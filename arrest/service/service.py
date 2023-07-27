@@ -24,4 +24,5 @@ class Service:
 
     def add_resource(self, resource: Resource) -> NoReturn:
         resource.base_url = self.url
+        resource.add_handlers(resource.handlers)
         self.resources[resource.name] = resource

@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from arrest.service.service import Service
 from arrest.resource.resource import Resource
 
@@ -39,9 +40,13 @@ app = FastAPI()
 
 @app.get("/")
 async def main():
-    return await payments_service["payment"].get(url="/abc")
+    return "hello world"
 
 
 @app.get("/{abc}")
 async def run_abc(abc: str):
+    if abc != "abc":
+        return JSONResponse(status_code=400, content="invalid abc")
+        # raise HTTPException(400, {"msg": "invalid abc"})
+
     return abc

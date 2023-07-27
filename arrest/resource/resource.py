@@ -1,12 +1,21 @@
-import re
-from urllib.parse import urljoin, urlsplit
+# pylint: disable=W0707
 
-from typing import Optional, Pattern, Type, get_args, MutableMapping, Mapping
+
+import re
+import typing
+from urllib.parse import urljoin, urlsplit
+import httpx
+import inspect
+
+from typing import Optional, Pattern, Type, Callable, MutableMapping, Mapping, Any
 from functools import partial
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 
 from arrest.http import Methods
-from arrest.exceptions import MethodNotAllowed
+from arrest.exceptions import ArrestHTTPException
+from arrest import params
+from arrest.utils import is_optional
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
@@ -21,38 +30,37 @@ CONVERTER_REGEX: Mapping[str, str] = {
 class ResourceHandler(BaseModel):
     method: Methods
     route: str
-    request: Optional[Type[BaseModel]]
-    response: Optional[Type[BaseModel]]
-    kwargs: Optional[dict]
-
-    # @model_validator(mode="after")
-    # def validate_params(self):
-    #     route = self.route
-    #     request = self.request
-    #     for match in PARAM_REGEX.finditer(route):
-    #         path_param, param_type = match.groups("str")
-
-    #         path_param = request.model_fields.get(path_param)
-    #         print(get_args(path_param.annotation)[0])
+    request: Optional[Any] = None
+    response: Optional[Any] = None
+    kwargs: Optional[dict] = {}
+    callback: Optional[Callable] = None
 
 
 class Resource:
     _handlers: MutableMapping[str, ResourceHandler]
 
     def __init__(
-        self, name: str, route: str, response_model: Optional[Type[BaseModel]] = None
+        self,
+        name: str,
+        route: str,
+        response_model: Optional[Type[BaseModel]] = None,
+        handlers: list[ResourceHandler] | list[Mapping[str, dict]] = None,
     ) -> None:
-        self.base_url = None  # will be filled once bound to a service
+        self.base_url = "/"  # will be filled once bound to a service
         self.name = name
-        self.route = route
+        self.route = route[1:] if route.startswith("/") else route
         self.response_model = response_model
-        self._handlers = {}
+        self.handlers = []
+        self._handler_mapping: Mapping[Pattern, ResourceHandler] = {}
 
-        self.get = partial(self._make_request_async, method=Methods.GET)
-        self.post = partial(self._make_request_async, method=Methods.POST)
-        self.put = partial(self._make_request_async, method=Methods.PUT)
-        self.patch = partial(self._make_request_async, method=Methods.PATCH)
-        self.delete = partial(self._make_request_async, method=Methods.DELETE)
+        if handlers:
+            self.handlers = handlers
+
+        self.get = partial(self.request, method=Methods.GET)
+        self.post = partial(self.request, method=Methods.POST)
+        self.put = partial(self.request, method=Methods.PUT)
+        self.patch = partial(self.request, method=Methods.PATCH)
+        self.delete = partial(self.request, method=Methods.DELETE)
 
     def add_handler(
         self,
@@ -94,32 +102,154 @@ class Resource:
         """
         assert (
             self.base_url
-        ), "missing base url, perhaps resource not bound to any service"
+        ), "missing base url, perhaps resource not bound to any service?"
 
         resource_route, handler_route = (
             urlsplit(self.route).path,
             urlsplit(handler.route).path,
         )
-        fq_url = urljoin(self.base_url, resource_route, handler_route)
-        self._handlers[fq_url] = handler
+        if len(handler_route) > 1:
+            handler_route = (
+                handler_route[1:] if handler_route.startswith("/") else handler_route
+            )
 
-    async def _make_request_async(
+        fq_url = urljoin(
+            urljoin(self.base_url, resource_route), handler_route
+        )  # TODO - use plain posixpath.join()
+        fq_url_regex = self.compile_path(fq_url)
+        self._handler_mapping[fq_url_regex] = handler
+
+    async def request(
         self,
-        method: Methods,
         url: str,
+        method: Methods,
         **kwargs,
-    ):
-        for handler in self._handlers:
-            if handler.route == url:
-                if method != handler.method:
-                    raise MethodNotAllowed
+    ) -> BaseModel | list[BaseModel] | dict | None:
+        request: BaseModel | None = kwargs.get("request", None)
+
+        if len(url) > 1:
+            url = url[1:] if url.startswith("/") else url
+        fq_url = urljoin(urljoin(self.base_url, self.route), url)
+
+        headers, query_params, body_params = {}, {}, {}
+
+        for route, handler in self._handler_mapping.items():
+            if re.fullmatch(route, fq_url) is not None:
+                request_type = handler.request
+                if request_type and not is_optional(request_type):
+                    if not request:
+                        raise ValueError(
+                            f"request of type {request_type.__name__} is required"
+                        )
+                    if not isinstance(request, request_type):
+                        raise ValueError(
+                            f"handler for {fq_url} expects request class {request_type.__name__}, found {type(request)}"
+                        )
+
+                    for field, field_info in request.model_fields:
+                        if isinstance(field_info, params.Query):
+                            query_params[field] = getattr(request, field, None)
+                        elif isinstance(field_info, params.Header):
+                            headers[field] = getattr(request, field, None)
+                        elif isinstance(field_info, params.Body, FieldInfo):
+                            body_params[field] = getattr(
+                                request, field, None
+                            )  # TODO - serialize datetime objs in case
+                        else:
+                            raise ValueError(
+                                f"Invalid field class specified: {field_info}"
+                            )
+
+                headers[
+                    "Content-Type"
+                ] = "application/json"  # TODO -temporary, remove once we support other request formats
+
+                response_type = handler.response or self.response_model
+                try:
+                    async with httpx.AsyncClient() as client:
+                        match method:
+                            case Methods.GET:
+                                response = await client.get(
+                                    url=fq_url, headers=headers, params=query_params
+                                )
+                            case Methods.POST:
+                                response = await client.post(
+                                    url=fq_url,
+                                    headers=headers,
+                                    params=query_params,
+                                    data=body_params,
+                                )
+                            case Methods.PUT:
+                                response = await client.put(
+                                    url=fq_url,
+                                    headers=headers,
+                                    params=query_params,
+                                    data=body_params,
+                                )
+                            case Methods.PATCH:
+                                response = await client.patch(
+                                    url=fq_url,
+                                    headers=headers,
+                                    params=query_params,
+                                    data=body_params,
+                                )
+                            case Methods.DELETE:
+                                response = await client.delete(
+                                    url=fq_url,
+                                    headers=headers,
+                                    params=query_params,
+                                    data=body_params,
+                                )
+
+                        response.raise_for_status()
+                        response_body = response.json()
+
+                        if handler.callback:
+                            if inspect.iscoroutinefunction(handler.callback):
+                                return await handler.callback(response_body)
+                            return handler.callback(response_body)
+
+                        parsed_response = response_body
+
+                        if response_type:
+                            parsed_response: list[
+                                response_type
+                            ] | response_type | dict = None
+                            if isinstance(response_body, list):
+                                parsed_response = [
+                                    response_type(**item) for item in response_body
+                                ]
+
+                            else:
+                                parsed_response = response_type(**response_body)
+
+                        return parsed_response
+
+                except httpx.HTTPStatusError as exc:
+                    err_response_body = response.json()
+                    raise ArrestHTTPException(
+                        status_code=exc.response.status_code, data=err_response_body
+                    )
+
+                except httpx.TimeoutException:
+                    raise ArrestHTTPException(
+                        status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                        data="request timed out",
+                    )
+
+                except httpx.RequestError:
+                    raise ArrestHTTPException(
+                        status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                        data="error occured while making request",
+                    )
 
     def compile_path(self, path: str) -> Pattern[str]:
         """
         Given a path string, like: "/{username:str}",
         returns a capturing group: "/(?P<username>[^/]+)"
 
-        inspired from: https://github.com/encode/starlette/blob/master/starlette/routing.py::compile_path()
+        inspired by:
+        https://github.com/encode/starlette/blob/master/starlette/routing.py::compile_path()
         """
         path_regex = "^"
         idx = 0

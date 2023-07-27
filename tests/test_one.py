@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
 from arrest.service.service import Service
 from arrest.resource.resource import Resource, ResourceHandler
 from arrest.http import Methods
-from arrest.params import Query, Path, Header
 
 resources = [
     Resource(
@@ -48,9 +48,35 @@ rq_handler = ResourceHandler(
     kwargs={},
 )
 
+resources = [
+    Resource(
+        "anything",
+        route="/anything/",
+        handlers=[
+            ResourceHandler(
+                method=Methods.GET,
+                route="/",
+            ),
+            ResourceHandler(
+                method=Methods.GET,
+                route="/{payment_id:int}",
+                # request=RequestBody | None,
+                # request=Optional[RequestBody],
+            ),
+        ],
+    ),
+    Resource(
+        "analytics",
+        route="/analytics",
+    ),
+]
 
-print(rq_handler)
+payments_service = Service(
+    name="payments",
+    url="https://httpbin.org",
+    resources=resources,
+)
 
-from arrest.service.service import Service
-
-Service(name="abc", url="https://abc.com", resources=[])
+payment_id = 2
+response = asyncio.run(payments_service["anything"].get(f"/{payment_id}"))
+print(response)
