@@ -50,3 +50,7 @@ rq_handler = ResourceHandler(
 
 
 print(rq_handler)
+
+from arrest.service.service import Service
+
+Service(name="abc", url="https://abc.com", resources=[])

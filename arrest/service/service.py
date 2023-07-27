@@ -11,6 +11,8 @@ class Service:
         url: str,
         resources: Optional[list[Resource]] = [],
     ) -> None:
+        if url.endswith("/"):
+            raise ValueError("url should not have a trailing `/`")
         self.name = name
         self.url = url
         self.resources: dict[str, Resource] = {}
