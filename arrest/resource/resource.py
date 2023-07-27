@@ -15,7 +15,7 @@ from pydantic.fields import FieldInfo
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
 from arrest import params
-from arrest.utils import is_optional
+from arrest.utils import is_optional, join_url
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
@@ -43,24 +43,25 @@ class Resource:
         self,
         name: str,
         route: str,
+        headers: Optional[dict] = {},
         response_model: Optional[Type[BaseModel]] = None,
-        handlers: list[ResourceHandler] | list[Mapping[str, dict]] = None,
+        handlers: list[ResourceHandler] | list[Mapping[str, dict]] = [],
     ) -> None:
         self.base_url = "/"  # will be filled once bound to a service
         self.name = name
-        self.route = route[1:] if route.startswith("/") else route
+        self.route = route
         self.response_model = response_model
-        self.handlers = []
+        self.headers = headers
+        self.handlers = handlers
         self._handler_mapping: Mapping[Pattern, ResourceHandler] = {}
-
-        if handlers:
-            self.handlers = handlers
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
         self.put = partial(self.request, method=Methods.PUT)
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
+
+        self.add_handlers(self.handlers)
 
     def add_handler(
         self,
@@ -86,6 +87,7 @@ class Resource:
         bulk insert multiple handlers either by a list of handler objs,
         or a list of dict structs
         """
+        self._handler_mapping = {}  # reset everytime
         for handler in handlers:
             if isinstance(handler, ResourceHandler):
                 self.__bind_handler_route(handler)
@@ -105,17 +107,11 @@ class Resource:
         ), "missing base url, perhaps resource not bound to any service?"
 
         resource_route, handler_route = (
-            urlsplit(self.route).path,
-            urlsplit(handler.route).path,
+            self.route,
+            handler.route,
         )
-        if len(handler_route) > 1:
-            handler_route = (
-                handler_route[1:] if handler_route.startswith("/") else handler_route
-            )
 
-        fq_url = urljoin(
-            urljoin(self.base_url, resource_route), handler_route
-        )  # TODO - use plain posixpath.join()
+        fq_url = join_url(self.base_url, resource_route, handler_route)
         fq_url_regex = self.compile_path(fq_url)
         self._handler_mapping[fq_url_regex] = handler
 
@@ -131,7 +127,7 @@ class Resource:
             url = url[1:] if url.startswith("/") else url
         fq_url = urljoin(urljoin(self.base_url, self.route), url)
 
-        headers, query_params, body_params = {}, {}, {}
+        headers, query_params, body_params = {} | self.headers, {}, {}
 
         for route, handler in self._handler_mapping.items():
             if re.fullmatch(route, fq_url) is not None:

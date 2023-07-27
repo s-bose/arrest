@@ -4,23 +4,7 @@ import asyncio
 from arrest.service.service import Service
 from arrest.resource.resource import Resource, ResourceHandler
 from arrest.http import Methods
-
-resources = [
-    Resource(
-        "payment",
-        route="/",
-    ),
-    Resource(
-        "analytics",
-        route="/analytics",
-    ),
-]
-
-payments_service = Service(
-    name="payments",
-    url="https://mybignewidea.com/internal/payments/api/v1",
-    resources=resources,
-)
+from arrest.exceptions import ArrestHTTPException
 
 
 # class BaseRequest(BaseModel):
@@ -78,5 +62,17 @@ payments_service = Service(
 )
 
 payment_id = 2
-response = asyncio.run(payments_service["anything"].get(f"/{payment_id}"))
-print(response)
+try:
+    response = asyncio.run(payments_service["anything"].get(f"/{payment_id}"))
+except ArrestHTTPException as exc:
+    match exc.status_code:
+        case 401:
+            # do something with  exc.data
+        case 404:
+            # break
+        case 500:
+            break
+        case _:
+            # do nothing
+
+print(json.dumps(response))
