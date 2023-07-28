@@ -1,7 +1,6 @@
-from collections.abc import Iterable
 from typing import Optional, NoReturn
 
-from arrest.resource.resource import Resource
+from arrest.resource import Resource
 
 
 class Service:

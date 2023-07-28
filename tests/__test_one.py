@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 import asyncio
-from arrest.service.service import Service
-from arrest.resource.resource import Resource, ResourceHandler
+import json
+from arrest.service import Service
+from arrest.resource import Resource, ResourceHandler
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
 
@@ -20,8 +22,12 @@ from arrest.exceptions import ArrestHTTPException
 class RequestBody(BaseModel):
     id: int
     name: str
-    abc: str
     payment_id: Optional[str]
+    created_at: Optional[datetime]
+
+
+class Test(BaseModel):
+    pass
 
 
 rq_handler = ResourceHandler(
@@ -42,9 +48,9 @@ resources = [
                 route="/",
             ),
             ResourceHandler(
-                method=Methods.GET,
-                route="/{payment_id:int}",
-                # request=RequestBody | None,
+                method=Methods.POST,
+                route="/{anything_id:int}",
+                request=Test,
                 # request=Optional[RequestBody],
             ),
         ],
@@ -61,18 +67,14 @@ payments_service = Service(
     resources=resources,
 )
 
-payment_id = 2
-try:
-    response = asyncio.run(payments_service["anything"].get(f"/{payment_id}"))
-except ArrestHTTPException as exc:
-    match exc.status_code:
-        case 401:
-            # do something with  exc.data
-        case 404:
-            # break
-        case 500:
-            break
-        case _:
-            # do nothing
+anything_id = 2
 
-print(json.dumps(response))
+response = asyncio.run(
+    payments_service["anything"].post(
+        f"/{anything_id}",
+        request=RequestBody(
+            id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
+        ),
+    )
+)
+print(response)

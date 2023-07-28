@@ -1,7 +1,8 @@
 import re
 import pytest
 from contextlib import nullcontext as noraise
-from arrest.resource.resource import Resource
+
+from arrest.resource import Resource
 
 
 @pytest.mark.parametrize(

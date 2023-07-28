@@ -2,11 +2,11 @@
 
 
 import re
-import typing
-from urllib.parse import urljoin, urlsplit
+import json
 import httpx
 import inspect
 
+import typing
 from typing import Optional, Pattern, Type, Callable, MutableMapping, Mapping, Any
 from functools import partial
 from pydantic import BaseModel
@@ -15,7 +15,7 @@ from pydantic.fields import FieldInfo
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
 from arrest import params
-from arrest.utils import is_optional, join_url
+from arrest.utils import is_optional, join_url, deserialize
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
@@ -121,45 +121,67 @@ class Resource:
         method: Methods,
         **kwargs,
     ) -> BaseModel | list[BaseModel] | dict | None:
-        request: BaseModel | None = kwargs.get("request", None)
+        request_data: BaseModel | None = kwargs.get("request", None)
 
-        if len(url) > 1:
-            url = url[1:] if url.startswith("/") else url
-        fq_url = urljoin(urljoin(self.base_url, self.route), url)
+        fq_url = join_url(self.base_url, self.route, url)
 
         headers, query_params, body_params = {} | self.headers, {}, {}
 
         for route, handler in self._handler_mapping.items():
             if re.fullmatch(route, fq_url) is not None:
-                request_type = handler.request
-                if request_type and not is_optional(request_type):
-                    if not request:
-                        raise ValueError(
-                            f"request of type {request_type.__name__} is required"
-                        )
-                    if not isinstance(request, request_type):
-                        raise ValueError(
-                            f"handler for {fq_url} expects request class {request_type.__name__}, found {type(request)}"
-                        )
+                if method != handler.method:
+                    raise ValueError(
+                        f"Method {method} not implemented for route {fq_url}"
+                    )
 
-                    for field, field_info in request.model_fields:
+                RequestType = handler.request
+                # if RequestType and request_data:
+                #     if not is_optional(RequestType) and not isinstance(
+                #         request_data, RequestType
+                #     ):
+                #         raise ValueError(
+                #             f"expected request class {RequestType!s}, found {type(request_data)}"
+                #         )
+
+                #     elif type(request_data) not in typing.get_args(RequestType):
+                #         raise ValueError(
+                #             f"{type(request_data)} does not match any of the request class {typing.get_args(RequestType)}"
+                #         )
+
+                if request_data:
+                    for field, field_info in request_data.model_fields.items():
                         if isinstance(field_info, params.Query):
-                            query_params[field] = getattr(request, field, None)
+                            query_params |= deserialize(request_data, field)
                         elif isinstance(field_info, params.Header):
-                            headers[field] = getattr(request, field, None)
-                        elif isinstance(field_info, params.Body, FieldInfo):
-                            body_params[field] = getattr(
-                                request, field, None
-                            )  # TODO - serialize datetime objs in case
+                            headers |= deserialize(request_data, field)
+                        elif isinstance(field_info, (params.Body, FieldInfo)):
+                            body_params |= deserialize(request_data, field)
                         else:
                             raise ValueError(
                                 f"Invalid field class specified: {field_info}"
                             )
 
+                    # apply type validation if Request Type present in handler definition
+                    if RequestType:
+                        if not isinstance(request_data, RequestType) or (
+                            is_optional(RequestType)
+                            and type(request_data) not in typing.get_args(RequestType)
+                        ):
+                            expected_types = (
+                                RequestType.__name__
+                                if not is_optional(RequestType)
+                                else tuple(
+                                    tp.__name__ for tp in typing.get_args(RequestType)
+                                )
+                            )
+                            raise ValueError(
+                                f"expected request types: {expected_types}, found {type(request_data).__name__}"
+                            )
+
                 headers[
                     "Content-Type"
                 ] = "application/json"  # TODO -temporary, remove once we support other request formats
-
+                print(f"{headers=}, {body_params=}")
                 response_type = handler.response or self.response_model
                 try:
                     async with httpx.AsyncClient() as client:
@@ -173,28 +195,27 @@ class Resource:
                                     url=fq_url,
                                     headers=headers,
                                     params=query_params,
-                                    data=body_params,
+                                    json=body_params,
                                 )
                             case Methods.PUT:
                                 response = await client.put(
                                     url=fq_url,
                                     headers=headers,
                                     params=query_params,
-                                    data=body_params,
+                                    data=json.dumps(body_params),
                                 )
                             case Methods.PATCH:
                                 response = await client.patch(
                                     url=fq_url,
                                     headers=headers,
                                     params=query_params,
-                                    data=body_params,
+                                    data=json.dumps(body_params),
                                 )
                             case Methods.DELETE:
                                 response = await client.delete(
                                     url=fq_url,
                                     headers=headers,
                                     params=query_params,
-                                    data=body_params,
                                 )
 
                         response.raise_for_status()
