@@ -10,7 +10,7 @@ import typing
 from typing import Optional, Pattern, Type, Callable, MutableMapping, Mapping, Any
 from functools import partial
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
+from pydantic.fields import FieldInfo, PrivateAttr
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
@@ -34,11 +34,14 @@ class ResourceHandler(BaseModel):
     response: Optional[Any] = None
     kwargs: Optional[dict] = {}
     callback: Optional[Callable] = None
+    _url: Optional[str] = PrivateAttr("")
+
+class UrlMapSchema(BaseModel):
+    method: Methods
+    
 
 
 class Resource:
-    _handlers: MutableMapping[str, ResourceHandler]
-
     def __init__(
         self,
         name: str,
@@ -53,7 +56,7 @@ class Resource:
         self.response_model = response_model
         self.headers = headers
         self.handlers = handlers
-        self._handler_mapping: Mapping[Pattern, ResourceHandler] = {}
+        self._handler_mapping: MutableMapping[Pattern, ResourceHandler] = {}
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
@@ -112,6 +115,7 @@ class Resource:
         )
 
         fq_url = join_url(self.base_url, resource_route, handler_route)
+        handler._url = fq_url
         fq_url_regex = self.compile_path(fq_url)
         self._handler_mapping[fq_url_regex] = handler
 
@@ -135,18 +139,6 @@ class Resource:
                     )
 
                 RequestType = handler.request
-                # if RequestType and request_data:
-                #     if not is_optional(RequestType) and not isinstance(
-                #         request_data, RequestType
-                #     ):
-                #         raise ValueError(
-                #             f"expected request class {RequestType!s}, found {type(request_data)}"
-                #         )
-
-                #     elif type(request_data) not in typing.get_args(RequestType):
-                #         raise ValueError(
-                #             f"{type(request_data)} does not match any of the request class {typing.get_args(RequestType)}"
-                #         )
 
                 if request_data:
                     for field, field_info in request_data.model_fields.items():
@@ -168,14 +160,14 @@ class Resource:
                             and type(request_data) not in typing.get_args(RequestType)
                         ):
                             expected_types = (
-                                RequestType.__name__
+                                (RequestType,)
                                 if not is_optional(RequestType)
-                                else tuple(
-                                    tp.__name__ for tp in typing.get_args(RequestType)
-                                )
+                                else typing.get_args(RequestType)
                             )
+
+                            expected_types = tuple(tp.__name__ for tp in expected_types)
                             raise ValueError(
-                                f"expected request types: {expected_types}, found {type(request_data).__name__}"
+                                f"expected request types: `{', '.join(expected_types)}`, found {type(request_data).__name__}"
                             )
 
                 headers[
@@ -291,3 +283,9 @@ class Resource:
 
         path_regex += re.escape(path[idx:]) + "$"
         return re.compile(path_regex)
+
+    @property
+    def mapping(self) -> Mapping[str, Any]:
+        url_map = {}
+        for handler in self._handler_mapping.values():
+            

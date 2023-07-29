@@ -50,7 +50,6 @@ resources = [
             ResourceHandler(
                 method=Methods.POST,
                 route="/{anything_id:int}",
-                request=Test,
                 # request=Optional[RequestBody],
             ),
         ],
@@ -59,6 +58,7 @@ resources = [
         "analytics",
         route="/analytics",
     ),
+    Resource("", route="/"),
 ]
 
 payments_service = Service(
@@ -66,6 +66,8 @@ payments_service = Service(
     url="https://httpbin.org",
     resources=resources,
 )
+
+print(payments_service[""]._handler_mapping)
 
 anything_id = 2
 
