@@ -3,8 +3,7 @@
 Enable data validation for REST APIs.
 
 Built on top of Pydantic and httpx.
-Arrest helps you define your external API calls underneath a structured data model.
-Especially useful when in a microservice architecture you have a number of internal/external services.
+Arrest is like a postman client for your microservice apis. It provides a simple layer of Pydantic encapsulation over Httpx HTTP calls to ensure structural integrity of your api definitions in a single file, as well as provide Pydantic's strength of data validation.
 
 ## TODOS
 [] add root resource "/"
