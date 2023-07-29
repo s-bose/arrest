@@ -16,6 +16,7 @@ from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
 from arrest import params
 from arrest.utils import is_optional, join_url, deserialize
+from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
@@ -46,7 +47,7 @@ class Resource:
         self,
         name: str,
         route: str,
-        headers: Optional[dict] = {},
+        headers: Optional[dict] = HEADER_DEFAULTS,
         response_model: Optional[Type[BaseModel]] = None,
         handlers: list[ResourceHandler] | list[Mapping[str, dict]] = [],
     ) -> None:
@@ -165,18 +166,20 @@ class Resource:
                                 else typing.get_args(RequestType)
                             )
 
-                            expected_types = tuple(tp.__name__ for tp in expected_types)
+                            expected_types = ",".join(tp.__name__ for tp in expected_types)
                             raise ValueError(
-                                f"expected request types: `{', '.join(expected_types)}`, found {type(request_data).__name__}"
+                                f"expected request types: {expected_types}; found {type(request_data).__name__}"
                             )
 
-                headers[
-                    "Content-Type"
-                ] = "application/json"  # TODO -temporary, remove once we support other request formats
-                print(f"{headers=}, {body_params=}")
                 response_type = handler.response or self.response_model
+                timeout = httpx.Timeout(TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
                 try:
-                    async with httpx.AsyncClient() as client:
+                    # TODO - add the followign default params to init
+                    # - headers X
+                    # - params (query_params)
+                    # - auth
+                    # - cookies
+                    async with httpx.AsyncClient(timeout=timeout, headers=self.headers) as client:
                         match method:
                             case Methods.GET:
                                 response = await client.get(
