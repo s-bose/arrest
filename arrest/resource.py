@@ -37,23 +37,25 @@ class ResourceHandler(BaseModel):
     callback: Optional[Callable] = None
     _url: Optional[str] = PrivateAttr("")
 
+
 class UrlMapSchema(BaseModel):
     method: Methods
-    
 
 
 class Resource:
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
+        *,
         route: str,
         headers: Optional[dict] = HEADER_DEFAULTS,
         response_model: Optional[Type[BaseModel]] = None,
         handlers: list[ResourceHandler] | list[Mapping[str, dict]] = [],
     ) -> None:
         self.base_url = "/"  # will be filled once bound to a service
-        self.name = name
         self.route = route
+        derived_name = name if name else self.route.strip("/").split("/")[0]
+        self.name = derived_name if derived_name else "root"
         self.response_model = response_model
         self.headers = headers
         self.handlers = handlers
@@ -65,28 +67,31 @@ class Resource:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-        self.add_handlers(self.handlers)
+        self.add_handlers(handlers=self.handlers)
 
     def add_handler(
         self,
+        *,
         method: Methods,
         route: str,
-        *,
         request: Optional[Type[BaseModel]] = None,
         response: Optional[Type[BaseModel]] = None,
         **kwargs,
     ):
         self.__bind_handler_route(
-            ResourceHandler(
+            handler=ResourceHandler(
                 method=method,
                 route=route,
                 request=request,
                 response=response,
                 kwargs=kwargs,
-            )
+            ),
         )
 
-    def add_handlers(self, handlers: list[ResourceHandler] | list[Mapping[str, dict]]):
+    def add_handlers(
+        self,
+        handlers: list[ResourceHandler] | list[Mapping[str, dict]],
+    ):
         """
         bulk insert multiple handlers either by a list of handler objs,
         or a list of dict structs
@@ -166,7 +171,9 @@ class Resource:
                                 else typing.get_args(RequestType)
                             )
 
-                            expected_types = ",".join(tp.__name__ for tp in expected_types)
+                            expected_types = ",".join(
+                                tp.__name__ for tp in expected_types
+                            )
                             raise ValueError(
                                 f"expected request types: {expected_types}; found {type(request_data).__name__}"
                             )
@@ -179,7 +186,9 @@ class Resource:
                     # - params (query_params)
                     # - auth
                     # - cookies
-                    async with httpx.AsyncClient(timeout=timeout, headers=self.headers) as client:
+                    async with httpx.AsyncClient(
+                        timeout=timeout, headers=self.headers
+                    ) as client:
                         match method:
                             case Methods.GET:
                                 response = await client.get(
@@ -286,9 +295,3 @@ class Resource:
 
         path_regex += re.escape(path[idx:]) + "$"
         return re.compile(path_regex)
-
-    @property
-    def mapping(self) -> Mapping[str, Any]:
-        url_map = {}
-        for handler in self._handler_mapping.values():
-            
