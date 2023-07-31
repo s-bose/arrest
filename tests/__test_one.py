@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 import asyncio
 import json
+from pprint import pprint
 from arrest.service import Service
 from arrest.resource import Resource, ResourceHandler
 from arrest.http import Methods
@@ -40,7 +41,6 @@ rq_handler = ResourceHandler(
 
 resources = [
     Resource(
-        "anything",
         route="/anything/",
         handlers=[
             ResourceHandler(
@@ -58,7 +58,7 @@ resources = [
         "analytics",
         route="/analytics",
     ),
-    Resource("", route="/"),
+    Resource("", route="/", handlers=[ResourceHandler(method=Methods.GET, route="/")]),
 ]
 
 payments_service = Service(
@@ -67,16 +67,23 @@ payments_service = Service(
     resources=resources,
 )
 
-print(payments_service[""]._handler_mapping)
-
 anything_id = 2
 
+# response = asyncio.run(
+#     payments_service["anything"].post(
+#         f"/{anything_id}",
+#         request=RequestBody(
+#             id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
+#         ),
+#     )
+# )
 response = asyncio.run(
-    payments_service["anything"].post(
-        f"/{anything_id}",
+    payments_service.post(
+        f"/anything/{anything_id}",
         request=RequestBody(
             id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
         ),
     )
 )
+
 print(response)
