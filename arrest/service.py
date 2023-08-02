@@ -25,9 +25,6 @@ class Service:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-    def __getitem__(self, resource_name: str) -> Optional[Resource]:
-        return self.resources.get(resource_name, None)
-
     def add_resource(self, resource: Resource) -> NoReturn:
         resource.base_url = self.url
         resource.add_handlers(handlers=resource.handlers)

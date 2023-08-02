@@ -7,10 +7,11 @@ import httpx
 import inspect
 
 import typing
-from typing import Optional, Pattern, Type, Callable, MutableMapping, Mapping, Any
+from typing import Optional, Pattern, Type, Callable, Mapping, Any
 from functools import partial
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
+from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
@@ -57,7 +58,7 @@ class Resource:
         self.name = derived_name if derived_name else "root"
         self.response_model = response_model
         self.headers = headers
-
+        self.handlers = handlers
         for handler in handlers:
             if isinstance(handler, dict):
                 try:
@@ -75,7 +76,7 @@ class Resource:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-        self.initialize_handlers()
+        # self.initialize_handlers()
 
     def initialize_handlers(self, base_url: Optional[str] = None) -> None:
         base_url = base_url or self.base_url
@@ -124,7 +125,6 @@ class Resource:
         )
 
         fq_url = join_url(self.base_url, resource_route, handler_route)
-        handler._url = fq_url
         fq_url_regex = self.compile_path(fq_url)
         self._handler_mapping[fq_url_regex] = handler
 
@@ -149,8 +149,13 @@ class Resource:
 
                 RequestType = handler.request
 
+                model_fields: dict = (
+                    request_data.__fields__
+                    if PYDANTIC_VERSION.startswith("2.")
+                    else request_data.model_fields
+                )
                 if request_data:
-                    for field, field_info in request_data.model_fields.items():
+                    for field, field_info in model_fields.items():
                         if isinstance(field_info, params.Query):
                             query_params |= deserialize(request_data, field)
                         elif isinstance(field_info, params.Header):

@@ -8,7 +8,8 @@ from arrest.service import Service
 from arrest.resource import Resource, ResourceHandler
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
-
+from arrest.params import Query
+from types import SimpleNamespace
 
 # class BaseRequest(BaseModel):
 #     a: int
@@ -21,6 +22,8 @@ from arrest.exceptions import ArrestHTTPException
 
 
 class RequestBody(BaseModel):
+    sort: bool = Query(default=True)
+    limit: int = Query(default=100)
     id: int
     name: str
     payment_id: Optional[str]
@@ -77,9 +80,10 @@ anything_id = 2
 #         ),
 #     )
 # )
+
 response = asyncio.run(
     payments_service.post(
-        f"/anything/{anything_id}",
+        f"/{anything_id}",
         request=RequestBody(
             id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
         ),
