@@ -9,8 +9,8 @@ import inspect
 import typing
 from typing import Optional, Pattern, Type, Callable, MutableMapping, Mapping, Any
 from functools import partial
-from pydantic import BaseModel
-from pydantic.fields import FieldInfo, PrivateAttr
+from pydantic import BaseModel, ValidationError
+from pydantic.fields import FieldInfo
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
@@ -35,11 +35,8 @@ class ResourceHandler(BaseModel):
     response: Optional[Any] = None
     kwargs: Optional[dict] = {}
     callback: Optional[Callable] = None
-    _url: Optional[str] = PrivateAttr("")
-
-
-class UrlMapSchema(BaseModel):
-    method: Methods
+    url: Optional[str] = None
+    url_regex: Optional[Pattern] = None
 
 
 class Resource:
@@ -50,7 +47,9 @@ class Resource:
         route: str,
         headers: Optional[dict] = HEADER_DEFAULTS,
         response_model: Optional[Type[BaseModel]] = None,
-        handlers: list[ResourceHandler] | list[Mapping[str, dict]] = [],
+        handlers: list[ResourceHandler]
+        | list[Mapping[str, Any]]
+        | list[tuple[Any, ...]] = [],
     ) -> None:
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
@@ -58,8 +57,17 @@ class Resource:
         self.name = derived_name if derived_name else "root"
         self.response_model = response_model
         self.headers = headers
-        self.handlers = handlers
-        self._handler_mapping: MutableMapping[Pattern, ResourceHandler] = {}
+
+        for handler in handlers:
+            if isinstance(handler, dict):
+                try:
+                    handler = ResourceHandler(**handler)
+                except ValidationError:
+                    raise ValueError("error initializing handler")
+            elif isinstance(handler, tuple):
+                pass
+
+        self.routes: dict[tuple[Methods, str], ResourceHandler] = {}
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
@@ -67,26 +75,21 @@ class Resource:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-        self.add_handlers(handlers=self.handlers)
+        self.initialize_handlers()
 
-    def add_handler(
-        self,
-        *,
-        method: Methods,
-        route: str,
-        request: Optional[Type[BaseModel]] = None,
-        response: Optional[Type[BaseModel]] = None,
-        **kwargs,
-    ):
-        self.__bind_handler_route(
-            handler=ResourceHandler(
-                method=method,
-                route=route,
-                request=request,
-                response=response,
-                kwargs=kwargs,
-            ),
-        )
+    def initialize_handlers(self, base_url: Optional[str] = None) -> None:
+        base_url = base_url or self.base_url
+
+        unique_handlers = set()
+        for handler in self.handlers:
+            relative_url = join_url(self.route, handler.route)
+            full_url = join_url(base_url, relative_url)
+            if relative_url in self.routes:
+                continue
+
+            handler.url = full_url
+            handler.url_regex = self.compile_path(full_url)
+            self.routes[(handler.method, relative_url)]
 
     def add_handlers(
         self,
