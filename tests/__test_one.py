@@ -46,22 +46,15 @@ resources = [
     Resource(
         route="/anything/",
         handlers=[
-            ResourceHandler(
-                method=Methods.GET,
-                route="/",
-            ),
-            ResourceHandler(
-                method=Methods.POST,
-                route="/{anything_id:int}",
-                # request=Optional[RequestBody],
-            ),
+            (Methods.GET, "/"),
+            (Methods.POST, "/{anything_id:int}", Optional[RequestBody]),
         ],
     ),
     Resource(
         "analytics",
         route="/analytics",
     ),
-    Resource("", route="/", handlers=[ResourceHandler(method=Methods.GET, route="/")]),
+    Resource(route="/", handlers=[ResourceHandler(method=Methods.GET, route="/")]),
 ]
 
 payments_service = Service(
@@ -70,10 +63,19 @@ payments_service = Service(
     resources=resources,
 )
 
-anything_id = 2
+# anything_id = 2
+
+# # response = asyncio.run(
+# #     payments_service["anything"].post(
+# #         f"/{anything_id}",
+# #         request=RequestBody(
+# #             id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
+# #         ),
+# #     )
+# # )
 
 # response = asyncio.run(
-#     payments_service["anything"].post(
+#     payments_service.resources["anything"].post(
 #         f"/{anything_id}",
 #         request=RequestBody(
 #             id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
@@ -81,13 +83,6 @@ anything_id = 2
 #     )
 # )
 
-response = asyncio.run(
-    payments_service.post(
-        f"/{anything_id}",
-        request=RequestBody(
-            id=1, name="abc", payment_id="xyz", created_at=datetime.utcnow()
-        ),
-    )
-)
-
-print(response)
+# print(response)
+#
+data = payments_service.anything.get()
