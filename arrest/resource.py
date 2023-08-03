@@ -1,16 +1,14 @@
 # pylint: disable=W0707
-
-
+import typing
+from typing import Optional, Pattern, Type, Callable, Mapping, Any
+import inspect
+from functools import partial
 import re
 import json
 import httpx
-import inspect
-
-import typing
-from typing import Optional, Pattern, Type, Callable, MutableMapping, Mapping, Any
-from functools import partial
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
+from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
@@ -33,7 +31,6 @@ class ResourceHandler(BaseModel):
     route: str
     request: Optional[Any] = None
     response: Optional[Any] = None
-    kwargs: Optional[dict] = {}
     callback: Optional[Callable] = None
     url: Optional[str] = None
     url_regex: Optional[Pattern] = None
@@ -57,17 +54,41 @@ class Resource:
         self.name = derived_name if derived_name else "root"
         self.response_model = response_model
         self.headers = headers
-
-        for handler in handlers:
-            if isinstance(handler, dict):
-                try:
-                    handler = ResourceHandler(**handler)
-                except ValidationError:
-                    raise ValueError("error initializing handler")
-            elif isinstance(handler, tuple):
-                pass
-
         self.routes: dict[tuple[Methods, str], ResourceHandler] = {}
+
+        for _handler in handlers:
+            try:
+                if isinstance(_handler, dict):
+                    self._bind_handler(handler=ResourceHandler(**_handler))
+                elif isinstance(_handler, tuple):
+                    if len(_handler) < 2:
+                        raise ValueError(
+                            "Too few arguments to unpack. Expected atleast 2"
+                        )
+                    if len(_handler) > 5:
+                        raise ValueError(
+                            f"Too many arguments to unpack. Expected 5, got {len(_handler)}"
+                        )
+
+                    method, route, rest = (
+                        _handler[0],
+                        _handler[1],
+                        _handler[2:],
+                    )
+
+                    self._bind_handler(
+                        handler=ResourceHandler(
+                            method=method,
+                            route=route,
+                            request=len(rest) >= 1 and rest[0] or None,
+                            response=len(rest) >= 2 and rest[1] or None,
+                            callback=len(rest) >= 3 and rest[2] or None,
+                        )
+                    )
+                else:
+                    self._bind_handler(handler=_handler)
+            except ValidationError:
+                raise ValueError("cannot initialize handler signature")
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
@@ -75,38 +96,21 @@ class Resource:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-        self.initialize_handlers()
-
     def initialize_handlers(self, base_url: Optional[str] = None) -> None:
-        base_url = base_url or self.base_url
-
-        unique_handlers = set()
-        for handler in self.handlers:
-            relative_url = join_url(self.route, handler.route)
-            full_url = join_url(base_url, relative_url)
-            if relative_url in self.routes:
-                continue
-
-            handler.url = full_url
-            handler.url_regex = self.compile_path(full_url)
-            self.routes[(handler.method, relative_url)]
-
-    def add_handlers(
-        self,
-        handlers: list[ResourceHandler] | list[Mapping[str, dict]],
-    ):
         """
-        bulk insert multiple handlers either by a list of handler objs,
-        or a list of dict structs
+        specifically used to inject `base_url` from a Service class to
+        downstream Resources.
+        Should not be used separately (unless you want to break things)
         """
-        self._handler_mapping = {}  # reset everytime
+        handlers = self.routes.values()
+        self.routes = {}  # recreate the mapping
+
         for handler in handlers:
-            if isinstance(handler, ResourceHandler):
-                self.__bind_handler_route(handler)
-            else:
-                self.__bind_handler_route(ResourceHandler(**handler))
+            self._bind_handler(base_url=base_url, handler=handler)
 
-    def __bind_handler_route(self, handler: ResourceHandler) -> None:
+    def _bind_handler(
+        self, base_url: Optional[str] = None, *, handler: ResourceHandler
+    ) -> None:
         """
         compose a fully-qualified url by joining base service url, resource url
         and handler url,
@@ -114,19 +118,12 @@ class Resource:
         Note: If there are duplicate handlers or any combination resulting in
         duplicate fq-url, the later will take precendence.
         """
-        assert (
-            self.base_url
-        ), "missing base url, perhaps resource not bound to any service?"
 
-        resource_route, handler_route = (
-            self.route,
-            handler.route,
-        )
+        base_url = base_url or self.base_url
+        handler.url = join_url(base_url, self.route, handler.route)
+        handler.url_regex = self.compile_path(handler.url)
 
-        fq_url = join_url(self.base_url, resource_route, handler_route)
-        handler._url = fq_url
-        fq_url_regex = self.compile_path(fq_url)
-        self._handler_mapping[fq_url_regex] = handler
+        self.routes[(handler.method, handler.route)] = handler
 
     async def request(
         self,
@@ -140,17 +137,22 @@ class Resource:
 
         headers, query_params, body_params = {} | self.headers, {}, {}
 
-        for route, handler in self._handler_mapping.items():
-            if re.fullmatch(route, fq_url) is not None:
+        for handler in self.routes.values():
+            if re.fullmatch(handler.url_regex, fq_url) is not None:
                 if method != handler.method:
                     raise ValueError(
                         f"Method {method} not implemented for route {fq_url}"
                     )
 
-                RequestType = handler.request
+                RequestType = handler.request  # pylint: disable=C0103
 
+                model_fields: dict = (
+                    request_data.__fields__
+                    if PYDANTIC_VERSION.startswith("2.")
+                    else request_data.model_fields
+                )
                 if request_data:
-                    for field, field_info in request_data.model_fields.items():
+                    for field, field_info in model_fields.items():
                         if isinstance(field_info, params.Query):
                             query_params |= deserialize(request_data, field)
                         elif isinstance(field_info, params.Header):

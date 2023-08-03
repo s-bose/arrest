@@ -1,5 +1,6 @@
-from typing import Optional, NoReturn
+from typing import Optional, NoReturn, Any
 from functools import partial
+import itertools
 
 from arrest.http import Methods
 from arrest.resource import Resource
@@ -25,13 +26,11 @@ class Service:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-    def __getitem__(self, resource_name: str) -> Optional[Resource]:
-        return self.resources.get(resource_name, None)
-
     def add_resource(self, resource: Resource) -> NoReturn:
         resource.base_url = self.url
-        resource.add_handlers(handlers=resource.handlers)
+        resource.initialize_handlers(base_url=self.url)
         self.resources[resource.name] = resource
+        setattr(self, resource.name, resource)
 
     async def request(self, path: str, method: Methods, **kwargs):
         parts = path.strip("/").split("/")
@@ -41,3 +40,11 @@ class Service:
         return await self.resources[resource].request(
             url=suffix, method=method, **kwargs
         )
+
+    def __getattr__(self, key: str) -> Resource | Any:  # type:(str) -> Resource | Any
+        if hasattr(self, key):
+            return getattr(self, key)
+        return self.resources[key]
+
+    def __dir__(self):
+        return list(itertools.chain(dir(super()), self.resources))

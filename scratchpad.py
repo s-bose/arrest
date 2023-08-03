@@ -15,6 +15,8 @@ class PaymentGetRequest(BaseModel):
 
 
 class PaymentPostRequest(BaseModel):
+    sort: bool = Query(..., default=True)
+    limit: int = Query(..., default=100)
     name: str
     value: int
     from_: str
@@ -66,7 +68,15 @@ class AnalyticsResponse(BaseModel):
 from arrest_alt.http import Http
 
 # define resources
-payment_resource = Resource("payment", route="/payment", response_model=PaymentResponse)
+payment_resource = Resource(
+    "payment", 
+    route="/payment", 
+    response_model=PaymentResponse, 
+    handlers=[
+        (Http.GET, "/", PaymentGetRequest, PaymentResponse), 
+        (Http.POST, "/", PaymentPostRequest, PaymentResponse)
+    ]
+)
 payment_resource.add_handler(
     Http.GET,
     "/",
