@@ -30,8 +30,8 @@ CONVERTER_REGEX: Mapping[str, str] = {
 class ResourceHandler(BaseModel):
     method: Methods
     route: str
-    request: Optional[Any] = None
-    response: Optional[Any] = None
+    request: Optional[Type[BaseModel]] = None
+    response: Optional[Type[BaseModel]] = None
     callback: Optional[Callable] = None
     url: Optional[str] = None
     url_regex: Optional[Pattern] = None
@@ -44,6 +44,7 @@ class Resource:
         *,
         route: str,
         headers: Optional[dict] = HEADER_DEFAULTS,
+        timeout: Optional[int] = TIMEOUT_DEFAULT,
         response_model: Optional[Type[BaseModel]] = None,
         handlers: list[ResourceHandler]
         | list[Mapping[str, Any]]
@@ -54,7 +55,15 @@ class Resource:
         derived_name = name if name else self.route.strip("/").split("/")[0]
         self.name = derived_name if derived_name else "root"
         self.response_model = response_model
+
+        # TODO - add the following default params to init
+        # - headers X
+        # - params (query_params)
+        # - auth
+        # - cookies
         self.headers = headers
+        self.timeout = httpx.Timeout(timeout=timeout, connect=timeout)
+
         self.routes: dict[tuple[Methods, str], ResourceHandler] = {}
 
         for _handler in handlers:
@@ -147,107 +156,16 @@ class Resource:
             params = self.__extract_request_params(request_data)
 
         # apply type validation if Request Type present in handler definition
-        if RequestType:
-            if not isinstance(request_data, RequestType) or (
-                is_optional(RequestType)
-                and type(request_data) not in typing.get_args(RequestType)
-            ):
-                expected_types = (
-                    (RequestType,)
-                    if not is_optional(RequestType)
-                    else typing.get_args(RequestType)
-                )
+        if RequestType and type(request_data) != RequestType:
+            raise ValueError(
+                f"type of {type(request_data).__name__} does not match provided type {RequestType.__name__}"
+            )
 
-                expected_types = ",".join(tp.__name__ for tp in expected_types)
-                raise ValueError(
-                    f"expected request types: {expected_types}; found {type(request_data).__name__}"
-                )
+        response_type = handler.response or self.response_model
 
-                response_type = handler.response or self.response_model
-                timeout = httpx.Timeout(TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
-                try:
-                    # TODO - add the followign default params to init
-                    # - headers X
-                    # - params (query_params)
-                    # - auth
-                    # - cookies
-                    async with httpx.AsyncClient(
-                        timeout=timeout, headers=self.headers
-                    ) as client:
-                        match method:
-                            case Methods.GET:
-                                response = await client.get(
-                                    url=fq_url, headers=headers, params=query_params
-                                )
-                            case Methods.POST:
-                                response = await client.post(
-                                    url=fq_url,
-                                    headers=headers,
-                                    params=query_params,
-                                    json=body_params,
-                                )
-                            case Methods.PUT:
-                                response = await client.put(
-                                    url=fq_url,
-                                    headers=headers,
-                                    params=query_params,
-                                    data=json.dumps(body_params),
-                                )
-                            case Methods.PATCH:
-                                response = await client.patch(
-                                    url=fq_url,
-                                    headers=headers,
-                                    params=query_params,
-                                    data=json.dumps(body_params),
-                                )
-                            case Methods.DELETE:
-                                response = await client.delete(
-                                    url=fq_url,
-                                    headers=headers,
-                                    params=query_params,
-                                )
-
-                        response.raise_for_status()
-                        response_body = response.json()
-
-                        if handler.callback:
-                            if inspect.iscoroutinefunction(handler.callback):
-                                return await handler.callback(response_body)
-                            return handler.callback(response_body)
-
-                        parsed_response = response_body
-
-                        if response_type:
-                            parsed_response: list[
-                                response_type
-                            ] | response_type | dict = None
-                            if isinstance(response_body, list):
-                                parsed_response = [
-                                    response_type(**item) for item in response_body
-                                ]
-
-                            else:
-                                parsed_response = response_type(**response_body)
-
-                        return parsed_response
-
-                except httpx.HTTPStatusError as exc:
-                    err_response_body = response.json()
-                    raise ArrestHTTPException(
-                        status_code=exc.response.status_code, data=err_response_body
-                    )
-
-                except httpx.TimeoutException:
-                    raise ArrestHTTPException(
-                        status_code=httpx.codes.INTERNAL_SERVER_ERROR,
-                        data="request timed out",
-                    )
-
-                except httpx.RequestError:
-                    raise ArrestHTTPException(
-                        status_code=httpx.codes.INTERNAL_SERVER_ERROR,
-                        data="error occured while making request",
-                    )
+        return await self.__make_request(
+            method=method, params=params, response_type=response_type
+        )
 
     def compile_path(self, path: str) -> Pattern[str]:
         """
@@ -307,3 +225,84 @@ class Resource:
             ParamTypes.query: query_params,
             ParamTypes.body: body_params,
         }
+
+    async def __make_request(
+        self,
+        url: str,
+        method: Methods,
+        params: dict,
+        response_type: Optional[Type[BaseModel]],
+    ):
+        headers, query_params, body_params = (
+            params[ParamTypes.header],
+            params[ParamTypes.query],
+            params[ParamTypes.body],
+        )
+        try:
+            async with httpx.AsyncClient(
+                timeout=self.timeout, headers=headers
+            ) as client:
+                match method:
+                    case Methods.GET:
+                        response = await client.get(url=url, params=query_params)
+                    case Methods.POST:
+                        response = await client.post(
+                            url=url,
+                            params=query_params,
+                            json=body_params,
+                        )
+                    case Methods.PUT:
+                        response = await client.put(
+                            url=url,
+                            params=query_params,
+                            data=json.dumps(body_params),
+                        )
+                    case Methods.PATCH:
+                        response = await client.patch(
+                            url=url,
+                            params=query_params,
+                            data=json.dumps(body_params),
+                        )
+                    case Methods.DELETE:
+                        response = await client.delete(
+                            url=url,
+                            params=query_params,
+                        )
+
+                response.raise_for_status()
+                response_body = response.json()
+
+                # parse response to pydantic model
+                parsed_response = response_body
+                if response_type:
+                    if isinstance(response_body, list):
+                        parsed_response = [
+                            response_type(**item) for item in response_body
+                        ]
+                    elif isinstance(response_body, dict):
+                        parsed_response = response_type(**response_body)
+                    else:
+                        raise ValueError(
+                            f"could not parse response to pydantic model {response_type.__name__}"
+                        )
+
+                return parsed_response
+
+        # exception handling
+        except httpx.HTTPStatusError as exc:
+            err_response_body = response.json()
+            raise ArrestHTTPException(
+                status_code=exc.response.status_code, data=err_response_body
+            ) from exc
+
+        except httpx.TimeoutException as exc:
+            raise ArrestHTTPException(
+                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                data="request timed out",
+            )
+
+        except httpx.RequestError:
+            raise ArrestHTTPException(
+                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                data="error occured while making request",
+            )
