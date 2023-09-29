@@ -13,6 +13,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
 from arrest import params
+from arrest.params import ParamTypes
 from arrest.utils import is_optional, join_url, deserialize
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 
@@ -103,7 +104,6 @@ class Resource:
         Should not be used separately (unless you want to break things)
         """
         handlers = self.routes.values()
-        self.routes = {}  # recreate the mapping
 
         for handler in handlers:
             self._bind_handler(base_url=base_url, handler=handler)
@@ -135,53 +135,33 @@ class Resource:
 
         fq_url = join_url(self.base_url, self.route, url)
 
-        headers, query_params, body_params = {} | self.headers, {}, {}
+        if not (handler := self.routes.get((method, url), None)):
+            raise ValueError(f"could not find a mapping for <{method!s}: {url}>")
 
-        for handler in self.routes.values():
-            if re.fullmatch(handler.url_regex, fq_url) is not None:
-                if method != handler.method:
-                    raise ValueError(
-                        f"Method {method} not implemented for route {fq_url}"
-                    )
+        if handler.url_regex.fullmatch(fq_url) is None:
+            raise ValueError(f"Could not parse requested url: {fq_url}")
 
-                RequestType = handler.request  # pylint: disable=C0103
+        RequestType = handler.request  # pylint: disable=C0103
 
-                model_fields: dict = (
-                    request_data.__fields__
-                    if PYDANTIC_VERSION.startswith("2.")
-                    else request_data.model_fields
+        if request_data:
+            params = self.__extract_request_params(request_data)
+
+        # apply type validation if Request Type present in handler definition
+        if RequestType:
+            if not isinstance(request_data, RequestType) or (
+                is_optional(RequestType)
+                and type(request_data) not in typing.get_args(RequestType)
+            ):
+                expected_types = (
+                    (RequestType,)
+                    if not is_optional(RequestType)
+                    else typing.get_args(RequestType)
                 )
-                if request_data:
-                    for field, field_info in model_fields.items():
-                        if isinstance(field_info, params.Query):
-                            query_params |= deserialize(request_data, field)
-                        elif isinstance(field_info, params.Header):
-                            headers |= deserialize(request_data, field)
-                        elif isinstance(field_info, (params.Body, FieldInfo)):
-                            body_params |= deserialize(request_data, field)
-                        else:
-                            raise ValueError(
-                                f"Invalid field class specified: {field_info}"
-                            )
 
-                    # apply type validation if Request Type present in handler definition
-                    if RequestType:
-                        if not isinstance(request_data, RequestType) or (
-                            is_optional(RequestType)
-                            and type(request_data) not in typing.get_args(RequestType)
-                        ):
-                            expected_types = (
-                                (RequestType,)
-                                if not is_optional(RequestType)
-                                else typing.get_args(RequestType)
-                            )
-
-                            expected_types = ",".join(
-                                tp.__name__ for tp in expected_types
-                            )
-                            raise ValueError(
-                                f"expected request types: {expected_types}; found {type(request_data).__name__}"
-                            )
+                expected_types = ",".join(tp.__name__ for tp in expected_types)
+                raise ValueError(
+                    f"expected request types: {expected_types}; found {type(request_data).__name__}"
+                )
 
                 response_type = handler.response or self.response_model
                 timeout = httpx.Timeout(TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
@@ -300,3 +280,30 @@ class Resource:
 
         path_regex += re.escape(path[idx:]) + "$"
         return re.compile(path_regex)
+
+    def __extract_request_params(
+        self, request_data: BaseModel
+    ) -> dict[ParamTypes, dict]:
+        headers, query_params, body_params = self.headers, {}, {}
+
+        model_fields: dict = (
+            request_data.__fields__
+            if PYDANTIC_VERSION.startswith("2.")
+            else request_data.model_fields
+        )
+
+        for field, field_info in model_fields.items():
+            if isinstance(field_info, params.Query):
+                query_params |= deserialize(request_data, field)
+            elif isinstance(field_info, params.Header):
+                headers |= deserialize(request_data, field)
+            elif isinstance(field_info, (params.Body, FieldInfo)):
+                body_params |= deserialize(request_data, field)
+            else:
+                raise ValueError(f"Invalid field class specified: {field_info}")
+
+        return {
+            ParamTypes.header: headers,
+            ParamTypes.query: query_params,
+            ParamTypes.body: body_params,
+        }

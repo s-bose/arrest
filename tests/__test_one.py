@@ -10,6 +10,7 @@ from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
 from arrest.params import Query
 from types import SimpleNamespace
+from pprint import pprint
 
 # class BaseRequest(BaseModel):
 #     a: int
@@ -85,4 +86,4 @@ payments_service = Service(
 
 # print(response)
 #
-data = payments_service.anything.get()
+pprint(payments_service.resources["anything"].routes)
