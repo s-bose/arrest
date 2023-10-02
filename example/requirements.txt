@@ -1,0 +1,5 @@
+fastapi==0.103.2
+uvicorn==0.23.2
+beanie==1.22.6
+pydantic==2.4.2
+motor==3.3.1
