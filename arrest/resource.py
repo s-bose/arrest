@@ -1,7 +1,5 @@
 # pylint: disable=W0707
-import typing
 from typing import Optional, Pattern, Type, Callable, Mapping, Any
-import inspect
 from functools import partial
 import re
 import json
@@ -12,9 +10,8 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
-from arrest import params
 from arrest.params import ParamTypes
-from arrest.utils import is_optional, join_url, deserialize
+from arrest.utils import join_url, deserialize
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
@@ -30,22 +27,22 @@ CONVERTER_REGEX: Mapping[str, str] = {
 class ResourceHandler(BaseModel):
     method: Methods
     route: str
-    request: Optional[Type[BaseModel]] = None
-    response: Optional[Type[BaseModel]] = None
-    callback: Optional[Callable] = None
-    url: Optional[str] = None
-    url_regex: Optional[Pattern] = None
+    request: Type[BaseModel] | None = None
+    response: Type[BaseModel] | None = None
+    callback: Callable | None = None
+    url: str | None = None
+    url_regex: Pattern | None = None
 
 
 class Resource:
     def __init__(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         *,
         route: str,
-        headers: Optional[dict] = HEADER_DEFAULTS,
-        timeout: Optional[int] = TIMEOUT_DEFAULT,
-        response_model: Optional[Type[BaseModel]] = None,
+        headers: dict | None = HEADER_DEFAULTS,
+        timeout: int | None = TIMEOUT_DEFAULT,
+        response_model: Type[BaseModel] | None = None,
         handlers: list[ResourceHandler]
         | list[Mapping[str, Any]]
         | list[tuple[Any, ...]] = [],
@@ -139,7 +136,22 @@ class Resource:
         url: str,
         method: Methods,
         **kwargs,
-    ) -> BaseModel | list[BaseModel] | dict | None:
+    ) -> Any | None:
+        """
+        Parameters
+        ----------
+
+        request : BaseModel
+            pydantic object containing the necessary fields to make an http
+            request to the handler url
+
+            must match the corresponding handler.request pydantic model
+
+        **kwargs : dict
+            keyword-args matching the request fields that can be alternatively
+            passed
+        """
+        params: dict = None
         request_data: BaseModel | None = kwargs.get("request", None)
 
         fq_url = join_url(self.base_url, self.route, url)
@@ -152,16 +164,19 @@ class Resource:
 
         RequestType = handler.request  # pylint: disable=C0103
 
-        if request_data:
-            params = self.__extract_request_params(request_data)
-
         # apply type validation if Request Type present in handler definition
-        if RequestType and type(request_data) != RequestType:
+
+        if not self.__validate_request(RequestType, request_data):
             raise ValueError(
                 f"type of {type(request_data).__name__} does not match provided type {RequestType.__name__}"
             )
 
-        response_type = handler.response or self.response_model
+        if request_data:
+            params = self.__extract_request_params(request_data)
+        else:
+            params = self.__extract_request_params(kwargs)
+
+        # response_type = handler.response or self.response_model
 
         return await self.__make_request(
             method=method, params=params, response_type=response_type
@@ -306,3 +321,12 @@ class Resource:
                 status_code=httpx.codes.INTERNAL_SERVER_ERROR,
                 data="error occured while making request",
             )
+
+    def __validate_request(
+        self, request_type: Type[BaseModel] | None, request_data: BaseModel | None
+    ):
+        if not request_data or (
+            request_type and isinstance(request_data, request_type)
+        ):
+            return True
+        return False

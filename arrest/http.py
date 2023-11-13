@@ -9,3 +9,7 @@ class Methods(str, enum.Enum):
     DELETE = "DELETE"
     HEAD = "HEAD"
     OPTIONS = "OPTIONS"
+
+
+class ContentType(str, enum.Enum):
+    APPLICATION_JSON = "application/json"
