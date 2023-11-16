@@ -103,7 +103,7 @@ class Resource:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-    def initialize_handlers(self, base_url: Optional[str] = None) -> None:
+    def initialize_handlers(self, base_url: str | None = None) -> None:
         """
         specifically used to inject `base_url` from a Service class to
         downstream Resources.
@@ -115,7 +115,7 @@ class Resource:
             self._bind_handler(base_url=base_url, handler=handler)
 
     def _bind_handler(
-        self, base_url: Optional[str] = None, *, handler: ResourceHandler
+        self, base_url: str | None = None, *, handler: ResourceHandler
     ) -> None:
         """
         compose a fully-qualified url by joining base service url, resource url
@@ -155,14 +155,14 @@ class Resource:
         request_data: BaseModel | None = kwargs.get("request", None)
 
         fq_url = join_url(self.base_url, self.route, url)
-        print(self.routes)
-        print(fq_url)
-        print((method, url))
 
-        if not (handler := self.routes.get((method, url), None)):
-            raise ValueError(f"could not find a mapping for <{method!s}: {url}>")
-
-        if handler.url_regex.fullmatch(fq_url) is None:
+        try:
+            handler = next(
+                _handler
+                for _handler in self.routes.values()
+                if _handler.url_regex.fullmatch(fq_url) is not None
+            )
+        except StopIteration:
             raise ValueError(f"Could not parse requested url: {fq_url}")
 
         RequestType = handler.request  # pylint: disable=C0103
