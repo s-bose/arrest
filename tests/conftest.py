@@ -13,3 +13,14 @@ def client():
     app = FastAPI()
     app.add_api_route("/", endpoint=get_root, methods=["GET"])
     return TestClient(app)
+
+
+@pytest.yield_fixture()
+def event_loop():
+    import asyncio
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    yield loop
+    loop.close()

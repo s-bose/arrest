@@ -35,10 +35,11 @@ class Service:
     async def request(self, path: str, method: Methods, **kwargs):
         parts = path.strip("/").split("/")
         resource, suffix = parts[0], "/".join(parts[1:])
+
         if resource not in self.resources:
             raise NotFoundException(message=f"resource {resource} not found")
         return await self.resources[resource].request(
-            url=suffix, method=method, **kwargs
+            url=f"/{suffix}", method=method, **kwargs
         )
 
     def __getattr__(self, key: str) -> Resource | Any:  # type:(str) -> Resource | Any

@@ -10,7 +10,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
-from arrest.params import ParamTypes
+from arrest.params import ParamTypes, Query, Param, Header, Body
 from arrest.utils import join_url, deserialize
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 
@@ -155,6 +155,9 @@ class Resource:
         request_data: BaseModel | None = kwargs.get("request", None)
 
         fq_url = join_url(self.base_url, self.route, url)
+        print(self.routes)
+        print(fq_url)
+        print((method, url))
 
         if not (handler := self.routes.get((method, url), None)):
             raise ValueError(f"could not find a mapping for <{method!s}: {url}>")
@@ -179,7 +182,7 @@ class Resource:
         # response_type = handler.response or self.response_model
 
         return await self.__make_request(
-            method=method, params=params, response_type=response_type
+            url=fq_url, method=method, params=params, response_type=None
         )
 
     def compile_path(self, path: str) -> Pattern[str]:
@@ -215,31 +218,38 @@ class Resource:
         return re.compile(path_regex)
 
     def __extract_request_params(
-        self, request_data: BaseModel
+        self, request_data: BaseModel | None, **kwargs
     ) -> dict[ParamTypes, dict]:
         headers, query_params, body_params = self.headers, {}, {}
 
-        model_fields: dict = (
-            request_data.__fields__
-            if PYDANTIC_VERSION.startswith("2.")
-            else request_data.model_fields
-        )
+        if not kwargs:
+            return {
+                ParamTypes.header: {},
+                ParamTypes.query: {},
+                ParamTypes.body: {},
+            }
+        if request_data:
+            model_fields: dict = (
+                request_data.__fields__
+                if PYDANTIC_VERSION.startswith("2.")
+                else request_data.model_fields
+            )
 
-        for field, field_info in model_fields.items():
-            if isinstance(field_info, params.Query):
-                query_params |= deserialize(request_data, field)
-            elif isinstance(field_info, params.Header):
-                headers |= deserialize(request_data, field)
-            elif isinstance(field_info, (params.Body, FieldInfo)):
-                body_params |= deserialize(request_data, field)
-            else:
-                raise ValueError(f"Invalid field class specified: {field_info}")
+            for field, field_info in model_fields.items():
+                if isinstance(field_info, Query):
+                    query_params |= deserialize(request_data, field)
+                elif isinstance(field_info, Header):
+                    headers |= deserialize(request_data, field)
+                elif isinstance(field_info, (Body, FieldInfo)):
+                    body_params |= deserialize(request_data, field)
+                else:
+                    raise ValueError(f"Invalid field class specified: {field_info}")
 
-        return {
-            ParamTypes.header: headers,
-            ParamTypes.query: query_params,
-            ParamTypes.body: body_params,
-        }
+            return {
+                ParamTypes.header: headers,
+                ParamTypes.query: query_params,
+                ParamTypes.body: body_params,
+            }
 
     async def __make_request(
         self,
