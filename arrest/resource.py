@@ -10,7 +10,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
 from arrest.exceptions import ArrestHTTPException
-from arrest.params import ParamTypes, Query, Param, Header, Body
+from arrest.params import ParamTypes, Query, Header, Body
 from arrest.utils import join_url, deserialize
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 
@@ -293,6 +293,8 @@ class Resource:
                             url=url,
                             params=query_params,
                         )
+                    case Methods.HEAD:
+                        response = await client.head(url=url, params=query_params)
 
                 response.raise_for_status()
                 response_body = response.json()
@@ -320,7 +322,7 @@ class Resource:
                 status_code=exc.response.status_code, data=err_response_body
             ) from exc
 
-        except httpx.TimeoutException as exc:
+        except httpx.TimeoutException:
             raise ArrestHTTPException(
                 status_code=httpx.codes.INTERNAL_SERVER_ERROR,
                 data="request timed out",

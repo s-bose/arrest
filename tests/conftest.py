@@ -1,26 +1,17 @@
 import pytest
+import respx
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-
-async def get_root():
-    return {"msg": "hello world"}
+from arrest.service import Service
+from tests import TEST_DEFAULT_SERVICE_NAME, TEST_DEFAULT_SERVICE_URL
 
 
-@pytest.fixture()
-def client():
-    app = FastAPI()
-    app.add_api_route("/", endpoint=get_root, methods=["GET"])
-    return TestClient(app)
+@pytest.fixture(scope="function")
+def mock_httpx():
+    with respx.mock(base_url=TEST_DEFAULT_SERVICE_URL) as respx_mock:
+        yield respx_mock
 
 
-@pytest.yield_fixture()
-def event_loop():
-    import asyncio
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    yield loop
-    loop.close()
+@pytest.fixture(scope="function")
+def service():
+    service_ = Service(name=TEST_DEFAULT_SERVICE_NAME, url=TEST_DEFAULT_SERVICE_URL)
+    return service_
