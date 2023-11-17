@@ -14,15 +14,6 @@ from arrest.params import ParamTypes, Query, Header, Body
 from arrest.utils import join_url, deserialize
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 
-# Match parameters in URL paths, eg. '{param}', and '{param:int}'
-PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
-
-CONVERTER_REGEX: Mapping[str, str] = {
-    "str": "[^/]+",
-    "int": "[0-9]+",
-    "float": r"[0-9]+(\.[0-9]+)?",
-}
-
 
 class ResourceHandler(BaseModel):
     method: Methods
@@ -166,6 +157,7 @@ class Resource:
             raise ValueError(f"Could not parse requested url: {fq_url}")
 
         RequestType = handler.request  # pylint: disable=C0103
+        print(handler.url_regex.groupindex)
 
         # apply type validation if Request Type present in handler definition
 
@@ -190,8 +182,7 @@ class Resource:
         Given a path string, like: "/{username:str}",
         returns a capturing group: "/(?P<username>[^/]+)"
 
-        inspired by:
-        https://github.com/encode/starlette/blob/master/starlette/routing.py::compile_path()
+        https://github.com/encode/starlette/blob/master/starlette/routing.py#L123
         """
         path_regex = "^"
         idx = 0
@@ -209,7 +200,7 @@ class Resource:
             path_regex += re.escape(path[idx : match.start()])
             path_regex += f"(?P<{param_name}>{converter_regex})"
             if param_name in parsed_path_params:
-                raise ValueError(f"Duplicate param name {param_name} at path {path}")
+                raise ValueError(f"Duplicate param {param_name} at path {path}")
             parsed_path_params.add(param_name)
 
             idx = match.end()

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from arrest.resource import Resource
 from arrest.http import Methods
-from arrest.params import Query, Path
+from arrest.params import Query
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ async def test_http_methods(method: Methods, service, mock_httpx):
 @pytest.mark.asyncio
 async def test_http_params(service, mock_httpx):
     class TestRequest(BaseModel):
-        anything: int = Path(...)
+        pass
 
     mock_httpx.get(url__regex="/test/get/*", name="http_request").mock(
         return_value=httpx.Response(200, json={"status": "OK"})
@@ -58,6 +58,8 @@ async def test_http_params(service, mock_httpx):
     )
 
     response = await service.test.get("/get/2")
+    print(service.test.routes)
     assert response == {"status": "OK"}
     assert mock_httpx["http_request"].called
     assert mock_httpx["http_request"].calls.call_count == 1
+    assert False
