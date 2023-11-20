@@ -19,8 +19,9 @@ from arrest.params import Query
     ],
 )
 @pytest.mark.asyncio
-async def test_http_methods(method: Methods, service, mock_httpx):
+async def test_request_http_methods(method: Methods, service, mock_httpx):
     route = str(method).lower()
+
     mock_httpx.request(method=method, url=f"/test/{route}", name="http_request").mock(
         return_value=httpx.Response(200, json={"status": "OK"})
     )
@@ -28,10 +29,11 @@ async def test_http_methods(method: Methods, service, mock_httpx):
     service.add_resource(
         Resource(
             route="/test",
-            handlers=[(method, f"/{route}")],
+            handlers=[(method, f"/{route}"), (Methods.GET, "/{anything:int}")],
         )
     )
 
+    print(service.test.routes)
     response = await service.test.request(f"/{route}", method=method)
     assert response == {"status": "OK"}
     assert mock_httpx["http_request"].called
@@ -39,10 +41,7 @@ async def test_http_methods(method: Methods, service, mock_httpx):
 
 
 @pytest.mark.asyncio
-async def test_http_params(service, mock_httpx):
-    class TestRequest(BaseModel):
-        pass
-
+async def test_request_path_params(service, mock_httpx, mocker):
     mock_httpx.get(url__regex="/test/get/*", name="http_request").mock(
         return_value=httpx.Response(200, json={"status": "OK"})
     )
@@ -50,16 +49,19 @@ async def test_http_params(service, mock_httpx):
     service.add_resource(
         Resource(
             route="/test",
-            handlers=[
-                (Methods.GET, "/get/{anything:int}"),
-                (Methods.GET, "/get", TestRequest),
-            ],
+            handlers=[(Methods.GET, "/get"), (Methods.GET, "/get/{foo:int}")],
         )
     )
 
     response = await service.test.get("/get/2")
-    print(service.test.routes)
     assert response == {"status": "OK"}
     assert mock_httpx["http_request"].called
     assert mock_httpx["http_request"].calls.call_count == 1
-    assert False
+
+    get_matching_handler = mocker.spy(service.test, "get_matching_handler")
+    response = await service.test.get("/get", foo=2)
+    assert response == {"status": "OK"}
+    assert mock_httpx["http_request"].called
+
+    handler, _ = get_matching_handler.spy_return
+    assert handler.route == "/get/{foo:int}"

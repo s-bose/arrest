@@ -1,7 +1,6 @@
 # pylint: disable=W0707
 from typing import Optional, Pattern, Type, Callable, Mapping, Any
 from functools import partial
-import re
 import json
 import httpx
 from pydantic import BaseModel, ValidationError
@@ -9,10 +8,12 @@ from pydantic.fields import FieldInfo
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
+from arrest.converters import compile_path, replace_params
 from arrest.exceptions import ArrestHTTPException
 from arrest.params import ParamTypes, Query, Header, Body
 from arrest.utils import join_url, deserialize
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
+from arrest.logging import logger
 
 
 class ResourceHandler(BaseModel):
@@ -23,6 +24,7 @@ class ResourceHandler(BaseModel):
     callback: Callable | None = None
     url: str | None = None
     url_regex: Pattern | None = None
+    path_params: dict[str, type] | None = None
 
 
 class Resource:
@@ -100,7 +102,7 @@ class Resource:
         downstream Resources.
         Should not be used separately (unless you want to break things)
         """
-        handlers = self.routes.values()
+        handlers = list(self.routes.values())
 
         for handler in handlers:
             self._bind_handler(base_url=base_url, handler=handler)
@@ -118,7 +120,11 @@ class Resource:
 
         base_url = base_url or self.base_url
         handler.url = join_url(base_url, self.route, handler.route)
-        handler.url_regex = self.compile_path(handler.url)
+        url_regex, handler_url, handler_path_params = compile_path(handler.url)
+
+        handler.url_regex = url_regex
+        handler.path_params = handler_path_params
+        handler.url = handler_url
 
         self.routes[(handler.method, handler.route)] = handler
 
@@ -142,84 +148,45 @@ class Resource:
             keyword-args matching the request fields that can be alternatively
             passed
         """
-        params: dict = None
+        params: dict = {}
         request_data: BaseModel | None = kwargs.get("request", None)
 
-        fq_url = join_url(self.base_url, self.route, url)
-
-        try:
-            handler = next(
-                _handler
-                for _handler in self.routes.values()
-                if _handler.url_regex.fullmatch(fq_url) is not None
-            )
-        except StopIteration:
-            raise ValueError(f"Could not parse requested url: {fq_url}")
-
-        RequestType = handler.request  # pylint: disable=C0103
-        print(handler.url_regex.groupindex)
-
-        # apply type validation if Request Type present in handler definition
-
-        if not self.__validate_request(RequestType, request_data):
-            raise ValueError(
-                f"type of {type(request_data).__name__} does not match provided type {RequestType.__name__}"
-            )
-
-        if request_data:
-            params = self.__extract_request_params(request_data)
-        else:
-            params = self.__extract_request_params(kwargs)
+        handler, url = self.get_matching_handler(url=url, **kwargs)
+        print(handler)
+        params = self.__extract_request_params(
+            request_type=handler.request, request_data=request_data, kwargs=kwargs
+        )
 
         # response_type = handler.response or self.response_model
 
         return await self.__make_request(
-            url=fq_url, method=method, params=params, response_type=None
+            url=url, method=method, params=params, response_type=None
         )
 
-    def compile_path(self, path: str) -> Pattern[str]:
-        """
-        Given a path string, like: "/{username:str}",
-        returns a capturing group: "/(?P<username>[^/]+)"
-
-        https://github.com/encode/starlette/blob/master/starlette/routing.py#L123
-        """
-        path_regex = "^"
-        idx = 0
-        parsed_path_params = set()
-
-        for match in PARAM_REGEX.finditer(path):
-            param_name, converter_type = match.groups("str")
-            converter_type = converter_type.lstrip(":")
-
-            assert (
-                converter_type in CONVERTER_REGEX
-            ), f"Invalid converter specified, available converters {CONVERTER_REGEX.keys()}"
-
-            converter_regex = CONVERTER_REGEX[converter_type]
-            path_regex += re.escape(path[idx : match.start()])
-            path_regex += f"(?P<{param_name}>{converter_regex})"
-            if param_name in parsed_path_params:
-                raise ValueError(f"Duplicate param {param_name} at path {path}")
-            parsed_path_params.add(param_name)
-
-            idx = match.end()
-
-        path_regex += re.escape(path[idx:]) + "$"
-        return re.compile(path_regex)
-
     def __extract_request_params(
-        self, request_data: BaseModel | None, **kwargs
+        self,
+        request_type: Type[BaseModel] | None,
+        request_data: BaseModel | None,
+        **kwargs,
     ) -> dict[ParamTypes, dict]:
+        if kwargs and request_type:
+            try:
+                request_data = request_type(**kwargs)
+            except ValidationError:
+                logger.debug(
+                    f"error forming model {request_type.__class__.__name__} from kwargs",
+                    exc_info=True,
+                )
+
+        # apply type validation if Request Type present in handler definition
+        if not self.__validate_request(request_type, request_data):
+            raise ValueError(
+                f"type of {type(request_data).__name__} does not match provided type {request_type.__name__}"
+            )
         headers, query_params, body_params = self.headers, {}, {}
 
-        if not kwargs:
-            return {
-                ParamTypes.header: {},
-                ParamTypes.query: {},
-                ParamTypes.body: {},
-            }
         if request_data:
+            # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
                 request_data.__fields__
                 if PYDANTIC_VERSION.startswith("2.")
@@ -236,11 +203,15 @@ class Resource:
                 else:
                     raise ValueError(f"Invalid field class specified: {field_info}")
 
-            return {
-                ParamTypes.header: headers,
-                ParamTypes.query: query_params,
-                ParamTypes.body: body_params,
-            }
+        else:
+            # return kwargs as body
+            body_params = kwargs
+
+        return {
+            ParamTypes.header: headers,
+            ParamTypes.query: query_params,
+            ParamTypes.body: body_params,
+        }
 
     async def __make_request(
         self,
@@ -333,3 +304,19 @@ class Resource:
         ):
             return True
         return False
+
+    def get_matching_handler(
+        self, url: str, **kwargs
+    ) -> tuple[ResourceHandler, str] | None:
+        requested_url = join_url(self.base_url, self.route, url)
+        for handler in self.routes.values():
+            if requested_url in handler.url:
+                print(f"{requested_url=}")
+                url, _ = replace_params(handler.url, kwargs, handler.path_params)
+                if url == handler.url:
+                    continue
+            else:
+                url = requested_url
+            if handler.url_regex.fullmatch(url) is not None:
+                print(handler.url_regex.fullmatch)
+                return handler, url

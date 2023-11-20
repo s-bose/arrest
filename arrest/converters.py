@@ -5,32 +5,69 @@ https://github.com/encode/starlette/blob/master/starlette/routing.py
 import re
 import uuid
 import enum
-from typing import Mapping, Pattern
+import math
+from typing import Type, Mapping, Pattern, Any, Generic, TypeVar, ClassVar
+
+from uuid import UUID
+
+T = TypeVar("T")
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 
 
-class PythonTypes(str, enum.Enum):
-    str = "str"
-    int = "int"
-    float = "float"
-    uuid = "uuid"
+class Converter(Generic[T]):
+    regex: ClassVar[str] = ""
+
+    def to_str(self, value: T) -> str:
+        raise NotImplementedError
 
 
-TYPES: Mapping[PythonTypes, type] = {
-    PythonTypes.str: str,
-    PythonTypes.int: int,
-    PythonTypes.float: float,
-    PythonTypes.uuid: uuid.UUID,
-}
+class IntegerConverter(Converter[int]):
+    regex = "[0-9]+"
+
+    def to_str(self, value: int) -> str:
+        value = int(value)
+
+        assert value >= 0, "Negative integers are not supported"
+        return str(value)
 
 
-CONVERTER_REGEX: Mapping[PythonTypes, str] = {
-    PythonTypes.str: "[^/]+",
-    PythonTypes.int: "[0-9]+",
-    PythonTypes.float: r"[0-9]+(\.[0-9]+)?",
-    PythonTypes.uuid: "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+class FloatConverter(Converter[float]):
+    regex = r"[0-9]+(\.[0-9]+)?"
+
+    def to_str(self, value: float) -> str:
+        value = float(value)
+
+        assert value >= 0.0, "Negative floats are not supported"
+        assert not math.isnan(value), "NaN values are not supported"
+        assert not math.isinf(value), "Infinite values are not supported"
+        return ("%0.20f" % value).rstrip("0").rstrip(".")
+
+
+class StrConverter(Converter[str]):
+    regex = "[^/]+"
+
+    def to_str(self, value: str) -> str:
+        value = str(value)
+
+        assert "/" not in value, "May not contain path separators"
+        assert value, "Must not be empty"
+        return value
+
+
+class UUIDConverter(Converter[uuid.UUID]):
+    regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+
+    def to_str(self, value: UUID) -> str:
+        return str(value)
+
+
+CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
+    "str": StrConverter(),
+    "int": IntegerConverter(),
+    "float": FloatConverter(),
+    "uuid": UUIDConverter(),
 }
 
 
@@ -44,7 +81,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
 
     regex : "/(?P<username>[^/]+)"
     format : "/{username}"
-    path_params : dict[username: type<str>]
+    path_params : dict[username: Converter[str]()]
     """
     path_regex = "^"
     path_format = ""
@@ -54,23 +91,23 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
 
     for match in PARAM_REGEX.finditer(path):
         param_name, converter_type = match.groups("str")
-        converter_type = converter_type.lstrip(":")
+        converter_type = converter_type.lstrip(":").casefold()
 
         assert (
             converter_type in CONVERTER_REGEX
         ), f"Invalid converter specified, available converters {CONVERTER_REGEX.keys()}"
 
-        converter_regex = CONVERTER_REGEX[converter_type]
+        converter = CONVERTER_REGEX[converter_type]
 
         path_regex += re.escape(path[idx : match.start()])
-        path_regex += f"(?P<{param_name}>{converter_regex})"
+        path_regex += f"(?P<{param_name}>{converter.regex})"
 
         path_format += path[idx : match.start()]
         path_format += "{%s}" % param_name
 
         if param_name in parsed_path_params:
             raise ValueError(f"Duplicate param {param_name} at path {path}")
-        parsed_path_params[param_name] = TYPES[converter_type]
+        parsed_path_params[param_name] = converter
 
         idx = match.end()
 
@@ -79,3 +116,26 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
 
     pattern = re.compile(path_regex)
     return pattern, path_format, parsed_path_params
+
+
+def replace_params(
+    path: str,
+    path_params: dict[str, Any],
+    param_types: dict[str, Converter[Any]] | None,
+) -> tuple[str, dict[str, str]]:
+    for key, value in list(path_params.items()):
+        if "{" + key + "}" in path:
+            if not param_types:
+                value = str(value)
+
+            path = path.replace("{" + key + "}", param_types[key].to_str(value))
+            path_params.pop(key)
+    return path, path_params
+
+
+def get_converter(key: str) -> Converter[Any]:
+    return CONVERTER_REGEX[key]
+
+
+def add_converter(converter: Converter[Any], key: str) -> None:
+    CONVERTER_REGEX[key] = converter
