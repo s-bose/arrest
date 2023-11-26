@@ -1,5 +1,5 @@
 # pylint: disable=W0707
-from typing import Optional, Pattern, Type, Callable, Mapping, Any
+from typing import Optional, Pattern, Type, Callable, Mapping, Any, NamedTuple
 from functools import partial
 import json
 import httpx
@@ -16,6 +16,11 @@ from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.logging import logger
 
 
+class HandlerKey(NamedTuple):
+    method: Methods
+    route: str
+
+
 class ResourceHandler(BaseModel):
     method: Methods
     route: str
@@ -27,7 +32,6 @@ class ResourceHandler(BaseModel):
     path_params: dict[str, type] | None = None
 
     def extract_params(self, path: str) -> dict:
-        print(path)
         match = self.url_regex.search(path)
         if match:
             return match.groupdict()
@@ -60,7 +64,7 @@ class Resource:
         self.headers = headers
         self.timeout = httpx.Timeout(timeout=timeout, connect=timeout)
 
-        self.routes: dict[tuple[Methods, str], ResourceHandler] = {}
+        self.routes: dict[HandlerKey, ResourceHandler] = {}
 
         for _handler in handlers:
             try:
@@ -132,7 +136,7 @@ class Resource:
         handler.path_params = handler_path_params
         handler.url = handler_url
 
-        self.routes[(handler.method, handler.route)] = handler
+        self.routes[HandlerKey(*(handler.method, handler.route))] = handler
 
     async def request(
         self,
@@ -314,9 +318,9 @@ class Resource:
     def get_matching_handler(
         self, method: Methods, url: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
-        print(f"{url=}")
+        print(self.routes.keys())
         for key, handler in self.routes.items():
-            if method != key[0]:
+            if method != key.method:
                 continue
 
             req_url = join_url(self.base_url, self.route, url)
@@ -325,6 +329,7 @@ class Resource:
                     if v is not None:
                         kwargs[k] = v
 
+            print(kwargs)
             if kwargs:
                 handler_url, remaining_params = replace_params(
                     handler.url, kwargs, handler.path_params
@@ -333,6 +338,5 @@ class Resource:
                     continue
                 req_url = handler_url
 
-            print(f"{req_url}")
             if handler.url_regex.fullmatch(req_url):
                 return handler, req_url
