@@ -100,7 +100,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
         converter = CONVERTER_REGEX[converter_type]
 
         path_regex += re.escape(path[idx : match.start()])
-        path_regex += f"(?P<{param_name}>{converter.regex})"
+        path_regex += f"(?P<{param_name}>{converter.regex})?"
 
         path_format += path[idx : match.start()]
         path_format += "{%s}" % param_name

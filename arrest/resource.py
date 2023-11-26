@@ -26,6 +26,12 @@ class ResourceHandler(BaseModel):
     url_regex: Pattern | None = None
     path_params: dict[str, type] | None = None
 
+    def extract_params(self, path: str) -> dict:
+        print(path)
+        match = self.url_regex.search(path)
+        if match:
+            return match.groupdict()
+
 
 class Resource:
     def __init__(
@@ -308,11 +314,17 @@ class Resource:
     def get_matching_handler(
         self, method: Methods, url: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
+        print(f"{url=}")
         for key, handler in self.routes.items():
             if method != key[0]:
                 continue
 
             req_url = join_url(self.base_url, self.route, url)
+            if seen_params := handler.extract_params(req_url):
+                for k, v in seen_params.items():
+                    if v is not None:
+                        kwargs[k] = v
+
             if kwargs:
                 handler_url, remaining_params = replace_params(
                     handler.url, kwargs, handler.path_params
@@ -321,31 +333,6 @@ class Resource:
                     continue
                 req_url = handler_url
 
+            print(f"{req_url}")
             if handler.url_regex.fullmatch(req_url):
                 return handler, req_url
-
-        # urlnew, params = replace_params(handler.url, kwargs, handler.path_params)
-        # print(
-        #     f"{urlnew=}, {params=}, {req_url=} {handler=} {handler.url_regex.fullmatch(req_url)}"
-        # )
-        # if not kwargs and not handler.path_params:
-        #     if urlnew == join_url(self.base_url, self.route, url):
-        #         return handler
-
-    #     else:
-    #         for path_param in handler.path_params:
-
-    #     if handler.url_regex.fullmatch(url) is not None:
-    #         print(handler.url_regex.fullmatch)
-    #         return handler, url
-
-
-"""
-urlnew='http://example.com/test/get', params={}, req_url='http://example.com/test/get/2'
-urlnew='http://example.com/test/get/{foo}', params={}, req_url='http://example.com/test/get/2'
-
-
-urlnew='http://example.com/test/get', params={'foo': 2}, req_url='http://example.com/test/get'
-urlnew='http://example.com/test/get/2', params={}, req_url='http://example.com/test/get'
-
-"""
