@@ -26,7 +26,7 @@ class Converter(Generic[T]):
 class IntegerConverter(Converter[int]):
     regex = "[0-9]+"
 
-    def to_str(self, value: int) -> str:
+    def to_str(self, value: Any | int) -> str:
         value = int(value)
 
         assert value >= 0, "Negative integers are not supported"
@@ -36,7 +36,7 @@ class IntegerConverter(Converter[int]):
 class FloatConverter(Converter[float]):
     regex = r"[0-9]+(\.[0-9]+)?"
 
-    def to_str(self, value: float) -> str:
+    def to_str(self, value: Any | float) -> str:
         value = float(value)
 
         assert value >= 0.0, "Negative floats are not supported"
@@ -48,7 +48,7 @@ class FloatConverter(Converter[float]):
 class StrConverter(Converter[str]):
     regex = "[^/]+"
 
-    def to_str(self, value: str) -> str:
+    def to_str(self, value: Any | str) -> str:
         value = str(value)
 
         assert "/" not in value, "May not contain path separators"
@@ -59,7 +59,7 @@ class StrConverter(Converter[str]):
 class UUIDConverter(Converter[uuid.UUID]):
     regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
-    def to_str(self, value: UUID) -> str:
+    def to_str(self, value: Any | UUID) -> str:
         return str(value)
 
 

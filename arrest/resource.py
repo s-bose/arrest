@@ -151,8 +151,8 @@ class Resource:
         params: dict = {}
         request_data: BaseModel | None = kwargs.get("request", None)
 
-        handler, url = self.get_matching_handler(url=url, **kwargs)
-        print(handler)
+        handler, url = self.get_matching_handler(method=method, url=url, **kwargs)
+
         params = self.__extract_request_params(
             request_type=handler.request, request_data=request_data, kwargs=kwargs
         )
@@ -306,17 +306,46 @@ class Resource:
         return False
 
     def get_matching_handler(
-        self, url: str, **kwargs
+        self, method: Methods, url: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
-        requested_url = join_url(self.base_url, self.route, url)
-        for handler in self.routes.values():
-            if requested_url in handler.url:
-                print(f"{requested_url=}")
-                url, _ = replace_params(handler.url, kwargs, handler.path_params)
-                if url == handler.url:
+        for key, handler in self.routes.items():
+            if method != key[0]:
+                continue
+
+            req_url = join_url(self.base_url, self.route, url)
+            if kwargs:
+                handler_url, remaining_params = replace_params(
+                    handler.url, kwargs, handler.path_params
+                )
+                if remaining_params:
                     continue
-            else:
-                url = requested_url
-            if handler.url_regex.fullmatch(url) is not None:
-                print(handler.url_regex.fullmatch)
-                return handler, url
+                req_url = handler_url
+
+            if handler.url_regex.fullmatch(req_url):
+                return handler, req_url
+
+        # urlnew, params = replace_params(handler.url, kwargs, handler.path_params)
+        # print(
+        #     f"{urlnew=}, {params=}, {req_url=} {handler=} {handler.url_regex.fullmatch(req_url)}"
+        # )
+        # if not kwargs and not handler.path_params:
+        #     if urlnew == join_url(self.base_url, self.route, url):
+        #         return handler
+
+    #     else:
+    #         for path_param in handler.path_params:
+
+    #     if handler.url_regex.fullmatch(url) is not None:
+    #         print(handler.url_regex.fullmatch)
+    #         return handler, url
+
+
+"""
+urlnew='http://example.com/test/get', params={}, req_url='http://example.com/test/get/2'
+urlnew='http://example.com/test/get/{foo}', params={}, req_url='http://example.com/test/get/2'
+
+
+urlnew='http://example.com/test/get', params={'foo': 2}, req_url='http://example.com/test/get'
+urlnew='http://example.com/test/get/2', params={}, req_url='http://example.com/test/get'
+
+"""
