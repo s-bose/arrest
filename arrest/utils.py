@@ -1,6 +1,7 @@
 import json
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
+from arrest.logging import logger
 
 
 def join_url(*urls) -> str:
@@ -19,3 +20,20 @@ def deserialize(model: BaseModel, field: str, default={}) -> dict:
     if not value:
         return default
     return json.loads(value)
+
+
+def process_header(model: BaseModel, field: str, header: dict | None = {}) -> dict:
+    header_dict = header | deserialize(model, field)
+    try:
+        return {k.replace("_", "-"): str(v) for k, v in header_dict.items()}
+    except (TypeError, ValueError):
+        logger.warning("could not convert header values to str")
+        return {}
+
+
+def process_body(model: BaseModel, field: str, body: dict | None = {}) -> dict:
+    return body | deserialize(model, field)
+
+
+def process_query(model: BaseModel, field: str, query: dict | None = {}) -> dict:
+    return query | deserialize(model, field)

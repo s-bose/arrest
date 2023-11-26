@@ -1,7 +1,15 @@
 import enum
 
 
-class Methods(str, enum.Enum):
+class StrEnum(str, enum.Enum):
+    def __repr__(self) -> str:
+        return self.value
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+class Methods(StrEnum):
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
@@ -10,12 +18,6 @@ class Methods(str, enum.Enum):
     HEAD = "HEAD"
     OPTIONS = "OPTIONS"
 
-    def __str__(self):
-        return self.value
 
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-class ContentType(str, enum.Enum):
+class ContentType(StrEnum):
     APPLICATION_JSON = "application/json"

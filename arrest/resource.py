@@ -1,5 +1,5 @@
 # pylint: disable=W0707
-from typing import Optional, Pattern, Type, Callable, Mapping, Any, NamedTuple
+from typing import Optional, Pattern, Type, Callable, Mapping, Any, NamedTuple, cast
 from functools import partial
 import json
 import httpx
@@ -10,8 +10,8 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 from arrest.http import Methods
 from arrest.converters import compile_path, replace_params
 from arrest.exceptions import ArrestHTTPException
-from arrest.params import ParamTypes, Query, Header, Body
-from arrest.utils import join_url, deserialize
+from arrest.params import ParamTypes, Param, Query, Header, Body
+from arrest.utils import join_url, process_body, process_header, process_query
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.logging import logger
 
@@ -86,6 +86,7 @@ class Resource:
                         _handler[2:],
                     )
 
+                    print(rest)
                     self._bind_handler(
                         handler=ResourceHandler(
                             method=method,
@@ -159,12 +160,12 @@ class Resource:
             passed
         """
         params: dict = {}
-        request_data: BaseModel | None = kwargs.get("request", None)
+        request_data: BaseModel | None = kwargs.pop("request", None)
 
         handler, url = self.get_matching_handler(method=method, url=url, **kwargs)
 
-        params = self.__extract_request_params(
-            request_type=handler.request, request_data=request_data, kwargs=kwargs
+        params = self.extract_request_params(
+            request_type=handler.request, request_data=request_data
         )
 
         # response_type = handler.response or self.response_model
@@ -173,21 +174,11 @@ class Resource:
             url=url, method=method, params=params, response_type=None
         )
 
-    def __extract_request_params(
+    def extract_request_params(
         self,
         request_type: Type[BaseModel] | None,
         request_data: BaseModel | None,
-        **kwargs,
     ) -> dict[ParamTypes, dict]:
-        if kwargs and request_type:
-            try:
-                request_data = request_type(**kwargs)
-            except ValidationError:
-                logger.debug(
-                    f"error forming model {request_type.__class__.__name__} from kwargs",
-                    exc_info=True,
-                )
-
         # apply type validation if Request Type present in handler definition
         if not self.__validate_request(request_type, request_data):
             raise ValueError(
@@ -204,18 +195,20 @@ class Resource:
             )
 
             for field, field_info in model_fields.items():
-                if isinstance(field_info, Query):
-                    query_params |= deserialize(request_data, field)
-                elif isinstance(field_info, Header):
-                    headers |= deserialize(request_data, field)
-                elif isinstance(field_info, (Body, FieldInfo)):
-                    body_params |= deserialize(request_data, field)
+                print(f"{field=}, {field_info=}")
+                field_info = cast(Param, field_info)
+                if not hasattr(field_info, "_param_type") and isinstance(
+                    field_info, FieldInfo
+                ):
+                    body_params |= process_body(request_data, field, body_params)
+                elif field_info._param_type == ParamTypes.query:
+                    query_params |= process_query(request_data, field, query_params)
+                elif field_info._param_type == ParamTypes.header:
+                    headers |= process_header(request_data, field, headers)
+                elif field_info._param_type == ParamTypes.body:
+                    body_params |= process_body(request_data, field, body_params)
                 else:
                     raise ValueError(f"Invalid field class specified: {field_info}")
-
-        else:
-            # return kwargs as body
-            body_params = kwargs
 
         return {
             ParamTypes.header: headers,
@@ -307,7 +300,9 @@ class Resource:
             )
 
     def __validate_request(
-        self, request_type: Type[BaseModel] | None, request_data: BaseModel | None
+        self,
+        request_type: Type[BaseModel] | None,
+        request_data: BaseModel | None,
     ):
         if not request_data or (
             request_type and isinstance(request_data, request_type)
@@ -329,7 +324,6 @@ class Resource:
                     if v is not None:
                         kwargs[k] = v
 
-            print(kwargs)
             if kwargs:
                 handler_url, remaining_params = replace_params(
                     handler.url, kwargs, handler.path_params

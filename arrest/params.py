@@ -1,6 +1,8 @@
 from enum import Enum
+from typing import Any
 from typing_extensions import Unpack
 from pydantic.fields import _FieldInfoInputs, FieldInfo
+from pydantic_core import PydanticUndefined
 
 
 class ParamTypes(Enum):
@@ -12,7 +14,10 @@ class ParamTypes(Enum):
 class Param(FieldInfo):
     _param_type: ParamTypes
 
-    def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
+    def __init__(
+        self, default: Any = PydanticUndefined, **kwargs: Unpack[_FieldInfoInputs]
+    ) -> None:
+        kwargs = dict(default=default, **kwargs)
         super().__init__(**kwargs)
 
 
