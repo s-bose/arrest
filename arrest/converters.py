@@ -4,9 +4,8 @@ https://github.com/encode/starlette/blob/master/starlette/routing.py
 
 import re
 import uuid
-import enum
 import math
-from typing import Type, Mapping, Pattern, Any, Generic, TypeVar, ClassVar
+from typing import Mapping, Pattern, Any, Generic, TypeVar, ClassVar
 
 from uuid import UUID
 

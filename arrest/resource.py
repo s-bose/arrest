@@ -10,7 +10,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 from arrest.http import Methods
 from arrest.converters import compile_path, replace_params
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
-from arrest.params import ParamTypes, Param, Query, Header, Body
+from arrest.params import ParamTypes, Param
 from arrest.utils import join_url, process_body, process_header, process_query
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.logging import logger
@@ -165,6 +165,7 @@ class Resource:
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
+        print(handler)
         params = self.extract_request_params(
             request_type=handler.request, request_data=request_data
         )
