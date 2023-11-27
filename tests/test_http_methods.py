@@ -1,6 +1,5 @@
 import httpx
 import pytest
-from respx.patterns import M
 
 from arrest.resource import Resource
 from arrest.http import Methods

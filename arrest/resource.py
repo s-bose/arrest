@@ -9,7 +9,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.http import Methods
 from arrest.converters import compile_path, replace_params
-from arrest.exceptions import ArrestHTTPException
+from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.params import ParamTypes, Param, Query, Header, Body
 from arrest.utils import join_url, process_body, process_header, process_query
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
@@ -86,7 +86,6 @@ class Resource:
                         _handler[2:],
                     )
 
-                    print(rest)
                     self._bind_handler(
                         handler=ResourceHandler(
                             method=method,
@@ -162,8 +161,10 @@ class Resource:
         params: dict = {}
         request_data: BaseModel | None = kwargs.pop("request", None)
 
-        handler, url = self.get_matching_handler(method=method, url=url, **kwargs)
+        if not (match := self.get_matching_handler(method=method, url=url, **kwargs)):
+            raise HandlerNotFound(message="no matching handler found for request")
 
+        handler, url = match
         params = self.extract_request_params(
             request_type=handler.request, request_data=request_data
         )
@@ -195,7 +196,6 @@ class Resource:
             )
 
             for field, field_info in model_fields.items():
-                print(f"{field=}, {field_info=}")
                 field_info = cast(Param, field_info)
                 if not hasattr(field_info, "_param_type") and isinstance(
                     field_info, FieldInfo
@@ -282,7 +282,7 @@ class Resource:
 
         # exception handling
         except httpx.HTTPStatusError as exc:
-            err_response_body = response.json()
+            err_response_body = exc.response.json()
             raise ArrestHTTPException(
                 status_code=exc.response.status_code, data=err_response_body
             ) from exc
@@ -313,7 +313,6 @@ class Resource:
     def get_matching_handler(
         self, method: Methods, url: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
-        print(self.routes.keys())
         for key, handler in self.routes.items():
             if method != key.method:
                 continue
