@@ -165,7 +165,7 @@ class Resource:
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
-        print(handler)
+
         params = self.extract_request_params(
             request_type=handler.request, request_data=request_data
         )

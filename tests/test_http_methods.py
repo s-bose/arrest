@@ -31,7 +31,6 @@ async def test_request_http_methods(method: Methods, service, mock_httpx):
         )
     )
 
-    print(service.test.routes)
     response = await service.test.request(f"/{route}", method=method)
     assert response == {"status": "OK"}
     assert mock_httpx["http_request"].called
