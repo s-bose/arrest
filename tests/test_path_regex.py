@@ -1,5 +1,4 @@
 import re
-import uuid
 from contextlib import nullcontext as noraise
 
 import pytest

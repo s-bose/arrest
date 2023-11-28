@@ -1,16 +1,11 @@
-from datetime import datetime
-from typing import Optional
-
 import httpx
 import pytest
-import respx
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from respx.patterns import M
 
 from arrest.http import Methods
 from arrest.params import Body, Header, ParamTypes, Query
 from arrest.resource import Resource
-from tests import TEST_DEFAULT_SERVICE_URL
 
 
 @pytest.mark.asyncio

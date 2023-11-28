@@ -164,7 +164,9 @@ class Resource:
         params: dict = {}
         request_data: BaseModel | None = kwargs.pop("request", None)
 
-        if not (match := self.get_matching_handler(method=method, url=url, **kwargs)):
+        if not (
+            match := self.get_matching_handler(method=method, url=url, **kwargs)
+        ):
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match

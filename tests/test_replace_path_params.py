@@ -18,9 +18,21 @@ dummy_date = datetime.now()
     "url, path_param_kwargs, expected_path",
     [
         ("/profile/{profile_id}", {"profile_id": 123}, f"{base_url}/profile/123"),
-        ("/profile/{profile_id:str}", {"profile_id": 123}, f"{base_url}/profile/123"),
-        ("/profile/{profile_id:int}", {"profile_id": 123}, f"{base_url}/profile/123"),
-        ("/profile/{profile_id:float}", {"profile_id": 145}, f"{base_url}/profile/145"),
+        (
+            "/profile/{profile_id:str}",
+            {"profile_id": 123},
+            f"{base_url}/profile/123",
+        ),
+        (
+            "/profile/{profile_id:int}",
+            {"profile_id": 123},
+            f"{base_url}/profile/123",
+        ),
+        (
+            "/profile/{profile_id:float}",
+            {"profile_id": 145},
+            f"{base_url}/profile/145",
+        ),
         (
             "/profile/{profile_id:float}",
             {"profile_id": 145.56},

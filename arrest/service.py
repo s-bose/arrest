@@ -1,6 +1,6 @@
 import itertools
 from functools import partial
-from typing import Any, NoReturn, Optional
+from typing import Any, Optional
 
 from arrest.exceptions import NotFoundException
 from arrest.http import Methods
