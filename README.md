@@ -7,10 +7,7 @@ Arrest is like a postman client for your microservice apis. It provides a simple
 
 ## TODOS
 
-- add root resource "/"
 - add logging support
 - pretty print apispec + generate swagger docs
 - config / setting option
 - add database support
-
-- add mocker for `httpx.AsyncClient.request()`
