@@ -1,4 +1,4 @@
-pytest
-pytest-cov
-pytest-asycnio
-respx
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asycnio==0.21.1
+respx==0.20.2
