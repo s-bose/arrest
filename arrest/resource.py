@@ -1,5 +1,5 @@
 # pylint: disable=W0707
-from typing import Optional, Pattern, Type, Callable, Mapping, Any, NamedTuple, cast
+from typing import Pattern, Type, Callable, Mapping, Any, NamedTuple, cast
 from functools import partial
 import json
 import httpx
@@ -172,10 +172,10 @@ class Resource:
             request_type=handler.request, request_data=request_data
         )
 
-        # response_type = handler.response or self.response_model
+        response_type = handler.response or self.response_model or None
 
         return await self.__make_request(
-            url=url, method=method, params=params, response_type=None
+            url=url, method=method, params=params, response_type=response_type
         )
 
     def extract_request_params(
@@ -222,7 +222,7 @@ class Resource:
         url: str,
         method: Methods,
         params: dict,
-        response_type: Optional[Type[BaseModel]],
+        response_type: Type[BaseModel],
     ):
         headers, query_params, body_params = (
             params[ParamTypes.header],

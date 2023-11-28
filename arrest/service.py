@@ -26,7 +26,7 @@ class Service:
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
 
-    def add_resource(self, resource: Resource) -> NoReturn:
+    def add_resource(self, resource: Resource) -> None:
         resource.base_url = self.url
         resource.initialize_handlers(base_url=self.url)
         self.resources[resource.name] = resource
@@ -42,10 +42,10 @@ class Service:
             url=f"/{suffix}", method=method, **kwargs
         )
 
-    def __getattr__(self, key: str) -> Resource | Any:  # type:(str) -> Resource | Any
+    def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
         if hasattr(self, key):
             return getattr(self, key)
         return self.resources[key]
 
-    def __dir__(self):
+    def __dir__(self):  # pragma: no cover
         return list(itertools.chain(dir(super()), self.resources))
