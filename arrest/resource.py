@@ -12,7 +12,6 @@ from arrest.converters import compile_path, replace_params
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.http import Methods
-from arrest.logging import logger
 from arrest.params import Param, ParamTypes
 from arrest.utils import join_url, process_body, process_header, process_query
 

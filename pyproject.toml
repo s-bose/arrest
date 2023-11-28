@@ -18,6 +18,12 @@ pytest-asyncio = "^0.21.1"
 pytest-mock = "^3.12.0"
 respx = "^0.20.2"
 pre-commit = "^3.5.0"
+coverage = { extras = ["toml"], version = "^7.3.2" }
+
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.3"
+mkdocs-material = "^9.4.14"
 
 [build-system]
 requires = ["poetry-core"]
@@ -38,3 +44,14 @@ exclude = '''
     | venv
 )/
 '''
+
+[tool.coverage.run]
+omit = [".*", "*/site-packages/*", "*/tests/*"]
+source = ["arrest"]
+
+[tool.coverage.report]
+fail_under = 100
+
+[tool.isort]
+line_length = 110
+profile = "black"

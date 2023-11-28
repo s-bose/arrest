@@ -1,0 +1,26 @@
+site_name: Arrest
+
+theme:
+  name: material
+
+  palette:
+
+      # Palette toggle for light mode
+      - media: "(prefers-color-scheme: light)"
+        scheme: default
+        primary: teal
+        accent: light green
+        toggle:
+          # icon: material/lightbulb
+          icon: material/brightness-4
+          name: Switch to dark mode
+
+      # Palette toggle for dark mode
+      - media: "(prefers-color-scheme: dark)"
+        scheme: slate
+        primary: teal
+        accent: light green
+        toggle:
+          # icon: material/lightbulb-outline
+          icon: material/brightness-7
+          name: Switch to light mode

@@ -3,8 +3,6 @@ import json
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
-from arrest.logging import logger
-
 
 def join_url(*urls) -> str:
     return "/".join([url.lstrip("/") for url in urls])

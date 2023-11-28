@@ -4,9 +4,15 @@ from typing import Any
 
 import pytest
 
-from arrest.converters import (Converter, FloatConverter, IntegerConverter,
-                               StrConverter, UUIDConverter, add_converter,
-                               replace_params)
+from arrest.converters import (
+    Converter,
+    FloatConverter,
+    IntegerConverter,
+    StrConverter,
+    UUIDConverter,
+    add_converter,
+    replace_params,
+)
 
 dummy_date = datetime.now()
 

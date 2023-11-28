@@ -1,8 +1,7 @@
 import httpx
 import pytest
 
-from arrest.exceptions import (ArrestHTTPException, HandlerNotFound,
-                               NotFoundException)
+from arrest.exceptions import ArrestHTTPException, HandlerNotFound, NotFoundException
 from arrest.http import Methods
 from arrest.resource import Resource
 

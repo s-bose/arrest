@@ -1,3 +1,12 @@
 [flake8]
 ignore = E203 W503
 max-line-length = 110
+exclude =
+    .git,
+    __pycache__,
+    *.egg-info,
+    .nox,
+    .pytest_cache,
+    .mypy_cache,
+    .venv,
+    venv
