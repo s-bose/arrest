@@ -1,96 +1,107 @@
 from typing import Any
-import uuid
 from datetime import datetime
-import httpx
+from contextlib import nullcontext as noraise
 import pytest
 
+from arrest.converters import (
+    Converter,
+    IntegerConverter,
+    FloatConverter,
+    StrConverter,
+    UUIDConverter,
+    add_converter,
+    replace_params,
+)
 
-import arrest
-from arrest.resource import Resource
-from arrest.http import Methods
-from arrest.converters import add_converter, Converter
-
-base_url = "http://example.com/user"
-dummy_uuid = uuid.uuid4()
 dummy_date = datetime.now()
 
 
-# class DatetimeConverter(Converter[datetime]):
-#     regex = r"\s+(?=\d{2}(?:\d{2})?-\d{1,2}-\d{1,2}\b)"
+class DatetimeConverter(Converter[datetime]):
+    regex = "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?"
 
-#     def to_str(self, value: datetime) -> str:
-#         return str(value)
-
-
-# add_converter(DatetimeConverter, "datetime")
+    def to_str(self, value: datetime) -> str:
+        return value.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 @pytest.mark.parametrize(
-    "url, path_param_kwargs, expected_path",
+    "path, path_params, param_types, returned_path, exception",
     [
-        ("/profile/{profile_id}", {"profile_id": 123}, f"{base_url}/profile/123"),
-        ("/profile/{profile_id:str}", {"profile_id": 123}, f"{base_url}/profile/123"),
-        ("/profile/{profile_id:int}", {"profile_id": 123}, f"{base_url}/profile/123"),
-        ("/profile/{profile_id:float}", {"profile_id": 145}, f"{base_url}/profile/145"),
         (
-            "/profile/{profile_id:float}",
+            "/profile/{profile_id}",
+            {"profile_id": 123},
+            {"profile_id": StrConverter()},
+            "/profile/123",
+            noraise(),
+        ),
+        (
+            "/profile/{profile_id}",
+            {"profile_id": 123},
+            {"profile_id": IntegerConverter()},
+            "/profile/123",
+            noraise(),
+        ),
+        (
+            "/profile/{profile_id}",
+            {"profile_id": 123},
+            {"profile_id": StrConverter()},
+            "/profile/123",
+            noraise(),
+        ),
+        (
+            "/profile/{profile_id}",
+            {"profile_id": 145},
+            {"profile_id": FloatConverter()},
+            "/profile/145",
+            noraise(),
+        ),
+        (
+            "/profile/{profile_id}",
             {"profile_id": 145.56},
-            f"{base_url}/profile/145.56000000000000227374",
+            {"profile_id": FloatConverter()},
+            "/profile/145.56000000000000227374",
+            noraise(),
         ),
         (
-            "/profile/{profile_id:uuid}",
+            "/profile/{profile_id}",
             {"profile_id": "4d96597f-5d49-4ec0-a400-a4a01efd4b53"},
-            f"{base_url}/profile/4d96597f-5d49-4ec0-a400-a4a01efd4b53",
+            {"profile_id": UUIDConverter()},
+            "/profile/4d96597f-5d49-4ec0-a400-a4a01efd4b53",
+            noraise(),
         ),
         (
-            "/profile/{profile_id:uuid}",
-            {"profile_id": dummy_uuid},
-            f"{base_url}/profile/{str(dummy_uuid)}",
+            "/profile/{profile_id}",
+            {"profile_id": "abc"},
+            {"profile_id": Converter()},
+            None,
+            pytest.raises(NotImplementedError),
         ),
         (
-            "/profile/{profile_id:int}/comments/{comment_id:int}",
-            {"profile_id": 123, "comment_id": 456},
-            f"{base_url}/profile/123/comments/456",
+            "/profile/{profile_id}",
+            {"profile_id": 123},
+            None,
+            "/profile/123",
+            noraise(),
         ),
         (
-            "/profile/{pdate:datetime}",
+            "/profile/{pdate}",
             {"pdate": dummy_date},
-            f"{base_url}/profile/{dummy_date.strftime('%Y-%m-%dT%H:%M:%S')}",
+            {"pdate": DatetimeConverter()},
+            f"/profile/{dummy_date.strftime('%Y-%m-%dT%H:%M:%S')}",
+            noraise(),
         ),
     ],
 )
-@pytest.mark.asyncio
-async def test_converter_path_params(
-    service,
-    mock_httpx,
-    mocker,
-    url: str,
-    path_param_kwargs: dict[str, Any],
-    expected_path: str,
+def test_replace_params(
+    path: str,
+    path_params: dict,
+    param_types: dict,
+    returned_path: str,
+    exception: Any,
 ):
-    mock_httpx.post(url__regex="/user/*", name="http_request").mock(
-        return_value=httpx.Response(status_code=200, json={"status": "OK"})
-    )
-
-    service.add_resource(
-        Resource(
-            route="/user",
-            handlers=[
-                (Methods.POST, url),
-            ],
-        )
-    )
-
-    class DatetimeConverter(Converter[datetime]):
-        regex = "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?"
-
-        def to_str(self, value: datetime) -> str:
-            return value.strftime("%Y-%m-%dT%H:%M:%S")
-
     add_converter(DatetimeConverter(), "datetime")
 
-    replace_params = mocker.spy(arrest.resource, "replace_params")
-    await service.user.post("/profile", **path_param_kwargs)
-    response = replace_params.spy_return
-
-    assert response[0] == expected_path
+    with exception:
+        ret, _ = replace_params(
+            path=path, path_params=path_params, param_types=param_types
+        )
+        assert ret == returned_path

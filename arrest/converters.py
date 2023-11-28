@@ -125,9 +125,10 @@ def replace_params(
     for key, value in list(path_params.items()):
         if "{" + key + "}" in path:
             if not param_types:
-                value = str(value)
-
-            path = path.replace("{" + key + "}", param_types[key].to_str(value))
+                strval = str(value)
+            else:
+                strval = param_types[key].to_str(value)
+            path = path.replace("{" + key + "}", strval)
             path_params.pop(key)
     return path, path_params
 

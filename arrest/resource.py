@@ -95,8 +95,10 @@ class Resource:
                             callback=len(rest) >= 3 and rest[2] or None,
                         )
                     )
-                else:
+                elif isinstance(_handler, BaseModel):
                     self._bind_handler(handler=_handler)
+                else:
+                    raise ValueError("invalid handler type specified")
             except ValidationError:
                 raise ValueError("cannot initialize handler signature")
 
@@ -186,7 +188,7 @@ class Resource:
             raise ValueError(
                 f"type of {type(request_data).__name__} does not match provided type {request_type.__name__}"
             )
-        headers, query_params, body_params = self.headers, {}, {}
+        headers, query_params, body_params = dict(self.headers), {}, {}
 
         if request_data:
             # extract pydantic fields into `Query`, `Body` and `Header`
@@ -208,8 +210,6 @@ class Resource:
                     headers |= process_header(request_data, field, headers)
                 elif field_info._param_type == ParamTypes.body:
                     body_params |= process_body(request_data, field, body_params)
-                else:
-                    raise ValueError(f"Invalid field class specified: {field_info}")
 
         return {
             ParamTypes.header: headers,

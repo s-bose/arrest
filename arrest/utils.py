@@ -17,18 +17,16 @@ def deserialize(model: BaseModel, field: str, default={}) -> dict:
         value = model.model_dump_json(include={field})
     else:
         value = model.json(include={field})
+    value = json.loads(value)
     if not value:
         return default
-    return json.loads(value)
+    return value
 
 
 def process_header(model: BaseModel, field: str, header: dict | None = {}) -> dict:
     header_dict = header | deserialize(model, field)
-    try:
-        return {k.replace("_", "-"): str(v) for k, v in header_dict.items()}
-    except (TypeError, ValueError):
-        logger.warning("could not convert header values to str")
-        return {}
+
+    return {k.replace("_", "-"): str(v) for k, v in header_dict.items()}
 
 
 def process_body(model: BaseModel, field: str, body: dict | None = {}) -> dict:
