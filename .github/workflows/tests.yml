@@ -4,20 +4,12 @@ on:
   push:
     branches:
       - "master"
-    paths:
-      - "arrest/**.py"
-      - "tests/**.py"
-      - "docs/*"
-      - ".github/*"
+
   pull_request:
     types:
       - opened
     branches:
       - master
-    paths:
-      - "arrest/**.py"
-      - "tests/**.py"
-      - "docs/*"
 
 jobs:
   test:
@@ -27,9 +19,9 @@ jobs:
         python-version: ['3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
