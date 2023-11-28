@@ -1,10 +1,10 @@
-from typing import Optional, NoReturn, Any
-from functools import partial
 import itertools
+from functools import partial
+from typing import Any, NoReturn, Optional
 
+from arrest.exceptions import NotFoundException
 from arrest.http import Methods
 from arrest.resource import Resource
-from arrest.exceptions import NotFoundException
 
 
 class Service:

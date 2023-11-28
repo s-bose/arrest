@@ -1,10 +1,11 @@
-import pytest
-from datetime import datetime
 from contextlib import nullcontext as noraise
+from datetime import datetime
+
+import pytest
 from pydantic import BaseModel, ValidationError
 
-from arrest.resource import Resource, ResourceHandler, HandlerKey
 from arrest.http import Methods
+from arrest.resource import HandlerKey, Resource, ResourceHandler
 
 
 class XYZ:

@@ -1,8 +1,8 @@
-import pytest
 import httpx
+import pytest
 
-from arrest.service import Service
 from arrest.resource import Resource
+from arrest.service import Service
 
 
 def test_service_add_resource():

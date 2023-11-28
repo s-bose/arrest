@@ -2,11 +2,10 @@
 https://github.com/encode/starlette/blob/master/starlette/routing.py
 """
 
+import math
 import re
 import uuid
-import math
-from typing import Mapping, Pattern, Any, Generic, TypeVar, ClassVar
-
+from typing import Any, ClassVar, Generic, Mapping, Pattern, TypeVar
 from uuid import UUID
 
 T = TypeVar("T")

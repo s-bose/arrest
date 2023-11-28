@@ -1,16 +1,17 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
 import asyncio
 import json
+from datetime import datetime
 from pprint import pprint
-from arrest.service import Service
-from arrest.resource import Resource, ResourceHandler
-from arrest.http import Methods
-from arrest.exceptions import ArrestHTTPException
-from arrest.params import Query
 from types import SimpleNamespace
-from pprint import pprint
+from typing import Optional
+
+from pydantic import BaseModel
+
+from arrest.exceptions import ArrestHTTPException
+from arrest.http import Methods
+from arrest.params import Query
+from arrest.resource import Resource, ResourceHandler
+from arrest.service import Service
 
 # class BaseRequest(BaseModel):
 #     a: int

@@ -1,12 +1,13 @@
-import pytest
 import json
-from uuid import uuid4
 from datetime import datetime
-from pydantic import BaseModel
-import httpx
+from uuid import uuid4
 
-from arrest.resource import Resource
+import httpx
+import pytest
+from pydantic import BaseModel
+
 from arrest.http import Methods
+from arrest.resource import Resource
 
 
 class XYZ:

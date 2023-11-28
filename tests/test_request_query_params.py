@@ -1,13 +1,12 @@
 import httpx
-import respx
 import pytest
+import respx
+from pydantic import BaseModel, ValidationError
 from respx.patterns import M
-from pydantic import BaseModel
-from pydantic import ValidationError
 
-from arrest.resource import Resource
 from arrest.http import Methods
-from arrest.params import Query, ParamTypes
+from arrest.params import ParamTypes, Query
+from arrest.resource import Resource
 from tests import TEST_DEFAULT_SERVICE_URL
 
 

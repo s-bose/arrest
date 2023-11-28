@@ -1,7 +1,8 @@
 import re
 import uuid
-import pytest
 from contextlib import nullcontext as noraise
+
+import pytest
 
 from arrest.converters import compile_path, get_converter
 

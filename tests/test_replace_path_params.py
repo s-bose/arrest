@@ -1,13 +1,13 @@
-from typing import Any
 import uuid
 from datetime import datetime
+from typing import Any
+
 import httpx
 import pytest
 
-
 import arrest
-from arrest.resource import Resource
 from arrest.http import Methods
+from arrest.resource import Resource
 
 base_url = "http://example.com/user"
 dummy_uuid = uuid.uuid4()

@@ -1,4 +1,3 @@
-import pytest
 from pydantic import BaseModel
 
 from arrest.utils import deserialize

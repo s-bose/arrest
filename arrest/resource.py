@@ -1,19 +1,20 @@
 # pylint: disable=W0707
-from typing import Pattern, Type, Callable, Mapping, Any, NamedTuple, cast
-from functools import partial
 import json
+from functools import partial
+from typing import Any, Callable, Mapping, NamedTuple, Pattern, Type, cast
+
 import httpx
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
-from arrest.http import Methods
 from arrest.converters import compile_path, replace_params
-from arrest.exceptions import ArrestHTTPException, HandlerNotFound
-from arrest.params import ParamTypes, Param
-from arrest.utils import join_url, process_body, process_header, process_query
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
+from arrest.exceptions import ArrestHTTPException, HandlerNotFound
+from arrest.http import Methods
 from arrest.logging import logger
+from arrest.params import Param, ParamTypes
+from arrest.utils import join_url, process_body, process_header, process_query
 
 
 class HandlerKey(NamedTuple):

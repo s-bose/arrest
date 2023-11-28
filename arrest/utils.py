@@ -1,6 +1,8 @@
 import json
+
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
+
 from arrest.logging import logger
 
 

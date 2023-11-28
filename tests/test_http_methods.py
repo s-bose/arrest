@@ -1,8 +1,8 @@
 import httpx
 import pytest
 
-from arrest.resource import Resource
 from arrest.http import Methods
+from arrest.resource import Resource
 
 
 @pytest.mark.parametrize(

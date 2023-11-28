@@ -1,13 +1,14 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 import httpx
 import pytest
-from respx.patterns import M
 from pydantic import BaseModel
+from respx.patterns import M
 
-from arrest.resource import Resource
 from arrest.http import Methods
-from arrest.params import Query, Body, ParamTypes
+from arrest.params import Body, ParamTypes, Query
+from arrest.resource import Resource
 
 
 @pytest.mark.asyncio
