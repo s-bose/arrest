@@ -1,5 +1,8 @@
 # Arrest
 
+[![Tests](https://github.com/s-bose/arrest/actions/workflows/tests.yml/badge.svg)](https://github.com/s-bose/arrest/actions/workflows/tests.yml)
+
+
 Enable data validation for REST APIs.
 
 Built on top of Pydantic and httpx.
