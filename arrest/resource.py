@@ -14,6 +14,7 @@ from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.http import Methods
 from arrest.params import Param, ParamTypes
 from arrest.utils import join_url, process_body, process_header, process_query
+from arrest.logging import logger
 
 
 class HandlerKey(NamedTuple):
@@ -264,6 +265,10 @@ class Resource:
                     case Methods.HEAD:
                         response = await client.head(url=url, params=query_params)
 
+                status_code = response.status_code
+                logger.debug(
+                    f"{method!s} {url} returned with status code {status_code!s}"
+                )
                 response.raise_for_status()
                 response_body = response.json()
 
