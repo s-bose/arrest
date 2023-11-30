@@ -4,6 +4,8 @@
 
 [![Coverage](https://codecov.io/github/s-bose/arrest/graph/badge.svg?token=VBU3156QHP)](https://codecov.io/github/s-bose/arrest)
 
+[![PyPi](https://img.shields.io/pypi/v/arrest.svg)](https://pypi.python.org/pypi/arrest)
+
 Enable data validation for REST APIs.
 
 Built on top of Pydantic and httpx.
