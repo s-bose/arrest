@@ -23,6 +23,7 @@ safety = "^2.3.5"
 black = "^23.11.0"
 isort = "^5.12.0"
 bandit = "^1.7.5"
+flake8 = "^6.1.0"
 
 
 [tool.poetry.group.docs.dependencies]
