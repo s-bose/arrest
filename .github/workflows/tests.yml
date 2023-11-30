@@ -26,7 +26,8 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        run: pip install --upgrade pip
+    - name: Pre install
+      run: pip install --upgrade pip
     - name: Install poetry
       uses:  abatilo/actions-poetry@v2
       with:
