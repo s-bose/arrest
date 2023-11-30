@@ -19,6 +19,7 @@ pytest-mock = "^3.12.0"
 respx = "^0.20.2"
 pre-commit = "^3.5.0"
 coverage = { extras = ["toml"], version = "^7.3.2" }
+safety = "^2.3.5"
 
 
 [tool.poetry.group.docs.dependencies]
