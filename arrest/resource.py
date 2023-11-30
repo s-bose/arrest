@@ -1,4 +1,5 @@
 # pylint: disable=W0707
+import inspect
 import json
 from functools import partial
 from typing import Any, Mapping, Type, cast
@@ -10,7 +11,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.converters import compile_path, replace_params
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
-from arrest.exceptions import ArrestHTTPException, HandlerNotFound
+from arrest.exceptions import ArrestError, ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
@@ -60,7 +61,7 @@ class Resource:
         base_url: str | None = None,
         handlers: list[ResourceHandler]
         | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = [],
+        | list[tuple[Any, ...]] = None,
     ) -> None:
         """
         specifically used to inject `base_url` from a Service class to
@@ -69,6 +70,9 @@ class Resource:
         """
         if self.routes:
             handlers = list(self.routes.values())
+
+        if not handlers:
+            return
 
         for _handler in handlers:
             try:
@@ -134,6 +138,7 @@ class Resource:
         self,
         url: str,
         method: Methods,
+        request: BaseModel | None = None,
         **kwargs,
     ) -> Any | None:
         """
@@ -147,34 +152,65 @@ class Resource:
             must match the corresponding handler.request pydantic model
 
         **kwargs : dict
-            keyword-args matching the request fields that can be alternatively
-            passed
+            keyword-args matching the path params, if any
         """
         params: dict = {}
-        request_data: BaseModel | None = kwargs.pop("request", None)
 
         if not (
             match := self.get_matching_handler(method=method, url=url, **kwargs)
         ):
+            logger.warning("no matching handler found for request")
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
 
         params = self.extract_request_params(
-            request_type=handler.request, request_data=request_data
+            request_type=handler.request, request_data=request
         )
 
         response_type = handler.response or self.response_model or None
 
-        return await self.__make_request(
+        response = await self.__make_request(
             url=url, method=method, params=params, response_type=response_type
         )
+
+        if handler.callback:
+            try:
+                if inspect.iscoroutinefunction(handler.callback):
+                    callback_response = await handler.callback(response)
+                else:
+                    callback_response = handler.callback(response)
+            except Exception as exc:
+                logger.warning("something went wrong during callback", exc_info=True)
+                raise ArrestError(str(exc)) from exc
+            return callback_response
+
+        return response
 
     def extract_request_params(
         self,
         request_type: Type[BaseModel] | None,
         request_data: BaseModel | None,
     ) -> dict[ParamTypes, dict]:
+        """
+        extracts `header`, `body` and `query` params from the pydantic request model
+
+        Parameters
+        ----------
+
+        request_type : Type[BaseModel] | None
+            a pydantic class for holding the request data
+
+        request_data : BaseModel | None
+            instance of the above containing the data
+
+        Returns
+        -------
+
+        dict[ParamTypes, dict]
+            a dictionary containing `header`, `body`, `query` params in separate dicts
+        """
+
         # apply type validation if Request Type present in handler definition
         if not self.__validate_request(request_type, request_data):
             raise ValueError(
@@ -214,8 +250,29 @@ class Resource:
         url: str,
         method: Methods,
         params: dict,
-        response_type: Type[BaseModel],
-    ):
+        response_type: Type[BaseModel] | None,
+    ) -> Any:
+        """
+        (private) makes the actual http call using httpx
+
+        Parameters
+        ----------
+
+        url : str
+            the complete url of the endpoint
+        method : Methods
+            one of the available http methods
+        params : dict
+            dict containing `header`, `query` and `body` params
+        response_type : Optional[Type[BaseModel]]
+            optional response_type to deserialize the json response to
+
+        Returns
+        -------
+
+        Any
+            a json object or a parsed pydantic object
+        """
         headers, query_params, body_params = (
             params[ParamTypes.header],
             params[ParamTypes.query],

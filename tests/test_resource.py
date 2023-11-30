@@ -129,3 +129,11 @@ def test_resource_handler_pydantic(handler, exception):
         res = Resource(route="/payments", handlers=[handler])
         _handler = list(res.routes.values())[0]
         assert _handler == handler
+
+
+def test_resource_handler_empty():
+    res = Resource(route="/payments", handlers=None)
+    assert not res.routes
+
+    res = Resource(route="/payments", handlers=[])
+    assert not res.routes
