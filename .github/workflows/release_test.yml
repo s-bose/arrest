@@ -1,9 +1,7 @@
-name: Release
+name: Test Release (manual)
 
 on:
-  release:
-    types:
-      - created
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -30,4 +28,4 @@ jobs:
       run: |
         poetry config repositories.test-pypi https://test.pypi.org/legacy/
         poetry config pypi-token.test-pypi $TEST_PYPI_TOKEN
-        poetry publish --build
+        poetry publish --build -r test-pypi
