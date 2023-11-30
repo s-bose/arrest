@@ -1,7 +1,7 @@
 # pylint: disable=W0707
 import json
 from functools import partial
-from typing import Any, Callable, Mapping, NamedTuple, Pattern, Type, cast
+from typing import Any, Mapping, Type, cast
 
 import httpx
 from pydantic import BaseModel, ValidationError
@@ -11,31 +11,11 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 from arrest.converters import compile_path, replace_params
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
+from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
+from arrest.logging import logger
 from arrest.params import Param, ParamTypes
 from arrest.utils import join_url, process_body, process_header, process_query
-from arrest.logging import logger
-
-
-class HandlerKey(NamedTuple):
-    method: Methods
-    route: str
-
-
-class ResourceHandler(BaseModel):
-    method: Methods
-    route: str
-    request: Type[BaseModel] | None = None
-    response: Type[BaseModel] | None = None
-    callback: Callable | None = None
-    url: str | None = None
-    url_regex: Pattern | None = None
-    path_params: dict[str, type] | None = None
-
-    def extract_params(self, path: str) -> dict:
-        match = self.url_regex.search(path)
-        if match:
-            return match.groupdict()
 
 
 class Resource:
@@ -67,10 +47,35 @@ class Resource:
 
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
+        self.get = partial(self.request, method=Methods.GET)
+        self.post = partial(self.request, method=Methods.POST)
+        self.put = partial(self.request, method=Methods.PUT)
+        self.patch = partial(self.request, method=Methods.PATCH)
+        self.delete = partial(self.request, method=Methods.DELETE)
+
+        self.initialize_handlers(handlers=handlers)
+
+    def initialize_handlers(
+        self,
+        base_url: str | None = None,
+        handlers: list[ResourceHandler]
+        | list[Mapping[str, Any]]
+        | list[tuple[Any, ...]] = [],
+    ) -> None:
+        """
+        specifically used to inject `base_url` from a Service class to
+        downstream Resources.
+        Should not be used separately (unless you want to break things)
+        """
+        if self.routes:
+            handlers = list(self.routes.values())
+
         for _handler in handlers:
             try:
                 if isinstance(_handler, dict):
-                    self._bind_handler(handler=ResourceHandler(**_handler))
+                    self._bind_handler(
+                        base_url=base_url, handler=ResourceHandler(**_handler)
+                    )
                 elif isinstance(_handler, tuple):
                     if len(_handler) < 2:
                         raise ValueError(
@@ -88,37 +93,21 @@ class Resource:
                     )
 
                     self._bind_handler(
+                        base_url=base_url,
                         handler=ResourceHandler(
                             method=method,
                             route=route,
                             request=len(rest) >= 1 and rest[0] or None,
                             response=len(rest) >= 2 and rest[1] or None,
                             callback=len(rest) >= 3 and rest[2] or None,
-                        )
+                        ),
                     )
                 elif isinstance(_handler, BaseModel):
-                    self._bind_handler(handler=_handler)
+                    self._bind_handler(base_url=base_url, handler=_handler)
                 else:
                     raise ValueError("invalid handler type specified")
             except ValidationError:
                 raise ValueError("cannot initialize handler signature")
-
-        self.get = partial(self.request, method=Methods.GET)
-        self.post = partial(self.request, method=Methods.POST)
-        self.put = partial(self.request, method=Methods.PUT)
-        self.patch = partial(self.request, method=Methods.PATCH)
-        self.delete = partial(self.request, method=Methods.DELETE)
-
-    def initialize_handlers(self, base_url: str | None = None) -> None:
-        """
-        specifically used to inject `base_url` from a Service class to
-        downstream Resources.
-        Should not be used separately (unless you want to break things)
-        """
-        handlers = list(self.routes.values())
-
-        for handler in handlers:
-            self._bind_handler(base_url=base_url, handler=handler)
 
     def _bind_handler(
         self, base_url: str | None = None, *, handler: ResourceHandler
