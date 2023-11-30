@@ -26,8 +26,6 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Pre install
-      run: pip install --upgrade pip
     - name: Install poetry
       uses:  abatilo/actions-poetry@v2
       with:
@@ -35,6 +33,9 @@ jobs:
 
     - name: Install dependencies
       run: poetry install
+
+    - name: Upgrade pip
+      run: poetry run pip install --upgrade pip
 
     - name: Run Tests
       run: poetry run pytest --cov=arrest --cov-report=term-missing --cov-report=html --cov-report=xml
