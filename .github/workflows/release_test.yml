@@ -22,10 +22,12 @@ jobs:
       uses:  abatilo/actions-poetry@v2
       with:
           poetry-version: ${{ matrix.poetry-version }}
+    - name: Build
+      run: poetry build
     - name: Publish
       env:
         TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
       run: |
         poetry config repositories.test-pypi https://test.pypi.org/legacy/
         poetry config pypi-token.test-pypi $TEST_PYPI_TOKEN
-        poetry publish --build -r test-pypi
+        poetry publish -r test-pypi
