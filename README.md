@@ -6,6 +6,8 @@
 
 [![PyPi](https://img.shields.io/pypi/v/arrest.svg)](https://pypi.python.org/pypi/arrest)
 
+- Documentation: https://s-bose.github.io/arrest/
+
 Enable data validation for REST APIs.
 
 Built on top of Pydantic and httpx.
