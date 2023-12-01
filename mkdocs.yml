@@ -54,6 +54,3 @@ plugins:
           options:
             heading_level: 4
             merge_init_into_class: true
-
-# extra_css:
-#     - css/custom.css
