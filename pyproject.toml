@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "arrest"
-version = "0.0.2b0"
+version = "0.0.1"
 description = "Arrest is a wrapper of pydantic and httpx to make your REST api calls type-safe and structured"
 authors = ["shiladitya <shiladitya_basu@live.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/s-bose/arrest"
+homepage = "https://s-bose.github.io/arrest"
 repository = "https://github.com/s-bose/arrest"
-documentation = "https://github.com/s-bose/arrest"
+documentation = "https://s-bose.github.io/arrest"
 keywords = ["arrest", "rest", "pydantic", "httpx", "api"]
 classifiers = [
     "Natural Language :: English",
@@ -41,7 +41,7 @@ flake8 = "^6.1.0"
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.5.3"
 mkdocs-material = "^9.4.14"
-mkdocstrings = {extras = ["python"], version = "^0.24.0"}
+mkdocstrings = { extras = ["python"], version = "^0.24.0" }
 
 [build-system]
 requires = ["poetry-core"]
