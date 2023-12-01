@@ -160,7 +160,7 @@ class Resource:
             match := self.get_matching_handler(method=method, url=url, **kwargs)
         ):
             logger.warning("no matching handler found for request")
-            raise HandlerNotFound(message="no matching handler found for request")
+            raise HandlerNotFound("no matching handler found for request")
 
         handler, url = match
 

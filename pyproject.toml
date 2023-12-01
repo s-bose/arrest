@@ -5,6 +5,18 @@ description = "Arrest is a wrapper of pydantic and httpx to make your REST api c
 authors = ["shiladitya <shiladitya_basu@live.com>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/s-bose/arrest"
+repository = "https://github.com/s-bose/arrest"
+documentation = "https://github.com/s-bose/arrest"
+keywords = ["arrest", "rest", "pydantic", "httpx", "api"]
+classifiers = [
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"

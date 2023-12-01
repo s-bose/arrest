@@ -6,16 +6,16 @@ class ArrestError(BaseException):
     """used in error situations"""
 
 
-class ArrestHTTPException(BaseException):
+class ArrestHTTPException(ArrestError):
     def __init__(self, status_code: int, data: dict | str) -> None:
         self.status_code = status_code
         self.data = data
 
 
-class NotFoundException(BaseException):
+class NotFoundException(ArrestError):
     def __init__(self, message: str):
         self.message = message
 
 
-class HandlerNotFound(NotFoundException):
+class HandlerNotFound(ArrestError):
     pass

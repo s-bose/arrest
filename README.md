@@ -11,9 +11,38 @@ Enable data validation for REST APIs.
 Built on top of Pydantic and httpx.
 Arrest is like a postman client for your microservice apis. It provides a simple layer of Pydantic encapsulation over Httpx HTTP calls to ensure structural integrity of your api definitions in a single file, as well as provide Pydantic's strength of data validation.
 
-## TODOS
+## Installation
 
-- add logging support
-- pretty print apispec + generate swagger docs
-- config / setting option
-- add database support
+```bash
+pip install arrest
+```
+
+## Getting Started
+
+```python
+
+from arrest.resource import Resource
+from arrest.service import Service
+from arrest.exceptions import ArrestHTTPException
+
+
+xyz_service = Service(
+    name="xyz",
+    url="http://www.xyz-service.default.local.cluster:80",
+    resources=[
+        Resource(
+            route="/users",
+            handlers=[
+                ("GET", "/"),
+                ("GET", "/{user_id:int}"),
+                ("POST", "/")
+            ]
+        )
+    ]
+)
+
+try:
+    response = await xyz_service.users.get("/123")
+except ArrestHTTPException as exc:
+    logging.warning(f"{exc.status_code} {exc.data}")
+```
