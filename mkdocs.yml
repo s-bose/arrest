@@ -46,7 +46,6 @@ markdown_extensions:
   - attr_list
 
 plugins:
-  - search
   - mkdocstrings:
       default_handler: python
       handlers:
