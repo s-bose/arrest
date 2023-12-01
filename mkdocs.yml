@@ -32,7 +32,7 @@ theme:
 nav:
   - Introduction: index.md
   - Getting Started: getting-started.md
-  - API Documentation: api-documentation.md
+  - API Documentation: api.md
 
 markdown_extensions:
   - pymdownx.superfences
@@ -44,7 +44,16 @@ markdown_extensions:
       custom_checkbox: true
       clickable_checkbox: false
   - attr_list
-  - mkautodoc
 
-extra_css:
-    - css/custom.css
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            heading_level: 4
+            merge_init_into_class: true
+
+# extra_css:
+#     - css/custom.css

@@ -3,3 +3,5 @@ __pycache__
 .idea
 
 .coverage
+dist/*
+site/*

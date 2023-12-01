@@ -41,7 +41,7 @@ flake8 = "^6.1.0"
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.5.3"
 mkdocs-material = "^9.4.14"
-mkautodoc = "^0.2.0"
+mkdocstrings = {extras = ["python"], version = "^0.24.0"}
 
 [build-system]
 requires = ["poetry-core"]

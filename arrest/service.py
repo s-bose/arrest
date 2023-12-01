@@ -14,6 +14,20 @@ class Service:
         url: str,
         resources: Optional[list[Resource]] = [],
     ) -> None:
+        """
+        A python class to define a service.
+        Contains a base url for the main HTTP service.
+        Resources can be added to a service.
+
+        Parameters:
+            name:
+                Name of the service
+            url:
+                Base url of the service
+            resources:
+                A list of resources provided by the service
+        """
+
         self.name = name
         self.url = url
         self.resources: dict[str, Resource] = {}
@@ -27,12 +41,30 @@ class Service:
         self.delete = partial(self.request, method=Methods.DELETE)
 
     def add_resource(self, resource: Resource) -> None:
+        """
+        Add a new resource to the service
+
+        Parameters:
+            resource:
+                The new resource instance
+        """
         resource.base_url = self.url
         resource.initialize_handlers(base_url=self.url)
         self.resources[resource.name] = resource
         setattr(self, resource.name, resource)
 
     async def request(self, path: str, method: Methods, **kwargs):
+        """
+        Helper function to make a request directly
+        from the service level
+
+        Parameters:
+            path:
+                Requested path needs to have the following syntax:
+                `/{resource_route}/{handler_route}`
+            method:
+                Requested HTTP Method
+        """
         parts = path.strip("/").split("/")
         resource, suffix = parts[0], "/".join(parts[1:])
 

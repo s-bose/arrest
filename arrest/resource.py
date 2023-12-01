@@ -23,25 +23,11 @@ class Resource:
     A python class used to define a RESTful resource.
 
     Usage:
+        ```python
+        >>> from arrest import Resource
 
-    ```python
-    >>> from arrest import Resource
-
-    >>> user_resource = Resource(name="user", route="/users", handlers=[("GET", "/")])
-    ```
-
-    **Parameters:**
-
-    * **name** - *(optional)* A unique name for the resource. If not present, will be picked
-    from `route`
-    * **route** - A unique route for the resource. Must begin with a slash.
-    * **headers** - *(optional)* A dictionary of header values to be used for all handlers
-    under this resource. Defaults to `{"Content-Type": "application/json}`.
-    * **timeout** - *(optional)* Timeout (in seconds) for all HTTP requests from this resource.
-    Defaults to 60.
-    * **response_model** - *(optional)* Pydantic response model to parse all responses under
-    the resource.
-    * **handlers** - *(optional)* - a list of handlers for the resource.
+        >>> user_resource = Resource(name="user", route="/users", handlers=[("GET", "/")])
+        ```
 
     Handlers can be provided as a list of tuple, dictionary or instances of `ResourceHandler`
 
@@ -64,6 +50,24 @@ class Resource:
         | list[Mapping[str, Any]]
         | list[tuple[Any, ...]] = None,
     ) -> None:
+        """
+
+        Parameters:
+            name:
+                Unique name of the resource
+            route:
+                Unique route to the resource
+            headers:
+                Dictionary of header key-value pairs for
+                all requests under the resource
+            timeout:
+                Timeout for all requests under the resource
+            response_model:
+                Pydantic datamodel to wrap the json response
+            handlers:
+                List of handlers
+        """
+
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
         derived_name = name if name else self.route.strip("/").split("/")[0]
@@ -82,84 +86,6 @@ class Resource:
 
         self.initialize_handlers(handlers=handlers)
 
-    def initialize_handlers(
-        self,
-        base_url: str | None = None,
-        handlers: list[ResourceHandler]
-        | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = None,
-    ) -> None:
-        """
-        specifically used to inject `base_url` from a Service class to
-        downstream Resources.
-        Should not be used separately (unless you want to break things)
-        """
-        if self.routes:
-            handlers = list(self.routes.values())
-
-        if not handlers:
-            return
-
-        for _handler in handlers:
-            try:
-                if isinstance(_handler, dict):
-                    self._bind_handler(
-                        base_url=base_url, handler=ResourceHandler(**_handler)
-                    )
-                elif isinstance(_handler, tuple):
-                    if len(_handler) < 2:
-                        raise ValueError(
-                            "Too few arguments to unpack. Expected atleast 2"
-                        )
-                    if len(_handler) > 5:
-                        raise ValueError(
-                            f"Too many arguments to unpack. Expected 5, got {len(_handler)}"
-                        )
-
-                    method, route, rest = (
-                        _handler[0],
-                        _handler[1],
-                        _handler[2:],
-                    )
-
-                    self._bind_handler(
-                        base_url=base_url,
-                        handler=ResourceHandler(
-                            method=method,
-                            route=route,
-                            request=len(rest) >= 1 and rest[0] or None,
-                            response=len(rest) >= 2 and rest[1] or None,
-                            callback=len(rest) >= 3 and rest[2] or None,
-                        ),
-                    )
-                elif isinstance(_handler, BaseModel):
-                    self._bind_handler(base_url=base_url, handler=_handler)
-                else:
-                    raise ValueError("invalid handler type specified")
-            except ValidationError:
-                raise ValueError("cannot initialize handler signature")
-
-    def _bind_handler(
-        self, base_url: str | None = None, *, handler: ResourceHandler
-    ) -> None:
-        """
-        compose a fully-qualified url by joining base service url, resource url
-        and handler url,
-        and map that to the handler object.
-        Note: If there are duplicate handlers or any combination resulting in
-        duplicate fq-url, the later will take precendence.
-        """
-
-        base_url = base_url or self.base_url
-        handler.url = join_url(base_url, self.route, handler.route)
-        url_regex, handler_url, handler_path_params = compile_path(handler.url)
-
-        handler.url_regex = url_regex
-        handler.path_params = handler_path_params
-        handler.url = handler_url
-
-        self.routes[HandlerKey(*(handler.method, handler.route))] = handler
-
     async def request(
         self,
         method: Methods,
@@ -171,22 +97,30 @@ class Resource:
         Makes an HTTP request against a handler route
 
         Usage:
+            ```python
+            >>> user_resource.user.request(method="GET")
+            ```
 
-        ```python
-        >>> user_resource.user.request(method="GET")
-        ```
+        Parameters:
+            method:
+                The HTTP method for the request
+            url:
+                Path to a handler specified in the resource
+            request:
+                A pydantic object containing the necessary fields
+                to make an http request to the handler url
 
-        **Parameters:**
+                **Must match the corresponding `handler.request` pydantic model**
+            **kwargs:
+                Keyword-args matching the path params, if any
 
-        request : BaseModel
-            pydantic object containing the necessary fields to make an http
-            request to the handler url
-
-            must match the corresponding handler.request pydantic model
-
-        **kwargs : dict
-            keyword-args matching the path params, if any
+        Returns:
+            Response:
+                A JSON response in form of a list or dict
+                `or`, Deserialized into the response pydantic model
+                `or`, Return value of the callback fn
         """
+
         params: dict = {}
 
         if not (
@@ -229,7 +163,7 @@ class Resource:
         """
         Makes a `HTTP GET` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.GET, url=url, request=request, **kwargs
@@ -244,7 +178,7 @@ class Resource:
         """
         Makes a `HTTP POST` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.POST, url=url, request=request, **kwargs
@@ -259,7 +193,7 @@ class Resource:
         """
         Makes a `HTTP PUT` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.PUT, url=url, request=request, **kwargs
@@ -274,7 +208,7 @@ class Resource:
         """
         Makes a `HTTP PATCH` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.PATCH, url=url, request=request, **kwargs
@@ -287,9 +221,9 @@ class Resource:
         **kwargs,
     ):
         """
-        Makes a `HTTP GET` request
+        Makes a `HTTP DELETE` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.DELETE, url=url, request=request, **kwargs
@@ -304,7 +238,7 @@ class Resource:
         """
         Makes a `HTTP HEAD` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.HEAD, url=url, request=request, **kwargs
@@ -319,7 +253,7 @@ class Resource:
         """
         Makes a `HTTP OPTIONS` request
 
-        see `request()`
+        see [request][arrest.resource.Resource.request]
         """
         return await self.request(
             method=Methods.OPTIONS, url=url, request=request, **kwargs
@@ -528,3 +462,81 @@ class Resource:
 
             if handler.url_regex.fullmatch(req_url):
                 return handler, req_url
+
+    def _bind_handler(
+        self, base_url: str | None = None, *, handler: ResourceHandler
+    ) -> None:
+        """
+        compose a fully-qualified url by joining base service url, resource url
+        and handler url,
+        and map that to the handler object.
+        Note: If there are duplicate handlers or any combination resulting in
+        duplicate fq-url, the later will take precendence.
+        """
+
+        base_url = base_url or self.base_url
+        handler.url = join_url(base_url, self.route, handler.route)
+        url_regex, handler_url, handler_path_params = compile_path(handler.url)
+
+        handler.url_regex = url_regex
+        handler.path_params = handler_path_params
+        handler.url = handler_url
+
+        self.routes[HandlerKey(*(handler.method, handler.route))] = handler
+
+    def initialize_handlers(
+        self,
+        base_url: str | None = None,
+        handlers: list[ResourceHandler]
+        | list[Mapping[str, Any]]
+        | list[tuple[Any, ...]] = None,
+    ) -> None:
+        """
+        specifically used to inject `base_url` from a Service class to
+        downstream Resources.
+        Should not be used separately (unless you want to break things)
+        """
+        if self.routes:
+            handlers = list(self.routes.values())
+
+        if not handlers:
+            return
+
+        for _handler in handlers:
+            try:
+                if isinstance(_handler, dict):
+                    self._bind_handler(
+                        base_url=base_url, handler=ResourceHandler(**_handler)
+                    )
+                elif isinstance(_handler, tuple):
+                    if len(_handler) < 2:
+                        raise ValueError(
+                            "Too few arguments to unpack. Expected atleast 2"
+                        )
+                    if len(_handler) > 5:
+                        raise ValueError(
+                            f"Too many arguments to unpack. Expected 5, got {len(_handler)}"
+                        )
+
+                    method, route, rest = (
+                        _handler[0],
+                        _handler[1],
+                        _handler[2:],
+                    )
+
+                    self._bind_handler(
+                        base_url=base_url,
+                        handler=ResourceHandler(
+                            method=method,
+                            route=route,
+                            request=len(rest) >= 1 and rest[0] or None,
+                            response=len(rest) >= 2 and rest[1] or None,
+                            callback=len(rest) >= 3 and rest[2] or None,
+                        ),
+                    )
+                elif isinstance(_handler, BaseModel):
+                    self._bind_handler(base_url=base_url, handler=_handler)
+                else:
+                    raise ValueError("invalid handler type specified")
+            except ValidationError:
+                raise ValueError("cannot initialize handler signature")
