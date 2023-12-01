@@ -1,7 +1,6 @@
 # pylint: disable=W0707
 import inspect
 import json
-from functools import partial
 from typing import Any, Mapping, Type, cast
 
 import httpx
@@ -20,6 +19,39 @@ from arrest.utils import join_url, process_body, process_header, process_query
 
 
 class Resource:
+    """
+    A python class used to define a RESTful resource.
+
+    Usage:
+
+    ```python
+    >>> from arrest import Resource
+
+    >>> user_resource = Resource(name="user", route="/users", handlers=[("GET", "/")])
+    ```
+
+    **Parameters:**
+
+    * **name** - *(optional)* A unique name for the resource. If not present, will be picked
+    from `route`
+    * **route** - A unique route for the resource. Must begin with a slash.
+    * **headers** - *(optional)* A dictionary of header values to be used for all handlers
+    under this resource. Defaults to `{"Content-Type": "application/json}`.
+    * **timeout** - *(optional)* Timeout (in seconds) for all HTTP requests from this resource.
+    Defaults to 60.
+    * **response_model** - *(optional)* Pydantic response model to parse all responses under
+    the resource.
+    * **handlers** - *(optional)* - a list of handlers for the resource.
+
+    Handlers can be provided as a list of tuple, dictionary or instances of `ResourceHandler`
+
+    If provided as a dict or `ResourceHandler`, the keys / fields have to be set according to
+    the `ResourceHandler` definiion.
+
+    If provided as a tuple, at minimum 2 entries `(method, route)` or a maximum of 5 entries
+    (method, route, request, response, callback) can be defined.
+    """
+
     def __init__(
         self,
         name: str | None = None,
@@ -30,7 +62,7 @@ class Resource:
         response_model: Type[BaseModel] | None = None,
         handlers: list[ResourceHandler]
         | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = [],
+        | list[tuple[Any, ...]] = None,
     ) -> None:
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
@@ -47,12 +79,6 @@ class Resource:
         self.timeout = httpx.Timeout(timeout=timeout, connect=timeout)
 
         self.routes: dict[HandlerKey, ResourceHandler] = {}
-
-        self.get = partial(self.request, method=Methods.GET)
-        self.post = partial(self.request, method=Methods.POST)
-        self.put = partial(self.request, method=Methods.PUT)
-        self.patch = partial(self.request, method=Methods.PATCH)
-        self.delete = partial(self.request, method=Methods.DELETE)
 
         self.initialize_handlers(handlers=handlers)
 
@@ -136,14 +162,21 @@ class Resource:
 
     async def request(
         self,
-        url: str,
         method: Methods,
+        url: str,
         request: BaseModel | None = None,
         **kwargs,
     ) -> Any | None:
         """
-        Parameters
-        ----------
+        Makes an HTTP request against a handler route
+
+        Usage:
+
+        ```python
+        >>> user_resource.user.request(method="GET")
+        ```
+
+        **Parameters:**
 
         request : BaseModel
             pydantic object containing the necessary fields to make an http
@@ -186,6 +219,111 @@ class Resource:
             return callback_response
 
         return response
+
+    async def get(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP GET` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.GET, url=url, request=request, **kwargs
+        )
+
+    async def post(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP POST` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.POST, url=url, request=request, **kwargs
+        )
+
+    async def put(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP PUT` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.PUT, url=url, request=request, **kwargs
+        )
+
+    async def patch(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP PATCH` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.PATCH, url=url, request=request, **kwargs
+        )
+
+    async def delete(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP GET` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.DELETE, url=url, request=request, **kwargs
+        )
+
+    async def head(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP HEAD` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.HEAD, url=url, request=request, **kwargs
+        )
+
+    async def options(
+        self,
+        url: str,
+        request: BaseModel | None = None,
+        **kwargs,
+    ):
+        """
+        Makes a `HTTP OPTIONS` request
+
+        see `request()`
+        """
+        return await self.request(
+            method=Methods.OPTIONS, url=url, request=request, **kwargs
+        )
 
     def extract_request_params(
         self,
@@ -310,6 +448,9 @@ class Resource:
                         )
                     case Methods.HEAD:
                         response = await client.head(url=url, params=query_params)
+
+                    case Methods.OPTIONS:
+                        response = await client.options(url=url, params=query_params)
 
                 status_code = response.status_code
                 logger.debug(

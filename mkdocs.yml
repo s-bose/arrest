@@ -1,4 +1,5 @@
 site_name: Arrest
+site_author: Shiladitya Bose
 
 theme:
   name: material
@@ -8,8 +9,8 @@ theme:
       # Palette toggle for light mode
       - media: "(prefers-color-scheme: light)"
         scheme: default
-        primary: teal
-        accent: light green
+        primary: purple
+        accent: light purple
         toggle:
           # icon: material/lightbulb
           icon: material/brightness-4
@@ -18,9 +19,32 @@ theme:
       # Palette toggle for dark mode
       - media: "(prefers-color-scheme: dark)"
         scheme: slate
-        primary: teal
-        accent: light green
+        primary: deep purple
+        accent: purple
         toggle:
           # icon: material/lightbulb-outline
           icon: material/brightness-7
           name: Switch to light mode
+
+  features:
+    - navigation.sections
+
+nav:
+  - Introduction: index.md
+  - Getting Started: getting-started.md
+  - API Documentation: api-documentation.md
+
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
+      clickable_checkbox: false
+  - attr_list
+  - mkautodoc
+
+extra_css:
+    - css/custom.css
