@@ -23,3 +23,7 @@
             - delete
             - head
             - options
+
+## `ResourceHandler`
+
+::: arrest.handler.ResourceHandler

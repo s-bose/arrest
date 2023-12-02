@@ -11,6 +11,23 @@ class HandlerKey(NamedTuple):
 
 
 class ResourceHandler(BaseModel):
+    """
+    A pydantic class defining a resource handler
+
+    Parameters:
+        method (Methods):
+            HTTP Method for the handler
+        route (str):
+            Unique path to the handler from its parent resource
+        request (Type[BaseModel], optional):
+            Pydantic type to validate the request with
+        response (Type[BaseModel], optional):
+            Pydantic type to deserialize the HTTP response
+        callback (Callable, optional):
+            A callable (sync or async) to execute with the HTTP
+            response
+    """
+
     method: Methods
     route: str
     request: Type[BaseModel] | None = None

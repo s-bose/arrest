@@ -475,14 +475,15 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
+        _, handler_route, handler_path_params = compile_path(handler.route)
         handler.url = join_url(base_url, self.route, handler.route)
-        url_regex, handler_url, handler_path_params = compile_path(handler.url)
+        url_regex, handler_url, _ = compile_path(handler.url)
 
         handler.url_regex = url_regex
         handler.path_params = handler_path_params
         handler.url = handler_url
 
-        self.routes[HandlerKey(*(handler.method, handler.route))] = handler
+        self.routes[HandlerKey(*(handler.method, handler_route))] = handler
 
     def initialize_handlers(
         self,

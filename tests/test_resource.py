@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 from pydantic import BaseModel
 
+from arrest.converters import UUIDConverter
 from arrest.http import Methods
 from arrest.resource import Resource, ResourceHandler
 
@@ -33,32 +34,30 @@ class PaymentResponse(BaseModel):
 
 
 def test_resource_handlers_dict():
-    with pytest.raises(ValueError):
-        payment_resource = Resource(
-            route="/payments",
-            handlers=[
-                {"method": Methods.GET, "route": "/"},
-                {"method": Methods.GET, "route": 123},
-                {"method": Methods.GET, "route": "/{payment_id:int}"},
-                {"method": Methods.POST, "route": "/", "request": PaymentRequest},
-                {
-                    "method": Methods.PUT,
-                    "route": "/{payment_id:int}",
-                    "request": PaymentRequest,
-                    "response": PaymentResponse,
-                    "callback": lambda response: print(response.dict()),
-                },
-            ],
-        )
+    payment_resource = Resource(
+        route="/payments",
+        handlers=[
+            {"method": Methods.GET, "route": "/"},
+            {"method": Methods.GET, "route": "/{payment_id:int}"},
+            {"method": Methods.POST, "route": "/", "request": PaymentRequest},
+            {
+                "method": Methods.PUT,
+                "route": "/{payment_id:int}",
+                "request": PaymentRequest,
+                "response": PaymentResponse,
+                "callback": lambda response: print(response.dict()),
+            },
+        ],
+    )
 
-        assert set(payment_resource.routes.keys()) == set(
-            [
-                (Methods.GET, "/"),
-                (Methods.GET, "/{payment_id:int}"),
-                (Methods.POST, "/"),
-                (Methods.PUT, "/{payment_id:int}"),
-            ]
-        )
+    assert set(payment_resource.routes.keys()) == set(
+        [
+            (Methods.GET, "/"),
+            (Methods.GET, "/{payment_id}"),
+            (Methods.POST, "/"),
+            (Methods.PUT, "/{payment_id}"),
+        ]
+    )
 
 
 @pytest.mark.parametrize(
@@ -131,9 +130,27 @@ def test_resource_handler_pydantic(handler, exception):
         assert _handler == handler
 
 
+def test_resource_handler_pydantic_validation_error():
+    with pytest.raises(ValueError):
+        Resource(route="/payments", handlers=[{"method": Methods.GET, "route": 123}])
+
+
 def test_resource_handler_empty():
     res = Resource(route="/payments", handlers=None)
     assert not res.routes
 
     res = Resource(route="/payments", handlers=[])
     assert not res.routes
+
+
+def test_resource_multiple_handler_same_signature():
+    res = Resource(
+        route="/payments",
+        handlers=[("GET", "/audit/{audit_id}"), ("GET", "/audit/{audit_id:uuid}")],
+    )
+
+    assert len(res.routes) == 1
+    key, handler = list(res.routes.items())[-1]
+
+    assert key.method, key.route == ("GET", "/audit/{audit_id}")
+    assert isinstance(handler.path_params["audit_id"], UUIDConverter)

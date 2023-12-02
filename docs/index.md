@@ -49,13 +49,13 @@ async def get_posts(url: str = "http://example.com/api/v1"):
             return exc.response.json()
 ```
 
-The problem arises when you have more than one method, and more than one endpoint to consider. We could create a sophisticated class containing the list of available endpoints and the methods. But it is a lot of boilerplate in trying to something as simple as communicating with an HTTP server, even more so when we have to deal with multiple servers to interact with, e.g, in a microservice architecture.
+The problem arises when you have more than one method, and more than one endpoint to consider. We could create a sophisticated class containing the list of available endpoints and the methods. But it is a lot of boilerplate in trying to do something as simple as communicating with an HTTP server, even more so when we have multiple servers to interact with, e.g, in a microservice architecture.
 
 Arrest attempts to simplify this by letting you create a single configuration using `services` and `resources` and `handlers` which creates a complete unit that can be used anywhere.
 
 Just define your service, i.e, the main server url, and a set of resources, e.g, `/users`, `/articles`.
 We assume the RESTful apis provided by the service are [resource-oriented](https://cloud.google.com/apis/design/resources#resources).
-
+python
 ```python
 from arrest import Service, Resource
 
