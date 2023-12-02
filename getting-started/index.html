@@ -260,6 +260,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -269,6 +280,112 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#using-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Methods
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-pydantic-model-for-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a Pydantic model for request
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-your-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring your request
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuring your request">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Headers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#body" class="md-nav__link">
+    <span class="md-ellipsis">
+      Body
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Path parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-pydantic-model-for-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a pydantic model for response
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a callback
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -314,6 +431,101 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#using-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Methods
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-pydantic-model-for-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a Pydantic model for request
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-your-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring your request
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuring your request">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Headers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#body" class="md-nav__link">
+    <span class="md-ellipsis">
+      Body
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Path parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-pydantic-model-for-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a pydantic model for response
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a callback
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -358,6 +570,178 @@ We have a REST endpoint <code>http://example.com/api/v1</code> which has a resou
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exc</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">exc</span><span class="o">.</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="k">return</span> <span class="n">resp</span>
+</code></pre></div>
+<h2 id="using-methods">Using Methods</h2>
+<p>We have the following HTTP Methods available. They can be found in <code>arrest.http.Methods</code> enum.</p>
+<p><div class="highlight"><pre><span></span><code>GET
+POST
+PUT
+PATCH
+DELETE
+HEAD
+OPTIONS
+</code></pre></div>
+There are also equivalent helper functions for each of these methods available for your resource.
+Simply run <code>.get</code>, <code>.post</code>, <code>.put</code>, <code>.patch</code>, <code>.delete</code>, <code>.head</code>, <code>.options</code>.
+Or you can directly make use of <code>.request()</code> and supply the method in it.</p>
+<h2 id="using-a-pydantic-model-for-request">Using a Pydantic model for request</h2>
+<p>You can also provide an additional request type for your handlers. This can be done by passing a third entry to your handler tuple containing the pydantic class, or pass it directly to the handler dict or <code>ResourceHandler</code> initialization.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="k">class</span> <span class="nc">UserRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/abc,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">UserRequest</span><span class="p">)</span> <span class="c1"># or ResourceHandler(method=&quot;POST&quot;, route=&quot;/&quot;, request=UserRequest)</span>
+                                   <span class="c1"># or {&quot;method&quot;: &quot;POST&quot;, &quot;route&quot;: &quot;/&quot;, &quot;request&quot;: UserRequest}</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Notice how we only supplied <code>route</code> for our resource? Arrest automatically infers the resource name based on the resource route. Hence we have deduced our resource to be <code>abc</code>.</p>
+<p>Now that our handler is initialized with a request, we can make a request with instances of type <code>UserRequest</code></p>
+<div class="admonition note">
+<p class="admonition-title">Important</p>
+<p>All fields in the pydantic model by default will be sent as the JSON body payload. If you want to send other params such as <code>headers</code> or <code>query</code>, see below.</p>
+</div>
+<h2 id="configuring-your-request">Configuring your request</h2>
+<p>We also provide a few additional classes that you can assign to your pydantic fields. They are inherited from pydantic's <code>FieldInfo</code> to ensure compatibility.</p>
+<h3 id="headers">Headers</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest.params</span> <span class="kn">import</span> <span class="n">Header</span>
+
+<span class="k">class</span> <span class="nc">HeaderRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x_max_age</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Header</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">x_cookie</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Header</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</code></pre></div>
+<p>We will automatically convert any non-str values to str and convert <code>snake_case</code> to <code>kebab-case</code> before sending the fields as headers in the request.
+You can also specify resource-wide headers as a dict in your resource definition.
+<div class="highlight"><pre><span></span><code><span class="n">Resource</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s2">&quot;/abc&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x-age&quot;</span><span class="p">:</span> <span class="s2">&quot;20&quot;</span><span class="p">},</span> <span class="n">handlers</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">])</span> <span class="c1"># this will now be used for any request from resource `abc`</span>
+</code></pre></div></p>
+<h3 id="query">Query</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest.params</span> <span class="kn">import</span> <span class="n">Query</span>
+
+<span class="k">class</span> <span class="nc">QueryRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">()</span>
+</code></pre></div>
+<p>For query no such formatting is done. Whatever field is marked as <code>Query</code> will be attached as a query parameter in the request.
+<div class="highlight"><pre><span></span><code>http://example.com/abc?limit=100&amp;name=abc&amp;index=145
+</code></pre></div></p>
+<h3 id="body">Body</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest.params</span> <span class="kn">import</span> <span class="n">Body</span>
+
+<span class="k">class</span> <span class="nc">BodyRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">is_active</span><span class="p">:</span> <span class="nb">bool</span>
+</code></pre></div>
+<p>For body, you don't need to explicitly mark a field as <code>Body</code>. But when you do, you get the extra validation features of pydantic's <code>FieldInfo</code>. <a href="https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo">see more</a></p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BodyRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;jeff&quot;</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">is_active</span><span class="p">:</span> <span class="nb">bool</span>
+</code></pre></div>
+<h3 id="path-parameters">Path parameters</h3>
+<p>Path parameters are a bit tricky as they are not set as pydantic fields.
+To define a handler that takes a path parameter, you have to specify the path-params inside curlys with (optional) their types.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/abc&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/user/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/user/{user_id:uuid}&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/user/</span><span class="si">{user_id}</span><span class="s2">/comments/{comment_id:int}&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Regarding multiple handlers</p>
+<p>If you specify handlers with the same path parameter but different type hints, the most recent one will override all the others. So in the above example, we only have one handler <code>GET /user/{user_id:uuid}</code></p>
+<p>This is because we keep track of unique handlers with the pair <code>&lt;method, route&gt;</code> where <code>route</code> is the handler route with its type hint removed.
+Subsequent handler definitions with varying path parameter types will thus override the entry.</p>
+</div>
+<p>There are many ways you can supply the path param. The most common way is to use a python f-string (considering the path-param is dynamic)</p>
+<div class="highlight"><pre><span></span><code><span class="o">...</span>
+<span class="n">user_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;ca80a889-8811-4e65-86bb-5e7c0c6e07cf&quot;</span><span class="p">)</span>
+
+<span class="o">...</span>
+<span class="n">service</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/user/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Alternatively, you can pass it as a static string.
+<div class="highlight"><pre><span></span><code><span class="n">service</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/user/ca80a889-8811-4e65-86bb-5e7c0c6e07cf&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<p>if f-strings are not cool enough for you, there is another alternative, albeit experimental, where you can pass the path-parameter(s) as kwargs in your request function.</p>
+<div class="highlight"><pre><span></span><code><span class="n">service</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span> <span class="n">user_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">)</span>
+<span class="c1"># or</span>
+<span class="n">service</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/user/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">/comments&quot;</span><span class="p">,</span> <span class="n">comment_id</span><span class="o">=</span><span class="n">comment_id</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the resource contains only one handler and that handler url contains multiple path params like this:</p>
+<div class="highlight"><pre><span></span><code><span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">Methods</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;/profile/{id:int}/comments/{comment_id:int}&quot;</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>then you can pass all the path_params as kwargs in the request by specifying the url as <code>/user</code></p>
+<div class="highlight"><pre><span></span><code><span class="n">user</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/profile&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">comment_id</span><span class="o">=</span><span class="mi">456</span><span class="p">)</span>
+<span class="n">user</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/profile/123&quot;</span><span class="p">,</span> <span class="n">comment_id</span><span class="o">=</span><span class="mi">456</span><span class="p">)</span>
+<span class="n">user</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/profile/123/comments&quot;</span><span class="p">,</span> <span class="n">comment_id</span><span class="o">=</span><span class="mi">456</span><span class="p">)</span>
+<span class="n">user</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/profile/123/comments/456&quot;</span><span class="p">)</span> <span class="c1"># all 4 would work</span>
+</code></pre></div>
+<p>However if it contains specific paths from <code>/profile</code>, then you need to specify the sub-resource name of the specific <code>profile</code> with a trailing slash</p>
+<div class="highlight"><pre><span></span><code><span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">Methods</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;/profile/{id:int}&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">Methods</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;/profile/{id:int}/comments/{comment_id:int}&quot;</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">user</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/profile&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="mi">456</span><span class="p">)</span> <span class="c1"># wont work</span>
+<span class="n">user</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/profile/123/comments/&quot;</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="mi">456</span><span class="p">)</span> <span class="c1"># will work</span>
+</code></pre></div>
+</div>
+<h2 id="using-a-pydantic-model-for-response">Using a pydantic model for response</h2>
+<p>Similar to request, you can pass an additional fourth argument in the handler tuple for specifying a pydantic model for the handler.
+If provided it will automatically deserialize the returned success json response into either a model instance or a list of model instances.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">UserResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">created_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">updated_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">is_deleted</span><span class="p">:</span> <span class="nb">bool</span>
+
+<span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">UserResponse</span><span class="p">),</span> <span class="c1"># if no request type to be supplied, leave it as `None`</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">svc</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># type: UserResponse</span>
+</code></pre></div>
+<h2 id="using-a-callback">Using a callback</h2>
+<p>Sometimes you want to chain a call to another function with the response you get from the api. You can already do that by calling the function after awaiting the api call response.
+However, Arrest provides a dedicated <code>callback</code> option for each handler, which can be passed as the fifth argument to the handler tuple (or set as a field in the dict or <code>ResourceHandler</code>).
+<code>callback</code> can take any callable that can be either sync or async.
+If it is specified, the response type from the api call will be the response type of the callback.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if you specify a response type to your handler, the callback needs to accept argument of appropriate response type.</p>
+</div>
+<div class="highlight"><pre><span></span><code>
 </code></pre></div>
 
 

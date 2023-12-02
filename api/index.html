@@ -452,6 +452,30 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#resourcehandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      ResourceHandler
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ResourceHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arrest.handler.ResourceHandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      ResourceHandler
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -614,6 +638,30 @@
   <a href="#arrest.resource.Resource.options" class="md-nav__link">
     <span class="md-ellipsis">
       options()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resourcehandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      ResourceHandler
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ResourceHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arrest.handler.ResourceHandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      ResourceHandler
     </span>
   </a>
   
@@ -965,7 +1013,7 @@ all requests under the resource</p>
         <tr>
           <td><code>handlers</code></td>
           <td>
-                <code>list[<span title="arrest.handler.ResourceHandler">ResourceHandler</span>] | list[<span title="typing.Mapping">Mapping</span>[str, <span title="typing.Any">Any</span>]] | list[tuple[<span title="typing.Any">Any</span>, ...]]</code>
+                <code>list[<a class="autorefs autorefs-internal" title="arrest.handler.ResourceHandler" href="#arrest.handler.ResourceHandler">ResourceHandler</a>] | list[<span title="typing.Mapping">Mapping</span>[str, <span title="typing.Any">Any</span>]] | list[tuple[<span title="typing.Any">Any</span>, ...]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1294,6 +1342,127 @@ to make an http request to the handler url</p>
   </div>
 
 </div>
+
+
+
+  </div>
+
+  </div>
+
+</div><h2 id="resourcehandler"><code>ResourceHandler</code></h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="arrest.handler.ResourceHandler"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>A pydantic class defining a resource handler</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>method</code></td>
+          <td>
+                <code><span title="arrest.http.Methods">Methods</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>HTTP Method for the handler</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>route</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Unique path to the handler from its parent resource</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>request</code></td>
+          <td>
+                <code><span title="typing.Type">Type</span>[<span title="pydantic.BaseModel">BaseModel</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Pydantic type to validate the request with</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>response</code></td>
+          <td>
+                <code><span title="typing.Type">Type</span>[<span title="pydantic.BaseModel">BaseModel</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Pydantic type to deserialize the HTTP response</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>callback</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A callable (sync or async) to execute with the HTTP
+response</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
 
 
 
