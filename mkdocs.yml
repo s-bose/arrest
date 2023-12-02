@@ -31,9 +31,7 @@ theme:
 
 nav:
   - Introduction: index.md
-  - Getting Started:
-    - getting-started.md
-    - Making a request: making-a-request.md
+  - Getting Started: getting-started.md
   - API Documentation: api.md
 
 markdown_extensions:
