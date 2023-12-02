@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "arrest"
-version = "0.1.0"
+version = "0.1.1"
 description = "Arrest is a wrapper of pydantic and httpx to make your REST api calls type-safe and structured"
 authors = ["shiladitya <shiladitya_basu@live.com>"]
 license = "MIT"
 readme = "README.md"
+include = ["CHANGELOG.md"]
 homepage = "https://s-bose.github.io/arrest"
 repository = "https://github.com/s-bose/arrest"
 documentation = "https://s-bose.github.io/arrest"
