@@ -13,7 +13,7 @@ def join_url(base_url: str, *urls) -> str:
     return urljoin(base_url, path)
 
 
-def deserialize(model: BaseModel, field: str, default={}) -> dict:
+def deserialize(model: BaseModel | None, field: str, default={}) -> dict:
     """
     reuse pydantic's own deserializer to extract single field
     as a json parsed dict
@@ -28,15 +28,21 @@ def deserialize(model: BaseModel, field: str, default={}) -> dict:
     return value
 
 
-def process_header(model: BaseModel, field: str, header: dict | None = {}) -> dict:
+def process_header(
+    model: BaseModel | None, field: str, header: dict | None = {}
+) -> dict:
     header_dict = header | deserialize(model, field)
 
     return {k.replace("_", "-"): str(v) for k, v in header_dict.items()}
 
 
-def process_body(model: BaseModel, field: str, body: dict | None = {}) -> dict:
+def process_body(
+    model: BaseModel | None, field: str, body: dict | None = {}
+) -> dict:
     return body | deserialize(model, field)
 
 
-def process_query(model: BaseModel, field: str, query: dict | None = {}) -> dict:
+def process_query(
+    model: BaseModel | None, field: str, query: dict | None = {}
+) -> dict:
     return query | deserialize(model, field)

@@ -8,7 +8,7 @@ import uuid
 from typing import Any, ClassVar, Generic, Mapping, Pattern, TypeVar
 from uuid import UUID
 
-from arrest.logging import logger
+from arrest.exceptions import ConversionError
 
 T = TypeVar("T")
 
@@ -22,9 +22,6 @@ class Converter(Generic[T]):
     def to_str(self, value: T) -> str:
         raise NotImplementedError()
 
-    def __repr__(self):
-        raise NotImplementedError()
-
 
 class IntegerConverter(Converter[int]):
     regex = "[0-9]+"
@@ -34,9 +31,6 @@ class IntegerConverter(Converter[int]):
 
         assert value >= 0, "Negative integers are not supported"
         return str(value)
-
-    def __repr__(self):
-        return f"Converter: {repr(int)}"
 
 
 class FloatConverter(Converter[float]):
@@ -50,9 +44,6 @@ class FloatConverter(Converter[float]):
         assert not math.isinf(value), "Infinite values are not supported"
         return ("%0.20f" % value).rstrip("0").rstrip(".")
 
-    def __repr__(self):
-        return f"Converter: {repr(float)}"
-
 
 class StrConverter(Converter[str]):
     regex = "[^/]+"
@@ -64,18 +55,13 @@ class StrConverter(Converter[str]):
         assert value, "Must not be empty"
         return value
 
-    def __repr__(self):
-        return f"Converter: {repr(str)}"
-
 
 class UUIDConverter(Converter[uuid.UUID]):
     regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
     def to_str(self, value: Any | UUID) -> str:
+        value = UUID(str(value))
         return str(value)
-
-    def __repr__(self):
-        return f"Converter: {repr(uuid.UUID)}"
 
 
 CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
@@ -147,11 +133,8 @@ def replace_params(
                     strval = param_types[key].to_str(value)
                 path = path.replace("{" + key + "}", strval)
                 path_params.pop(key)
-        except (TypeError, ValueError):
-            logger.warning(
-                f"could not convert value: {value} to {param_types[key]!s}"
-            )
-            raise
+        except (TypeError, ValueError) as exc:
+            raise ConversionError(*exc.args) from exc
 
     return path, path_params
 

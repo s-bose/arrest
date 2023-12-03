@@ -13,8 +13,14 @@ from arrest.converters import (
     add_converter,
     replace_params,
 )
+from arrest.exceptions import ConversionError
 
 dummy_date = datetime.now()
+
+
+class NoStr:
+    def __str__(self):
+        pass
 
 
 class DatetimeConverter(Converter[datetime]):
@@ -92,7 +98,7 @@ class DatetimeConverter(Converter[datetime]):
         ),
     ],
 )
-def test_replace_params(
+def test_converters_convert_and_replace_params(
     path: str,
     path_params: dict,
     param_types: dict,
@@ -106,3 +112,33 @@ def test_replace_params(
             path=path, path_params=path_params, param_types=param_types
         )
         assert ret == returned_path
+
+
+@pytest.mark.parametrize(
+    "path, path_params, param_types",
+    [
+        (
+            "/profile/{profile_id}",
+            {"profile_id": "notanumber"},
+            {"profile_id": IntegerConverter()},
+        ),
+        (
+            "/profile/{profile_id}",
+            {"profile_id": "notanumber"},
+            {"profile_id": FloatConverter()},
+        ),
+        (
+            "/profile/{profile_id}",
+            {"profile_id": "notauuid"},
+            {"profile_id": UUIDConverter()},
+        ),
+        (
+            "/profile/{profile_id}",
+            {"profile_id": NoStr()},
+            {"profile_id": StrConverter()},
+        ),
+    ],
+)
+def test_converters_type_error(path, path_params, param_types):
+    with pytest.raises(ConversionError):
+        replace_params(path=path, path_params=path_params, param_types=param_types)

@@ -5,7 +5,9 @@ from typing import Callable, NamedTuple, Pattern, Type
 from pydantic import AnyUrl, BaseModel
 
 from arrest.converters import replace_params
+from arrest.exceptions import ConversionError
 from arrest.http import Methods
+from arrest.logging import logger
 
 
 class HandlerKey(NamedTuple):
@@ -56,7 +58,10 @@ class ResourceHandler(BaseModel):
         return self.__parse_exact_path(path)
 
     def __parse_exact_path(self, path: str | AnyUrl) -> str | AnyUrl | None:
+        print(f"{path=}")
         if self.path_regex.fullmatch(path):
+            print(f"{self.path_regex.fullmatch(path)=}")
+
             return path
 
     def __resolve_path_param(
@@ -74,7 +79,8 @@ class ResourceHandler(BaseModel):
                 path_params=params,
                 param_types=self.param_types,
             )
-        except Exception:
+        except ConversionError as exc:
+            logger.warning(str(exc), exc_info=True)
             return None
         if remaining_params:
             return None

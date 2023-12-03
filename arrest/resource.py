@@ -131,9 +131,14 @@ class Resource:
 
         handler, url = match
 
-        params = self.extract_request_params(
-            request_type=handler.request, request_data=request
-        )
+        if path.endswith("?"):
+            params = self.extract_request_params(
+                request_type=handler.request, request_data=request, **kwargs
+            )
+        else:
+            params = self.extract_request_params(
+                request_type=handler.request, request_data=request
+            )
 
         response_type = handler.response or self.response_model or None
 
@@ -263,23 +268,21 @@ class Resource:
         self,
         request_type: Type[BaseModel] | None,
         request_data: BaseModel | None,
+        **kwargs,
     ) -> dict[ParamTypes, dict]:
         """
         extracts `header`, `body` and `query` params from the pydantic request model
 
-        Parameters
-        ----------
+        Parameters:
+            request_type:
+                a pydantic class for holding the request data
 
-        request_type : Type[BaseModel] | None
-            a pydantic class for holding the request data
+            request_data:
+                instance of the above containing the data
 
-        request_data : BaseModel | None
-            instance of the above containing the data
-
-        Returns
-        -------
-
-        dict[ParamTypes, dict]
+            kwargs:
+                optional keyword-arguments containing query parameters
+        Returns:
             a dictionary containing `header`, `body`, `query` params in separate dicts
         """
 
@@ -290,13 +293,16 @@ class Resource:
             )
         headers, query_params, body_params = dict(self.headers), {}, {}
 
-        if request_data:
+        if request_type:
             # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
-                request_data.__fields__
+                request_type.__fields__
                 if PYDANTIC_VERSION.startswith("2.")
-                else request_data.model_fields
+                else request_type.model_fields
             )
+
+            if not request_data:
+                pass  # TODO
 
             for field, field_info in model_fields.items():
                 field_info = cast(Param, field_info)
@@ -443,7 +449,8 @@ class Resource:
         self, method: Methods, path: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
         for handler in self.routes.values():
-            if parsed_path := handler.parse_path(method=method, path=path, **kwargs):
+            parsed_path = handler.parse_path(method=method, path=path, **kwargs)
+            if parsed_path is not None:
                 url = join_url(self.base_url, self.route, parsed_path)
                 return handler, url
 
