@@ -1,11 +1,16 @@
 import json
+import posixpath
+from urllib.parse import urljoin
 
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
 
-def join_url(*urls) -> str:
-    return "/".join([url.lstrip("/") for url in urls])
+def join_url(base_url: str, *urls) -> str:
+    path = posixpath.join(*[url.lstrip("/") for url in urls])
+    if not urls[-1].endswith("/"):
+        path = path.rstrip("/")
+    return urljoin(base_url, path)
 
 
 def deserialize(model: BaseModel, field: str, default={}) -> dict:

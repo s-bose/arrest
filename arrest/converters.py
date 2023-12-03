@@ -8,6 +8,8 @@ import uuid
 from typing import Any, ClassVar, Generic, Mapping, Pattern, TypeVar
 from uuid import UUID
 
+from arrest.logging import logger
+
 T = TypeVar("T")
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
@@ -18,7 +20,10 @@ class Converter(Generic[T]):
     regex: ClassVar[str] = ""
 
     def to_str(self, value: T) -> str:
-        raise NotImplementedError
+        raise NotImplementedError()
+
+    def __repr__(self):
+        raise NotImplementedError()
 
 
 class IntegerConverter(Converter[int]):
@@ -29,6 +34,9 @@ class IntegerConverter(Converter[int]):
 
         assert value >= 0, "Negative integers are not supported"
         return str(value)
+
+    def __repr__(self):
+        return f"Converter: {repr(int)}"
 
 
 class FloatConverter(Converter[float]):
@@ -42,6 +50,9 @@ class FloatConverter(Converter[float]):
         assert not math.isinf(value), "Infinite values are not supported"
         return ("%0.20f" % value).rstrip("0").rstrip(".")
 
+    def __repr__(self):
+        return f"Converter: {repr(float)}"
+
 
 class StrConverter(Converter[str]):
     regex = "[^/]+"
@@ -53,12 +64,18 @@ class StrConverter(Converter[str]):
         assert value, "Must not be empty"
         return value
 
+    def __repr__(self):
+        return f"Converter: {repr(str)}"
+
 
 class UUIDConverter(Converter[uuid.UUID]):
     regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
     def to_str(self, value: Any | UUID) -> str:
         return str(value)
+
+    def __repr__(self):
+        return f"Converter: {repr(uuid.UUID)}"
 
 
 CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
@@ -79,7 +96,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
 
     regex : "/(?P<username>[^/]+)"
     format : "/{username}"
-    path_params : dict[username: Converter[str]()]
+    param_types : dict[username: Converter[str]()]
     """
     path_regex = "^"
     path_format = ""
@@ -98,7 +115,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
         converter = CONVERTER_REGEX[converter_type]
 
         path_regex += re.escape(path[idx : match.start()])
-        path_regex += f"(?P<{param_name}>{converter.regex})?"
+        path_regex += f"(?P<{param_name}>{converter.regex})"
 
         path_format += path[idx : match.start()]
         path_format += "{%s}" % param_name
@@ -122,13 +139,20 @@ def replace_params(
     param_types: dict[str, Converter[Any]] | None,
 ) -> tuple[str, dict[str, str]]:
     for key, value in list(path_params.items()):
-        if "{" + key + "}" in path:
-            if not param_types:
-                strval = str(value)
-            else:
-                strval = param_types[key].to_str(value)
-            path = path.replace("{" + key + "}", strval)
-            path_params.pop(key)
+        try:
+            if "{" + key + "}" in path:
+                if not param_types:
+                    strval = str(value)
+                else:
+                    strval = param_types[key].to_str(value)
+                path = path.replace("{" + key + "}", strval)
+                path_params.pop(key)
+        except (TypeError, ValueError):
+            logger.warning(
+                f"could not convert value: {value} to {param_types[key]!s}"
+            )
+            raise
+
     return path, path_params
 
 

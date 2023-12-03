@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
-from arrest.converters import compile_path, replace_params
+from arrest.converters import compile_path
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.exceptions import ArrestError, ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
@@ -89,7 +89,7 @@ class Resource:
     async def request(
         self,
         method: Methods,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ) -> Any | None:
@@ -104,7 +104,7 @@ class Resource:
         Parameters:
             method:
                 The HTTP method for the request
-            url:
+            path:
                 Path to a handler specified in the resource
             request:
                 A pydantic object containing the necessary fields
@@ -124,7 +124,7 @@ class Resource:
         params: dict = {}
 
         if not (
-            match := self.get_matching_handler(method=method, url=url, **kwargs)
+            match := self.get_matching_handler(method=method, path=path, **kwargs)
         ):
             logger.warning("no matching handler found for request")
             raise HandlerNotFound("no matching handler found for request")
@@ -156,7 +156,7 @@ class Resource:
 
     async def get(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -166,12 +166,12 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.GET, url=url, request=request, **kwargs
+            method=Methods.GET, path=path, request=request, **kwargs
         )
 
     async def post(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -181,12 +181,12 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.POST, url=url, request=request, **kwargs
+            method=Methods.POST, path=path, request=request, **kwargs
         )
 
     async def put(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -196,12 +196,12 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.PUT, url=url, request=request, **kwargs
+            method=Methods.PUT, path=path, request=request, **kwargs
         )
 
     async def patch(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -211,12 +211,12 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.PATCH, url=url, request=request, **kwargs
+            method=Methods.PATCH, path=path, request=request, **kwargs
         )
 
     async def delete(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -226,12 +226,12 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.DELETE, url=url, request=request, **kwargs
+            method=Methods.DELETE, path=path, request=request, **kwargs
         )
 
     async def head(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -241,12 +241,12 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.HEAD, url=url, request=request, **kwargs
+            method=Methods.HEAD, path=path, request=request, **kwargs
         )
 
     async def options(
         self,
-        url: str,
+        path: str,
         request: BaseModel | None = None,
         **kwargs,
     ):
@@ -256,7 +256,7 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.OPTIONS, url=url, request=request, **kwargs
+            method=Methods.OPTIONS, path=path, request=request, **kwargs
         )
 
     def extract_request_params(
@@ -440,28 +440,12 @@ class Resource:
         return False
 
     def get_matching_handler(
-        self, method: Methods, url: str, **kwargs
+        self, method: Methods, path: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
-        for key, handler in self.routes.items():
-            if method != key.method:
-                continue
-
-            req_url = join_url(self.base_url, self.route, url)
-            if seen_params := handler.extract_params(req_url):
-                for k, v in seen_params.items():
-                    if v is not None:
-                        kwargs[k] = v
-
-            if kwargs:
-                handler_url, remaining_params = replace_params(
-                    handler.url, kwargs, handler.path_params
-                )
-                if remaining_params:
-                    continue
-                req_url = handler_url
-
-            if handler.url_regex.fullmatch(req_url):
-                return handler, req_url
+        for handler in self.routes.values():
+            if parsed_path := handler.parse_path(method=method, path=path, **kwargs):
+                url = join_url(self.base_url, self.route, parsed_path)
+                return handler, url
 
     def _bind_handler(
         self, base_url: str | None = None, *, handler: ResourceHandler
@@ -475,15 +459,11 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
-        _, handler_route, handler_path_params = compile_path(handler.route)
-        handler.url = join_url(base_url, self.route, handler.route)
-        url_regex, handler_url, _ = compile_path(handler.url)
+        handler.path_regex, handler.path_format, handler.param_types = compile_path(
+            handler.route
+        )
 
-        handler.url_regex = url_regex
-        handler.path_params = handler_path_params
-        handler.url = handler_url
-
-        self.routes[HandlerKey(*(handler.method, handler_route))] = handler
+        self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
 
     def initialize_handlers(
         self,
