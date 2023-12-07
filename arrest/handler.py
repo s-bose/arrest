@@ -48,20 +48,13 @@ class ResourceHandler(BaseModel):
         if method != self.method:
             return None
 
-        if path.endswith("?"):
-            path = path.rstrip("?")
-            return self.__parse_exact_path(path)
-
         if kwargs:
             return self.__resolve_path_param(path, **kwargs)
 
         return self.__parse_exact_path(path)
 
     def __parse_exact_path(self, path: str | AnyUrl) -> str | AnyUrl | None:
-        print(f"{path=}")
         if self.path_regex.fullmatch(path):
-            print(f"{self.path_regex.fullmatch(path)=}")
-
             return path
 
     def __resolve_path_param(

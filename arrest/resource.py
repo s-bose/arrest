@@ -4,6 +4,7 @@ import json
 from typing import Any, Mapping, Type, cast
 
 import httpx
+from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
 from pydantic.version import VERSION as PYDANTIC_VERSION
@@ -15,7 +16,7 @@ from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, ParamTypes
-from arrest.utils import join_url, process_body, process_header, process_query
+from arrest.utils import extract_model_field, join_url
 
 
 class Resource:
@@ -90,7 +91,9 @@ class Resource:
         self,
         method: Methods,
         path: str,
-        request: BaseModel | None = None,
+        request: BaseModel | Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ) -> Any | None:
         """
@@ -111,8 +114,14 @@ class Resource:
                 to make an http request to the handler url
 
                 **Must match the corresponding `handler.request` pydantic model**
+            headers:
+                A multi-dict or `httpx.Headers` containing additional
+                header key-value pairs
+            query:
+                A multi-dict or `httpx.QueryParams` containing additional
+                query-param key-value pairs
             **kwargs:
-                Keyword-args matching the path params, if any
+                Keyword-arguments matching the path params, if any
 
         Returns:
             Response:
@@ -131,14 +140,13 @@ class Resource:
 
         handler, url = match
 
-        if path.endswith("?"):
-            params = self.extract_request_params(
-                request_type=handler.request, request_data=request, **kwargs
-            )
-        else:
-            params = self.extract_request_params(
-                request_type=handler.request, request_data=request
-            )
+        params = self.extract_request_params(
+            request_type=handler.request,
+            request_data=request,
+            headers=headers,
+            query=query,
+            **kwargs,
+        )
 
         response_type = handler.response or self.response_model or None
 
@@ -163,6 +171,8 @@ class Resource:
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -171,13 +181,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.GET, path=path, request=request, **kwargs
+            method=Methods.GET,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def post(
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -186,13 +203,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.POST, path=path, request=request, **kwargs
+            method=Methods.POST,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def put(
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -201,13 +225,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.PUT, path=path, request=request, **kwargs
+            method=Methods.PUT,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def patch(
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -216,13 +247,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.PATCH, path=path, request=request, **kwargs
+            method=Methods.PATCH,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def delete(
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -231,13 +269,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.DELETE, path=path, request=request, **kwargs
+            method=Methods.DELETE,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def head(
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -246,13 +291,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.HEAD, path=path, request=request, **kwargs
+            method=Methods.HEAD,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def options(
         self,
         path: str,
         request: BaseModel | None = None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, str] | None = None,
         **kwargs,
     ):
         """
@@ -261,25 +313,29 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.OPTIONS, path=path, request=request, **kwargs
+            method=Methods.OPTIONS,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     def extract_request_params(
         self,
         request_type: Type[BaseModel] | None,
-        request_data: BaseModel | None,
-        **kwargs,
-    ) -> dict[ParamTypes, dict]:
+        request_data: BaseModel | Mapping[str, Any] | None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, Any] | None = None,
+    ) -> dict[ParamTypes, Mapping[str, Any]]:
         """
         extracts `header`, `body` and `query` params from the pydantic request model
 
         Parameters:
             request_type:
                 a pydantic class for holding the request data
-
             request_data:
                 instance of the above containing the data
-
             kwargs:
                 optional keyword-arguments containing query parameters
         Returns:
@@ -287,13 +343,16 @@ class Resource:
         """
 
         # apply type validation if Request Type present in handler definition
-        if not self.__validate_request(request_type, request_data):
+        if not (data := self.__validate_request(request_type, request_data)):
             raise ValueError(
-                f"type of {type(request_data).__name__} does not match provided type {request_type.__name__}"
+                f"type of {type(request_data)} does not match provided type {request_type.__name__}"
             )
-        headers, query_params, body_params = dict(self.headers), {}, {}
 
-        if request_type:
+        header_params = headers or {}
+        query_params = query or {}
+        body_params = {}
+
+        if isinstance(data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
                 request_type.__fields__
@@ -301,25 +360,25 @@ class Resource:
                 else request_type.model_fields
             )
 
-            if not request_data:
-                pass  # TODO
-
             for field, field_info in model_fields.items():
                 field_info = cast(Param, field_info)
                 if not hasattr(field_info, "_param_type") and isinstance(
                     field_info, FieldInfo
                 ):
-                    body_params |= process_body(request_data, field, body_params)
+                    body_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.query:
-                    query_params |= process_query(request_data, field, query_params)
+                    query_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.header:
-                    headers |= process_header(request_data, field, headers)
+                    header_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.body:
-                    body_params |= process_body(request_data, field, body_params)
+                    body_params |= extract_model_field(request_data, field)
+
+        else:
+            body_params = data
 
         return {
-            ParamTypes.header: headers,
-            ParamTypes.query: query_params,
+            ParamTypes.header: Headers(headers),
+            ParamTypes.query: QueryParams(query_params),
             ParamTypes.body: body_params,
         }
 
@@ -437,13 +496,16 @@ class Resource:
     def __validate_request(
         self,
         request_type: Type[BaseModel] | None,
-        request_data: BaseModel | None,
-    ):
-        if not request_data or (
-            request_type and isinstance(request_data, request_type)
-        ):
-            return True
-        return False
+        request_data: BaseModel | Mapping[str, Any] | Any | None,
+    ) -> Any:
+        if not request_type:
+            return request_data
+        if request_data and isinstance(request_data, request_type):
+            return request_data
+        if request_data and isinstance(request_data, dict):
+            return request_type(**request_data)
+
+        return request_data
 
     def get_matching_handler(
         self, method: Methods, path: str, **kwargs
