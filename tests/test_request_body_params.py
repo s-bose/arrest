@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from respx.patterns import M
 
 from arrest.http import Methods
-from arrest.params import Body, ParamTypes, Query
+from arrest.params import Body, Query
 from arrest.resource import Resource
 
 
@@ -43,12 +43,10 @@ async def test_request_body_params(service, mock_httpx, mocker):
     )
 
     params = extract_request_params.spy_return
-    assert params[ParamTypes.body] == {
+    assert params.body == {
         "name": "bob",
         "email": "abc@mail.com",
         "dob": None,
     }
 
-    assert params[ParamTypes.query] == {
-        "limit": 1,
-    }
+    assert params.query == httpx.QueryParams({"limit": 1})

@@ -1,7 +1,6 @@
 # pylint: disable=W0707
 import inspect
-import json
-from typing import Any, Mapping, Type, cast
+from typing import Any, Mapping, Optional, Type, Union, cast
 
 import httpx
 from httpx import Headers, QueryParams
@@ -15,8 +14,8 @@ from arrest.exceptions import ArrestError, ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
-from arrest.params import Param, ParamTypes
-from arrest.utils import extract_model_field, join_url
+from arrest.params import Param, Params, ParamTypes
+from arrest.utils import extract_model_field, join_url, jsonify
 
 
 class Resource:
@@ -41,15 +40,17 @@ class Resource:
 
     def __init__(
         self,
-        name: str | None = None,
+        name: Optional[str] = None,
         *,
-        route: str,
-        headers: dict | None = HEADER_DEFAULTS,
-        timeout: int | None = TIMEOUT_DEFAULT,
-        response_model: Type[BaseModel] | None = None,
-        handlers: list[ResourceHandler]
-        | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = None,
+        route: Optional[str],
+        headers: Optional[dict] = HEADER_DEFAULTS,
+        timeout: Optional[int] = TIMEOUT_DEFAULT,
+        response_model: Optional[Type[BaseModel]] = None,
+        handlers: Union[
+            list[ResourceHandler],
+            list[Mapping[str, Any]],
+            list[tuple[Any, ...]],
+        ] = None,
     ) -> None:
         """
 
@@ -91,9 +92,9 @@ class Resource:
         self,
         method: Methods,
         path: str,
-        request: BaseModel | Mapping[str, Any] | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Union[BaseModel, Mapping[str, Any], None] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ) -> Any | None:
         """
@@ -170,9 +171,9 @@ class Resource:
     async def get(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -192,9 +193,9 @@ class Resource:
     async def post(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -214,9 +215,9 @@ class Resource:
     async def put(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -236,9 +237,9 @@ class Resource:
     async def patch(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -258,9 +259,9 @@ class Resource:
     async def delete(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -280,9 +281,9 @@ class Resource:
     async def head(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -302,9 +303,9 @@ class Resource:
     async def options(
         self,
         path: str,
-        request: BaseModel | None = None,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, str] | None = None,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -327,7 +328,7 @@ class Resource:
         request_data: BaseModel | Mapping[str, Any] | None,
         headers: Mapping[str, str] | None = None,
         query: Mapping[str, Any] | None = None,
-    ) -> dict[ParamTypes, Mapping[str, Any]]:
+    ) -> Params:
         """
         extracts `header`, `body` and `query` params from the pydantic request model
 
@@ -342,17 +343,15 @@ class Resource:
             a dictionary containing `header`, `body`, `query` params in separate dicts
         """
 
-        # apply type validation if Request Type present in handler definition
-        if not (data := self.__validate_request(request_type, request_data)):
-            raise ValueError(
-                f"type of {type(request_data)} does not match provided type {request_type.__name__}"
-            )
-
-        header_params = headers or {}
+        header_params = headers or dict(self.headers)
         query_params = query or {}
         body_params = {}
 
-        if isinstance(data, BaseModel):
+        if request_type:
+            # perform type validation on `request_data`
+            request_data = request_type.model_validate(request_data)
+
+        if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
                 request_type.__fields__
@@ -374,20 +373,20 @@ class Resource:
                     body_params |= extract_model_field(request_data, field)
 
         else:
-            body_params = data
+            body_params = request_data
 
-        return {
-            ParamTypes.header: Headers(headers),
-            ParamTypes.query: QueryParams(query_params),
-            ParamTypes.body: body_params,
-        }
+        return Params(
+            header=Headers(header_params),
+            query=QueryParams(query_params),
+            body=jsonify(body_params),
+        )
 
     async def __make_request(
         self,
         url: str,
         method: Methods,
-        params: dict,
-        response_type: Type[BaseModel] | None,
+        params: Params,
+        response_type: Optional[Type[BaseModel]],
     ) -> Any:
         """
         (private) makes the actual http call using httpx
@@ -411,9 +410,9 @@ class Resource:
             a json object or a parsed pydantic object
         """
         headers, query_params, body_params = (
-            params[ParamTypes.header],
-            params[ParamTypes.query],
-            params[ParamTypes.body],
+            params.header,
+            params.query,
+            params.body,
         )
         try:
             async with httpx.AsyncClient(
@@ -432,13 +431,13 @@ class Resource:
                         response = await client.put(
                             url=url,
                             params=query_params,
-                            data=json.dumps(body_params),
+                            json=body_params,
                         )
                     case Methods.PATCH:
                         response = await client.patch(
                             url=url,
                             params=query_params,
-                            data=json.dumps(body_params),
+                            json=body_params,
                         )
                     case Methods.DELETE:
                         response = await client.delete(
@@ -492,20 +491,6 @@ class Resource:
                 status_code=httpx.codes.INTERNAL_SERVER_ERROR,
                 data="error occured while making request",
             )
-
-    def __validate_request(
-        self,
-        request_type: Type[BaseModel] | None,
-        request_data: BaseModel | Mapping[str, Any] | Any | None,
-    ) -> Any:
-        if not request_type:
-            return request_data
-        if request_data and isinstance(request_data, request_type):
-            return request_data
-        if request_data and isinstance(request_data, dict):
-            return request_type(**request_data)
-
-        return request_data
 
     def get_matching_handler(
         self, method: Methods, path: str, **kwargs

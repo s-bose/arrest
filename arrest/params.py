@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any
 
+import httpx
 from pydantic.fields import FieldInfo, _FieldInfoInputs
 from pydantic_core import PydanticUndefined
 from typing_extensions import Unpack
@@ -32,3 +33,12 @@ class Header(Param):
 
 class Body(Param):
     _param_type = ParamTypes.body
+
+
+class Params:
+    def __init__(
+        self, *, header: httpx.Headers, query: httpx.QueryParams, body: Any
+    ) -> None:
+        self.header = header
+        self.query = query
+        self.body = body

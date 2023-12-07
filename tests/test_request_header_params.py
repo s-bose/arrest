@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from respx.patterns import M
 
 from arrest.http import Methods
-from arrest.params import Body, Header, ParamTypes, Query
+from arrest.params import Body, Header, Query
 from arrest.resource import Resource
 
 
@@ -20,7 +20,7 @@ async def test_request_header_params(service, mock_httpx, mocker):
 
     class UserRequest(BaseModel):
         limit: int = Query()
-        x_max_age: int = Header(...)
+        x_max_age: str = Header(...)
         x_user_agent: str = Header(...)
         name: str = Body(...)
         email: str
@@ -44,20 +44,22 @@ async def test_request_header_params(service, mock_httpx, mocker):
             name="bob",
             email="bob@mail.com",
             password="xyz",
-            x_max_age=20,
+            x_max_age="20",
             x_user_agent="mozila",
         ),
     )
     handler, _ = get_matching_handler.spy_return
     assert handler.route == "/profile"
     params = extract_request_params.spy_return
-    assert params[ParamTypes.query] == {"limit": 1}
-    assert params[ParamTypes.header] == {
-        "x-max-age": "20",
-        "x-user-agent": "mozila",
-        "Content-Type": "application/json",
-    }
-    assert params[ParamTypes.body] == {
+    assert params.query == httpx.QueryParams({"limit": 1})
+    assert params.header == httpx.Headers(
+        {
+            "x_max_age": "20",
+            "x_user_agent": "mozila",
+            "Content-Type": "application/json",
+        }
+    )
+    assert params.body == {
         "name": "bob",
         "email": "bob@mail.com",
         "password": "xyz",
