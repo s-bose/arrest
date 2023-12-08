@@ -5,7 +5,6 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from arrest.exceptions import ArrestError
 from arrest.handler import ResourceHandler
 from arrest.http import Methods
 from arrest.resource import Resource
@@ -17,9 +16,7 @@ class ResponseType(BaseModel):
     c: str
 
 
-@pytest.mark.parametrize(
-    "response_type, expected_type", [(ResponseType, ResponseType), (None, dict)]
-)
+@pytest.mark.parametrize("response_type, expected_type", [(ResponseType, ResponseType), (None, dict)])
 @pytest.mark.asyncio
 async def test_request_callback(
     service,
@@ -52,9 +49,7 @@ async def test_request_callback(
     assert isinstance(response, expected_type)
 
 
-@pytest.mark.parametrize(
-    "response_type, expected_type", [(ResponseType, ResponseType), (None, dict)]
-)
+@pytest.mark.parametrize("response_type, expected_type", [(ResponseType, ResponseType), (None, dict)])
 @pytest.mark.asyncio
 async def test_request_callback_async(
     service,
@@ -113,5 +108,5 @@ async def test_request_callback_exception(
         )
     )
 
-    with pytest.raises(ArrestError):
+    with pytest.raises(ValueError):
         await service.user.get("/")

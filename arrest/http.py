@@ -17,7 +17,3 @@ class Methods(StrEnum):
     DELETE = "DELETE"
     HEAD = "HEAD"
     OPTIONS = "OPTIONS"
-
-
-class ContentType(StrEnum):
-    APPLICATION_JSON = "application/json"

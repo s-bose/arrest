@@ -9,13 +9,13 @@ from pydantic.fields import FieldInfo
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
 from arrest.converters import compile_path
-from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
-from arrest.exceptions import ArrestError, ArrestHTTPException, HandlerNotFound
+from arrest.defaults import TIMEOUT_DEFAULT
+from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, Params, ParamTypes
-from arrest.utils import extract_model_field, join_url, jsonify
+from arrest.utils import extract_model_field, join_url, jsonify, validate_request_model
 
 
 class Resource:
@@ -43,7 +43,7 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        headers: Optional[dict] = HEADER_DEFAULTS,
+        headers: Optional[dict] = None,
         timeout: Optional[int] = TIMEOUT_DEFAULT,
         response_model: Optional[Type[BaseModel]] = None,
         handlers: Union[
@@ -133,11 +133,9 @@ class Resource:
 
         params: dict = {}
 
-        if not (
-            match := self.get_matching_handler(method=method, path=path, **kwargs)
-        ):
+        if not (match := self.get_matching_handler(method=method, path=path, **kwargs)):
             logger.warning("no matching handler found for request")
-            raise HandlerNotFound("no matching handler found for request")
+            raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
 
@@ -161,9 +159,9 @@ class Resource:
                     callback_response = await handler.callback(response)
                 else:
                     callback_response = handler.callback(response)
-            except Exception as exc:
+            except Exception:
                 logger.warning("something went wrong during callback", exc_info=True)
-                raise ArrestError(str(exc)) from exc
+                raise
             return callback_response
 
         return response
@@ -344,27 +342,24 @@ class Resource:
         """
 
         header_params = headers or {}
-        header_params |= self.headers
+        if self.headers:
+            header_params |= self.headers
         query_params = query or {}
         body_params = {}
 
         if request_type:
             # perform type validation on `request_data`
-            request_data = request_type.model_validate(request_data)
+            request_data = validate_request_model(type_=request_type, obj=request_data)
 
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
-                request_data.__fields__
-                if PYDANTIC_VERSION.startswith("2.")
-                else request_data.model_fields
+                request_data.__fields__ if PYDANTIC_VERSION.startswith("2.") else request_data.model_fields
             )
 
             for field, field_info in model_fields.items():
                 field_info = cast(Param, field_info)
-                if not hasattr(field_info, "_param_type") and isinstance(
-                    field_info, FieldInfo
-                ):
+                if not hasattr(field_info, "_param_type") and isinstance(field_info, FieldInfo):
                     body_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.query:
                     query_params |= extract_model_field(request_data, field)
@@ -416,9 +411,7 @@ class Resource:
             params.body,
         )
         try:
-            async with httpx.AsyncClient(
-                timeout=self.timeout, headers=headers
-            ) as client:
+            async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
                 match method:
                     case Methods.GET:
                         response = await client.get(url=url, params=query_params)
@@ -452,9 +445,7 @@ class Resource:
                         response = await client.options(url=url, params=query_params)
 
                 status_code = response.status_code
-                logger.debug(
-                    f"{method!s} {url} returned with status code {status_code!s}"
-                )
+                logger.debug(f"{method!s} {url} returned with status code {status_code!s}")
                 response.raise_for_status()
                 response_body = response.json()
 
@@ -462,9 +453,7 @@ class Resource:
                 parsed_response = response_body
                 if response_type:
                     if isinstance(response_body, list):
-                        parsed_response = [
-                            response_type(**item) for item in response_body
-                        ]
+                        parsed_response = [response_type(**item) for item in response_body]
                     elif isinstance(response_body, dict):
                         parsed_response = response_type(**response_body)
                     else:
@@ -477,9 +466,7 @@ class Resource:
         # exception handling
         except httpx.HTTPStatusError as exc:
             err_response_body = exc.response.json()
-            raise ArrestHTTPException(
-                status_code=exc.response.status_code, data=err_response_body
-            ) from exc
+            raise ArrestHTTPException(status_code=exc.response.status_code, data=err_response_body) from exc
 
         except httpx.TimeoutException:
             raise ArrestHTTPException(
@@ -502,9 +489,7 @@ class Resource:
                 url = join_url(self.base_url, self.route, parsed_path)
                 return handler, url
 
-    def _bind_handler(
-        self, base_url: str | None = None, *, handler: ResourceHandler
-    ) -> None:
+    def _bind_handler(self, base_url: str | None = None, *, handler: ResourceHandler) -> None:
         """
         compose a fully-qualified url by joining base service url, resource url
         and handler url,
@@ -514,18 +499,14 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
-        handler.path_regex, handler.path_format, handler.param_types = compile_path(
-            handler.route
-        )
+        handler.path_regex, handler.path_format, handler.param_types = compile_path(handler.route)
 
         self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
 
     def initialize_handlers(
         self,
         base_url: str | None = None,
-        handlers: list[ResourceHandler]
-        | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = None,
+        handlers: list[ResourceHandler] | list[Mapping[str, Any]] | list[tuple[Any, ...]] = None,
     ) -> None:
         """
         specifically used to inject `base_url` from a Service class to
@@ -541,18 +522,12 @@ class Resource:
         for _handler in handlers:
             try:
                 if isinstance(_handler, dict):
-                    self._bind_handler(
-                        base_url=base_url, handler=ResourceHandler(**_handler)
-                    )
+                    self._bind_handler(base_url=base_url, handler=ResourceHandler(**_handler))
                 elif isinstance(_handler, tuple):
                     if len(_handler) < 2:
-                        raise ValueError(
-                            "Too few arguments to unpack. Expected atleast 2"
-                        )
+                        raise ValueError("Too few arguments to unpack. Expected atleast 2")
                     if len(_handler) > 5:
-                        raise ValueError(
-                            f"Too many arguments to unpack. Expected 5, got {len(_handler)}"
-                        )
+                        raise ValueError(f"Too many arguments to unpack. Expected 5, got {len(_handler)}")
 
                     method, route, rest = (
                         _handler[0],

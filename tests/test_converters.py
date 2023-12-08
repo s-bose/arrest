@@ -108,9 +108,7 @@ def test_converters_convert_and_replace_params(
     add_converter(DatetimeConverter(), "datetime")
 
     with exception:
-        ret, _ = replace_params(
-            path=path, path_params=path_params, param_types=param_types
-        )
+        ret, _ = replace_params(path=path, path_params=path_params, param_types=param_types)
         assert ret == returned_path
 
 

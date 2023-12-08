@@ -53,7 +53,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.black]
 target-version = ["py310"]
 color = false
-line-length = 85
+line-length = 110
 
 exclude = '''
 /(

@@ -87,63 +87,125 @@ Now that our handler is initialized with a request, we can make a request with i
 
 
 ## Configuring your request
-We also provide a few additional classes that you can assign to your pydantic fields. They are inherited from pydantic's `FieldInfo` to ensure compatibility.
+If you want to enrich your HTTP request with additional arguments such as headers or query parameters, you can specify them in the HTTP request as dictionaries in `headers` and `query` fields.
+Additionally, Arrest offers custom field types `Header`, `Query` and `Body`, which are inherited from pydantic's [`FieldInfo`](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo), that you can use in defining your pydantic request model.
 
-### Headers
-```python
-from arrest.params import Header
 
-class HeaderRequest(BaseModel):
-    x_max_age: str = Header(...)
-    x_cookie: str = Header(...)
-```
+### Header
 
-We will automatically convert any non-str values to str and convert `snake_case` to `kebab-case` before sending the fields as headers in the request.
-You can also specify resource-wide headers as a dict in your resource definition.
-```python
-Resource(route="/abc", headers={"x-age": "20"}, handlers=[...]) # this will now be used for any request from resource `abc`
-```
+You can use the `headers` keyword-argument in the request method to directly pass a set of key-value pairs as headers.
+
+!!! example "using `headers` kwarg"
+
+    ```python
+    await service.user.get("/posts", headers={"x-max-age": "20", "x-organization": "abc-123"})
+    ```
+
+If you want resource-wide shared header definition, you can set it in the `Resource` definition as well. You can use both of these together as all the headers will be collected and sent as a whole.
+
+!!! example "using `Resource.headers`"
+
+    ```python
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                (Methods.GET, "/profile"),
+            ],
+            headers={"x-organization": "abc-123"}
+        )
+    )
+
+    await service.user.get("/posts", headers={"x-max-age": "20"})
+    ```
+
+If you want to define your headers as part of your request model, use `arrest.params.Header` to specify the header fields in your request.
+This is useful when you want to group together all the components of your request inside one data model.
+
+!!! example "using `Header` class"
+
+    ```python
+    from arrest.params import Header
+
+    class HeaderRequest(BaseModel):
+        x_max_age: str = Header(...)
+        x_cookie: str = Header(...)
+
+    await service.user.get("/posts", request=HeaderRequest(x_max_age="20", "x_cookie": "xyz"))
+    ```
+
+!!! warning
+    Arrest does NOT convert any non-str values to str and convert `snake_case` to `kebab-case` before sending the fields as headers in the request.
+    If you want to send `kebab-case` headers you need to:
+    1. specify them as `kebab-case` in the dictionary passed to the `headers` keyword or Resource class definition.
+    2. Use `serialization_alias` in your pydantic field info.
+
+    ```python
+    class UserRequest(BaseModel):
+        x_user_agent: str = Header(serialization_alias="x-user-agent")
+
+    await service.user.post("/", request=UserRequest(x_user_agent="mozila"))
+    # header = {"x-user-agent": "mozila"}
+    ```
 
 
 ### Query
-```python
-from arrest.params import Query
+Similar to headers, you can provide your request-specific query parameters as a dict to the `query` kwarg in the request method.
 
-class QueryRequest(BaseModel):
-    limit: int = Query(...)
-    name: str = Query(...)
-    index: int | None = Query()
-```
+!!! example "using `query` kwarg"
 
-For query no such formatting is done. Whatever field is marked as `Query` will be attached as a query parameter in the request.
-```
-http://example.com/abc?limit=100&name=abc&index=145
-```
+    ```python
+    await service.user.get("/posts", query={"limit": 100, "username": "abc"})
+    ```
+
+If you want to define your query parameters as part of your request model, use `arrest.params.Query` to specify the query fields in your request.
+Whatever field is marked as `Query` will be attached as a query parameter in the request.
+
+!!! example "using `Query` class"
+
+    ```python
+    from arrest.params import Query
+
+    class QueryRequest(BaseModel):
+        limit: int = Query(...)
+        name: str = Query(...)
+        index: int | None = Query()
+
+    await service.user.get("/posts", request=QueryRequest(limit=100, name="abc", index=10))
+    ```
+
 
 
 ### Body
-```python
-from arrest.params import Body
 
-class BodyRequest(BaseModel):
-    name: str = Body(...)
-    email: str
-    password: str
-    role: Optional[str]
-    is_active: bool
-```
+Request body is supplied with the keyword argument `request` in your call.
+This can be a pydantic instance, a simple dictionary, a list or any object that can be jsonified.
 
-For body, you don't need to explicitly mark a field as `Body`. But when you do, you get the extra validation features of pydantic's `FieldInfo`. [see more](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo)
+However, if the handler for the path has a request type specified, the request body must match the type (or be convertible to it).
+You can make use of `arrest.params.Body` when defining the body fields, although fields that don't have any defaults will be automatically parsed as body.
 
-```python
-class BodyRequest(BaseModel):
-    name: str = Body(default="jeff", gt=10)
-    email: str
-    password: str
-    role: Optional[str]
-    is_active: bool
-```
+!!! example "using request type"
 
+    ```python
+    from arrest.params import Body
+
+    class BodyRequest(BaseModel):
+        name: str = Body(...)
+        email: str
+        password: str
+        role: Optional[str]
+        is_active: bool
+
+    # both of the following should work
+    await service.user.post("/", request=BodyRequest(name="abc", email="abc@email.com", password="123", role="ADMIN", is_active=False))
+    await service.user.post("/", request={"name": "abc", "email": "abc@email.com", "password": "123", "role": "ADMIN", "is_active": False})
+    ```
+
+If you do not have a request type specified to the handler, you can still pass a pydantic object but no model validation will take place and Arrest will extract the fields as per their defaults.
+You can also pass a plain dictionary or a list as request. They will get passed as json payload.
+
+!!! note "regarding json payloads"
+    Arrest uses `orjson` for serializing the request payload. This was chosen because the stdlib `json` does not parse datetime which `orjson` does.
 
 ### Path parameters
 Path parameters are a bit tricky as they are not set as pydantic fields.
@@ -160,7 +222,7 @@ Resource(
 )
 ```
 
-!!! Note "Regarding multiple handlers"
+!!! note "Regarding multiple handlers"
     If you specify handlers with the same path parameter but different type hints, the most recent one will override all the others. So in the above example, we only have one handler `GET /user/{user_id:uuid}`
 
     This is because we keep track of unique handlers with the pair `<method, route>` where `route` is the handler route with its type hint removed.
@@ -210,7 +272,7 @@ service.abc.get(f"/user/{user_id}/comments", comment_id=comment_id)
     user.post("/profile/123/comments/456") # all 4 would work
     ```
 
-    However if it contains specific paths from `/profile`, then you need to specify the sub-resource name of the specific `profile` with a trailing slash
+    However if it contains specific paths from `/profile`, then you need to specify the sub-resource name of the specific `profile`
 
     ```python
     Resource(
@@ -224,6 +286,32 @@ service.abc.get(f"/user/{user_id}/comments", comment_id=comment_id)
     user.post("/profile", id=123, comments=456) # wont work
     user.post("/profile/123/comments/", comments=456) # will work
     ```
+
+!!! note "About url paths"
+    If the endpoint you are trying to call ends with a trailing slash (/), you need to specify the relative path to the handler also with the trailing slash (/).
+
+    ```python
+    (GET,  ""),
+    (GET, "/")
+    ```
+    are considered two different handlers.
+    This does not apply when you are passing kwargs as path-parameters and Arrest will construct and find a match for the full path.
+
+    ```python
+    # both will work
+    user.post("/profile/123/comments", comments=456)
+    user.post("/profile/123/comments/", comments=456)
+
+    ```
+## Using converters
+Arrest uses converters for the following types to validate and stringify the passed kwarg path-params to construct the url.
+- `int`
+- `float`
+- `str`
+- `UUID`
+
+If you want to run with a custom datatype as path-param, you can add a converter and regex for it by subclassing `arrest.converters.Converter` and add the converter to Arrest by `add_converter(...)`
+
 
 ## Using a pydantic model for response
 Similar to request, you can pass an additional fourth argument in the handler tuple for specifying a pydantic model for the handler.
@@ -249,7 +337,8 @@ response = await svc.user.get(f"/{user_id}") # type: UserResponse
 ```
 
 ## Using a callback
-Sometimes you want to chain a call to another function with the response you get from the api. You can already do that by calling the function after awaiting the api call response.
+Sometimes you want to chain a call to another function with the response you get from the api. This can be something like logging or auditing somewhere or triggering another api.
+You can already do that by calling the function after awaiting the api call response.
 However, Arrest provides a dedicated `callback` option for each handler, which can be passed as the fifth argument to the handler tuple (or set as a field in the dict or `ResourceHandler`).
 `callback` can take any callable that can be either sync or async.
 If it is specified, the response type from the api call will be the response type of the callback.
@@ -257,7 +346,46 @@ If it is specified, the response type from the api call will be the response typ
 !!! Note
     if you specify a response type to your handler, the callback needs to accept argument of appropriate response type.
 
+Any exception thrown by the callback is re-raised.
 
 ```python
+async def demo_callback(data: Any):
+    await asyncio.sleep(1)
+    logging.info("foo has been barred")
+    return None
 
+service.add_resource(
+    Resource(
+        route="/user",
+        handlers=[
+            ResourceHandler(
+                method=Methods.GET,
+                route="/",
+                callback=demo_callback,
+            )
+        ],
+    )
+)
+
+response = await service.user.get("/")
+# >>> foo has been barred
+# response == None
 ```
+
+## Handling exceptions
+All of Arrest's exceptions/errors subclass `ArrestError`.
+The most important one is `ArrestHTTPException` which wraps the httpx-specific errors that might occur from making a request.
+Any response that does not have a success status code (i.e. 200-299) will throw an `ArrestHTTPException` with the appropriate `status_code` and `data`.
+
+!!! example
+
+    ```python
+    try:
+        response = await xyz_service.users.get("/123")
+    except ArrestHTTPException as exc:
+        logging.warning(f"{exc.status_code} {exc.data}")
+        # do something with the error response
+    ```
+
+Any other error such as `TimeoutException` or `RequestError` will result in a `ArrestHTTPException` with `status_code=500`
+See [API Documentation](api.md) for further details.

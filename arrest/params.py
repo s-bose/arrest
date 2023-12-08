@@ -16,9 +16,7 @@ class ParamTypes(Enum):
 class Param(FieldInfo):
     _param_type: ParamTypes
 
-    def __init__(
-        self, default: Any = PydanticUndefined, **kwargs: Unpack[_FieldInfoInputs]
-    ) -> None:
+    def __init__(self, default: Any = PydanticUndefined, **kwargs: Unpack[_FieldInfoInputs]) -> None:
         kwargs = dict(default=default, **kwargs)
         super().__init__(**kwargs)
 
@@ -36,9 +34,7 @@ class Body(Param):
 
 
 class Params:
-    def __init__(
-        self, *, header: httpx.Headers, query: httpx.QueryParams, body: Any
-    ) -> None:
+    def __init__(self, *, header: httpx.Headers, query: httpx.QueryParams, body: Any) -> None:
         self.header = header
         self.query = query
         self.body = body

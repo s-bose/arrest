@@ -21,9 +21,9 @@ from arrest.resource import Resource
 async def test_request_http_methods(method: Methods, service, mock_httpx):
     route = str(method).lower()
 
-    mock_httpx.request(
-        method=method, url=f"/test/{route}", name="http_request"
-    ).mock(return_value=httpx.Response(200, json={"status": "OK"}))
+    mock_httpx.request(method=method, url=f"/test/{route}", name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "OK"})
+    )
 
     service.add_resource(
         Resource(
@@ -53,9 +53,9 @@ async def test_request_http_methods(method: Methods, service, mock_httpx):
 )
 @pytest.mark.asyncio
 async def test_request_http_methods_helpers(service, mock_httpx, method):
-    mock_httpx.request(
-        method=method, url__regex="/test/*", name="http_request"
-    ).mock(return_value=httpx.Response(200, json={"status": "OK"}))
+    mock_httpx.request(method=method, url__regex="/test/*", name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "OK"})
+    )
 
     service.add_resource(
         Resource(

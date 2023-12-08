@@ -77,9 +77,7 @@ def test_path_params_kwargs(
             ],
         )
     )
-    _, parsed_path = service.user.get_matching_handler(
-        method="POST", path="/profile/", **path_param_kwargs
-    )
+    _, parsed_path = service.user.get_matching_handler(method="POST", path="/profile/", **path_param_kwargs)
 
     assert parsed_path == expected_path
 
@@ -149,9 +147,7 @@ def test_path_params_str(service, handler_route, request_path, expected_path):
             ],
         )
     )
-    _, parsed_path = service.user.get_matching_handler(
-        method="GET", path=request_path
-    )
+    _, parsed_path = service.user.get_matching_handler(method="GET", path=request_path)
 
     assert parsed_path == expected_path
 
@@ -181,9 +177,7 @@ def test_path_params_str(service, handler_route, request_path, expected_path):
         ("GET", "/xyz", {"ping": "pong"}, None),
     ],
 )
-def test_path_params_kwargs_multiple_handlers(
-    service, method, request_path, kwargs, expected_handler_route
-):
+def test_path_params_kwargs_multiple_handlers(service, method, request_path, kwargs, expected_handler_route):
     service.add_resource(
         Resource(
             route="/user",
@@ -195,9 +189,7 @@ def test_path_params_kwargs_multiple_handlers(
         )
     )
 
-    result = service.user.get_matching_handler(
-        method=method, path=request_path, **kwargs
-    )
+    result = service.user.get_matching_handler(method=method, path=request_path, **kwargs)
     if result is not None:
         assert result[0].route == expected_handler_route
     else:
@@ -225,9 +217,7 @@ def test_path_params_kwargs_multiple_handlers(
         ("GET", "/xyz", None),
     ],
 )
-def test_path_params_fstrings_multiple_handlers(
-    service, method, request_path, expected_handler_route
-):
+def test_path_params_fstrings_multiple_handlers(service, method, request_path, expected_handler_route):
     service.add_resource(
         Resource(
             route="/user",

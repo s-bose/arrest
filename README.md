@@ -23,8 +23,7 @@ pip install arrest
 
 ```python
 
-from arrest.resource import Resource
-from arrest.service import Service
+from arrest import Resource, Service
 from arrest.exceptions import ArrestHTTPException
 
 

@@ -42,9 +42,7 @@ class ResourceHandler(BaseModel):
     path_regex: Pattern | None = None
     param_types: dict[str, type] | None = None
 
-    def parse_path(
-        self, method: Methods, path: str | AnyUrl, **kwargs
-    ) -> str | AnyUrl | None:
+    def parse_path(self, method: Methods, path: str | AnyUrl, **kwargs) -> str | AnyUrl | None:
         if method != self.method:
             return None
 
@@ -57,9 +55,7 @@ class ResourceHandler(BaseModel):
         if self.path_regex.fullmatch(path):
             return path
 
-    def __resolve_path_param(
-        self, path: str | AnyUrl, **kwargs
-    ) -> str | AnyUrl | None:
+    def __resolve_path_param(self, path: str | AnyUrl, **kwargs) -> str | AnyUrl | None:
         params = self.__extract_path_params(path)
         if params is None:
             return None

@@ -24,9 +24,7 @@ class UserResponse(BaseModel):
 
 @pytest.mark.asyncio
 async def test_response_type(service, mock_httpx):
-    service.add_resource(
-        Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)])
-    )
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)]))
 
     mock_response = dict(
         user_id=str(uuid4()),
@@ -48,9 +46,7 @@ async def test_response_type(service, mock_httpx):
 
 @pytest.mark.asyncio
 async def test_list_response_type(service, mock_httpx):
-    service.add_resource(
-        Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)])
-    )
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)]))
 
     res_1 = dict(
         user_id=str(uuid4()),
@@ -82,9 +78,7 @@ async def test_list_response_type(service, mock_httpx):
 
 @pytest.mark.asyncio
 async def test_response_type_invalid_type(service, mock_httpx):
-    service.add_resource(
-        Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)])
-    )
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)]))
     mock_httpx.get(url__regex="/user/*", name="http_request").mock(
         return_value=httpx.Response(200, json=123.45)
     )

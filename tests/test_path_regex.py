@@ -61,9 +61,7 @@ from arrest.converters import compile_path, get_converter
         ),
     ],
 )
-def test_compile_path(
-    path, expected_regex, expected_path_format, expected_params, exception
-):
+def test_compile_path(path, expected_regex, expected_path_format, expected_params, exception):
     with exception:
         assert compile_path(path) == (
             re.compile(expected_regex),

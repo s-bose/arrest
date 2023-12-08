@@ -2,7 +2,7 @@ import itertools
 from functools import partial
 from typing import Any, Optional
 
-from arrest.exceptions import NotFoundException
+from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
 
@@ -69,10 +69,8 @@ class Service:
         resource, suffix = parts[0], "/".join(parts[1:])
 
         if resource not in self.resources:
-            raise NotFoundException(message=f"resource {resource} not found")
-        return await self.resources[resource].request(
-            path=f"/{suffix}", method=method, **kwargs
-        )
+            raise ResourceNotFound(message=f"resource {resource} not found")
+        return await self.resources[resource].request(path=f"/{suffix}", method=method, **kwargs)
 
     def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
         if hasattr(self, key):

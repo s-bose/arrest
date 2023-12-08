@@ -32,7 +32,9 @@ async def test_header_params(service, mock_httpx, mocker):
 
     params = extract_request_params.spy_return
     assert params.header == httpx.Headers(
-        {"x-header": "123", "Content-Type": "application/json"}
+        {
+            "x-header": "123",
+        }
     )
 
 
@@ -64,9 +66,7 @@ async def test_header_params_in_request(service, mock_httpx, mocker):
     extract_request_params = mocker.spy(service.user, "extract_request_params")
     await service.user.get(
         "/profile",
-        request=UserRequest(
-            x_user_agent="mozila", name="abc", email="abc@email.com", password="123"
-        ),
+        request=UserRequest(x_user_agent="mozila", name="abc", email="abc@email.com", password="123"),
         headers={"x-header": "123"},
     )
 
@@ -75,6 +75,5 @@ async def test_header_params_in_request(service, mock_httpx, mocker):
         {
             "x-header": "123",
             "x-user-agent": "mozila",
-            "Content-Type": "application/json",
         }
     )

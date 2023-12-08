@@ -11,8 +11,36 @@ from arrest.params import Body, Query
 from arrest.resource import Resource
 
 
+class UserRequest(BaseModel):
+    limit: int = Query(...)
+    name: str = Body(...)
+    email: str
+    dob: Optional[datetime]
+
+
+@pytest.mark.parametrize(
+    "request_body, pydantic_version",
+    [
+        (
+            UserRequest(limit=1, name="bob", email="abc@mail.com", dob=None),
+            "1.",
+        ),
+        (
+            UserRequest(limit=1, name="bob", email="abc@mail.com", dob=None),
+            "2.",
+        ),
+        (
+            {"limit": 1, "name": "bob", "email": "abc@mail.com", "dob": None},
+            "1.",
+        ),
+        (
+            {"limit": 1, "name": "bob", "email": "abc@mail.com", "dob": None},
+            "2.",
+        ),
+    ],
+)
 @pytest.mark.asyncio
-async def test_request_body_params(service, mock_httpx, mocker):
+async def test_request_body_params(service, mock_httpx, mocker, request_body, pydantic_version):
     patterns = [
         M(url__regex="/user/*", method__in=["POST"]),
     ]
@@ -21,11 +49,7 @@ async def test_request_body_params(service, mock_httpx, mocker):
         return_value=httpx.Response(200, json={"status": "OK"})
     )
 
-    class UserRequest(BaseModel):
-        limit: int = Query(...)
-        name: str = Body(...)
-        email: str
-        dob: Optional[datetime]
+    mocker.patch("arrest.utils.PYDANTIC_VERSION", new=pydantic_version, autospec=False)
 
     service.add_resource(
         Resource(
@@ -39,7 +63,7 @@ async def test_request_body_params(service, mock_httpx, mocker):
     extract_request_params = mocker.spy(service.user, "extract_request_params")
     await service.user.post(
         "/profile",
-        request=UserRequest(limit=1, name="bob", email="abc@mail.com", dob=None),
+        request=request_body,
     )
 
     params = extract_request_params.spy_return
@@ -48,5 +72,3 @@ async def test_request_body_params(service, mock_httpx, mocker):
         "email": "abc@mail.com",
         "dob": None,
     }
-
-    assert params.query == httpx.QueryParams({"limit": 1})

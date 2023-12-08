@@ -11,9 +11,7 @@ def test_service_add_resource():
         route="/users",
         handlers=[("GET", "/"), ("POST", "/"), ("GET", "/{user_id:uuid}")],
     )
-    service = Service(
-        name="myservice", url="http://www.example.com", resources=[user_resource]
-    )
+    service = Service(name="myservice", url="http://www.example.com", resources=[user_resource])
 
     service.add_resource(
         Resource(

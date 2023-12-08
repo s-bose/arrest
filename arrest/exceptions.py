@@ -5,6 +5,9 @@ class BaseException(Exception):
 class ArrestError(BaseException):
     """used in error situations"""
 
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
 
 class ArrestHTTPException(ArrestError):
     def __init__(self, status_code: int, data: dict | str) -> None:
@@ -17,9 +20,16 @@ class NotFoundException(ArrestError):
         self.message = message
 
 
-class HandlerNotFound(ArrestError):
-    pass
+class HandlerNotFound(NotFoundException):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ResourceNotFound(NotFoundException):
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
 class ConversionError(ArrestError):
-    pass
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)

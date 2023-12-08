@@ -70,12 +70,10 @@ async def test_request_query_params_invalid_type(service, mocker):
 
 @pytest.mark.asyncio
 async def test_request_query_params_validation_error(service):
-    with respx.mock(
-        base_url=TEST_DEFAULT_SERVICE_URL, assert_all_called=False
-    ) as mock:
-        mock.route(
-            url__regex="/user/*", name="http_request", method__in=["GET", "POST"]
-        ).mock(return_value=httpx.Response(200, json={"status": "OK"}))
+    with respx.mock(base_url=TEST_DEFAULT_SERVICE_URL, assert_all_called=False) as mock:
+        mock.route(url__regex="/user/*", name="http_request", method__in=["GET", "POST"]).mock(
+            return_value=httpx.Response(200, json={"status": "OK"})
+        )
 
         class UserRequest(BaseModel):
             limit: int = Query(gt=10)
@@ -91,9 +89,5 @@ async def test_request_query_params_validation_error(service):
         )
 
         with pytest.raises(ValidationError):
-            await service.user.post(
-                "/profile", request=UserRequest(limit=15, q=123.0)
-            )
-            await service.user.post(
-                "/profile", request=UserRequest(limit=10, q="abc")
-            )
+            await service.user.post("/profile", request=UserRequest(limit=15, q=123.0))
+            await service.user.post("/profile", request=UserRequest(limit=10, q="abc"))

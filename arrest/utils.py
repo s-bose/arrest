@@ -1,5 +1,5 @@
 import posixpath
-import typing
+from typing import Any, Type
 from urllib.parse import urljoin
 
 import orjson
@@ -31,5 +31,11 @@ def extract_model_field(model: BaseModel, field: str) -> dict:
     return value
 
 
-def jsonify(obj: typing.Any) -> typing.Any:
+def jsonify(obj: Any) -> Any:
     return orjson.loads(orjson.dumps(obj))
+
+
+def validate_request_model(type_: Type[BaseModel], obj: Any) -> BaseModel:
+    if PYDANTIC_VERSION.startswith("2."):
+        return type_.model_validate(obj)
+    return type_.parse_obj(obj)

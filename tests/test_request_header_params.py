@@ -4,12 +4,47 @@ from pydantic import BaseModel
 from respx.patterns import M
 
 from arrest.http import Methods
-from arrest.params import Body, Header, Query
+from arrest.params import Body, Header
 from arrest.resource import Resource
 
 
+@pytest.mark.parametrize(
+    "resource_header, kwarg_header, expected_result",
+    [
+        (
+            {"x-resource-header": "123"},
+            None,
+            {
+                "x_max_age": "20",
+                "x-user-agent": "mozila",
+                "x-resource-header": "123",
+            },
+        ),
+        (
+            None,
+            {"x-kwarg-header": "abc"},
+            {
+                "x_max_age": "20",
+                "x-user-agent": "mozila",
+                "x-kwarg-header": "abc",
+            },
+        ),
+        (
+            {"x-resource-header": "123"},
+            {"x-kwarg-header": "abc"},
+            {
+                "x_max_age": "20",
+                "x-user-agent": "mozila",
+                "x-kwarg-header": "abc",
+                "x-resource-header": "123",
+            },
+        ),
+    ],
+)
 @pytest.mark.asyncio
-async def test_request_header_params(service, mock_httpx, mocker):
+async def test_request_header_params(
+    service, mock_httpx, mocker, resource_header, kwarg_header, expected_result
+):
     patterns = [
         M(url__regex="/user/*", method__in=["POST"]),
     ]
@@ -19,7 +54,6 @@ async def test_request_header_params(service, mock_httpx, mocker):
     )
 
     class UserRequest(BaseModel):
-        limit: int = Query()
         x_max_age: str = Header(alias="x-max-age")
         x_user_agent: str = Header(serialization_alias="x-user-agent")
         name: str = Body(...)
@@ -32,6 +66,7 @@ async def test_request_header_params(service, mock_httpx, mocker):
             handlers=[
                 (Methods.POST, "/profile", UserRequest),
             ],
+            headers=resource_header,
         )
     )
 
@@ -40,27 +75,15 @@ async def test_request_header_params(service, mock_httpx, mocker):
     await service.user.post(
         "/profile",
         request=UserRequest(
-            limit=1,
             name="bob",
             email="bob@mail.com",
             password="xyz",
             x_max_age="20",
             x_user_agent="mozila",
         ),
+        headers=kwarg_header,
     )
     handler, _ = get_matching_handler.spy_return
     assert handler.route == "/profile"
     params = extract_request_params.spy_return
-    assert params.query == httpx.QueryParams({"limit": 1})
-    assert params.header == httpx.Headers(
-        {
-            "x_max_age": "20",
-            "x-user-agent": "mozila",
-            "Content-Type": "application/json",
-        }
-    )
-    assert params.body == {
-        "name": "bob",
-        "email": "bob@mail.com",
-        "password": "xyz",
-    }
+    assert params.header == httpx.Headers(expected_result)

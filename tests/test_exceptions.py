@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from arrest.exceptions import ArrestHTTPException, HandlerNotFound, NotFoundException
+from arrest.exceptions import ArrestHTTPException, HandlerNotFound, ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
 
@@ -95,5 +95,5 @@ async def test_resource_not_found(service):
         )
     )
 
-    with pytest.raises(NotFoundException):
+    with pytest.raises(ResourceNotFound):
         await service.request("/dashboard/profile", method=Methods.POST)

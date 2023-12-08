@@ -62,9 +62,7 @@ async def test_query_params_in_request(service, mock_httpx, mocker):
     extract_request_params = mocker.spy(service.user, "extract_request_params")
     await service.user.get(
         "/profile",
-        request=UserRequest(
-            limit=2, name="abc", email="abc@email.com", password="123"
-        ),
+        request=UserRequest(limit=2, name="abc", email="abc@email.com", password="123"),
         query={"value": "xyz"},
     )
 
