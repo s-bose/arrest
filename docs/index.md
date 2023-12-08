@@ -25,9 +25,22 @@ Arrest is like a postman client for your api calls. It provides a simple layer o
 
 ## Installation
 
+### using `pip`
 ```shell
 $ pip install arrest
 ```
+
+### using `poetry`
+```shell
+$ poetry install arrest
+```
+
+### using `github`
+```shell
+$ pip install git+https://github.com/s-bose/arrest.git@master
+```
+
+
 
 ## Philosophy of Arrest
 
