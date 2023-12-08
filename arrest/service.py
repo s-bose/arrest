@@ -71,7 +71,7 @@ class Service:
         if resource not in self.resources:
             raise NotFoundException(message=f"resource {resource} not found")
         return await self.resources[resource].request(
-            url=f"/{suffix}", method=method, **kwargs
+            path=f"/{suffix}", method=method, **kwargs
         )
 
     def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover

@@ -1,21 +1,21 @@
 # pylint: disable=W0707
 import inspect
-import json
-from typing import Any, Mapping, Type, cast
+from typing import Any, Mapping, Optional, Type, Union, cast
 
 import httpx
+from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
-from arrest.converters import compile_path, replace_params
+from arrest.converters import compile_path
 from arrest.defaults import HEADER_DEFAULTS, TIMEOUT_DEFAULT
 from arrest.exceptions import ArrestError, ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
-from arrest.params import Param, ParamTypes
-from arrest.utils import join_url, process_body, process_header, process_query
+from arrest.params import Param, Params, ParamTypes
+from arrest.utils import extract_model_field, join_url, jsonify
 
 
 class Resource:
@@ -40,15 +40,17 @@ class Resource:
 
     def __init__(
         self,
-        name: str | None = None,
+        name: Optional[str] = None,
         *,
-        route: str,
-        headers: dict | None = HEADER_DEFAULTS,
-        timeout: int | None = TIMEOUT_DEFAULT,
-        response_model: Type[BaseModel] | None = None,
-        handlers: list[ResourceHandler]
-        | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = None,
+        route: Optional[str],
+        headers: Optional[dict] = HEADER_DEFAULTS,
+        timeout: Optional[int] = TIMEOUT_DEFAULT,
+        response_model: Optional[Type[BaseModel]] = None,
+        handlers: Union[
+            list[ResourceHandler],
+            list[Mapping[str, Any]],
+            list[tuple[Any, ...]],
+        ] = None,
     ) -> None:
         """
 
@@ -89,8 +91,10 @@ class Resource:
     async def request(
         self,
         method: Methods,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Union[BaseModel, Mapping[str, Any], None] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ) -> Any | None:
         """
@@ -104,15 +108,21 @@ class Resource:
         Parameters:
             method:
                 The HTTP method for the request
-            url:
+            path:
                 Path to a handler specified in the resource
             request:
                 A pydantic object containing the necessary fields
                 to make an http request to the handler url
 
                 **Must match the corresponding `handler.request` pydantic model**
+            headers:
+                A multi-dict or `httpx.Headers` containing additional
+                header key-value pairs
+            query:
+                A multi-dict or `httpx.QueryParams` containing additional
+                query-param key-value pairs
             **kwargs:
-                Keyword-args matching the path params, if any
+                Keyword-arguments matching the path params, if any
 
         Returns:
             Response:
@@ -124,7 +134,7 @@ class Resource:
         params: dict = {}
 
         if not (
-            match := self.get_matching_handler(method=method, url=url, **kwargs)
+            match := self.get_matching_handler(method=method, path=path, **kwargs)
         ):
             logger.warning("no matching handler found for request")
             raise HandlerNotFound("no matching handler found for request")
@@ -132,7 +142,11 @@ class Resource:
         handler, url = match
 
         params = self.extract_request_params(
-            request_type=handler.request, request_data=request
+            request_type=handler.request,
+            request_data=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
         response_type = handler.response or self.response_model or None
@@ -156,8 +170,10 @@ class Resource:
 
     async def get(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -166,13 +182,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.GET, url=url, request=request, **kwargs
+            method=Methods.GET,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def post(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -181,13 +204,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.POST, url=url, request=request, **kwargs
+            method=Methods.POST,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def put(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -196,13 +226,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.PUT, url=url, request=request, **kwargs
+            method=Methods.PUT,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def patch(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -211,13 +248,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.PATCH, url=url, request=request, **kwargs
+            method=Methods.PATCH,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def delete(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -226,13 +270,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.DELETE, url=url, request=request, **kwargs
+            method=Methods.DELETE,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def head(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -241,13 +292,20 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.HEAD, url=url, request=request, **kwargs
+            method=Methods.HEAD,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     async def options(
         self,
-        url: str,
-        request: BaseModel | None = None,
+        path: str,
+        request: Optional[BaseModel] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        query: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         """
@@ -256,41 +314,45 @@ class Resource:
         see [request][arrest.resource.Resource.request]
         """
         return await self.request(
-            method=Methods.OPTIONS, url=url, request=request, **kwargs
+            method=Methods.OPTIONS,
+            path=path,
+            request=request,
+            headers=headers,
+            query=query,
+            **kwargs,
         )
 
     def extract_request_params(
         self,
         request_type: Type[BaseModel] | None,
-        request_data: BaseModel | None,
-    ) -> dict[ParamTypes, dict]:
+        request_data: BaseModel | Mapping[str, Any] | None,
+        headers: Mapping[str, str] | None = None,
+        query: Mapping[str, Any] | None = None,
+    ) -> Params:
         """
         extracts `header`, `body` and `query` params from the pydantic request model
 
-        Parameters
-        ----------
-
-        request_type : Type[BaseModel] | None
-            a pydantic class for holding the request data
-
-        request_data : BaseModel | None
-            instance of the above containing the data
-
-        Returns
-        -------
-
-        dict[ParamTypes, dict]
+        Parameters:
+            request_type:
+                a pydantic class for holding the request data
+            request_data:
+                instance of the above containing the data
+            kwargs:
+                optional keyword-arguments containing query parameters
+        Returns:
             a dictionary containing `header`, `body`, `query` params in separate dicts
         """
 
-        # apply type validation if Request Type present in handler definition
-        if not self.__validate_request(request_type, request_data):
-            raise ValueError(
-                f"type of {type(request_data).__name__} does not match provided type {request_type.__name__}"
-            )
-        headers, query_params, body_params = dict(self.headers), {}, {}
+        header_params = headers or {}
+        header_params |= self.headers
+        query_params = query or {}
+        body_params = {}
 
-        if request_data:
+        if request_type:
+            # perform type validation on `request_data`
+            request_data = request_type.model_validate(request_data)
+
+        if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
                 request_data.__fields__
@@ -303,26 +365,29 @@ class Resource:
                 if not hasattr(field_info, "_param_type") and isinstance(
                     field_info, FieldInfo
                 ):
-                    body_params |= process_body(request_data, field, body_params)
+                    body_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.query:
-                    query_params |= process_query(request_data, field, query_params)
+                    query_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.header:
-                    headers |= process_header(request_data, field, headers)
+                    header_params |= extract_model_field(request_data, field)
                 elif field_info._param_type == ParamTypes.body:
-                    body_params |= process_body(request_data, field, body_params)
+                    body_params |= extract_model_field(request_data, field)
 
-        return {
-            ParamTypes.header: headers,
-            ParamTypes.query: query_params,
-            ParamTypes.body: body_params,
-        }
+        else:
+            body_params = request_data
+
+        return Params(
+            header=Headers(header_params),
+            query=QueryParams(query_params),
+            body=jsonify(body_params),
+        )
 
     async def __make_request(
         self,
         url: str,
         method: Methods,
-        params: dict,
-        response_type: Type[BaseModel] | None,
+        params: Params,
+        response_type: Optional[Type[BaseModel]],
     ) -> Any:
         """
         (private) makes the actual http call using httpx
@@ -346,9 +411,9 @@ class Resource:
             a json object or a parsed pydantic object
         """
         headers, query_params, body_params = (
-            params[ParamTypes.header],
-            params[ParamTypes.query],
-            params[ParamTypes.body],
+            params.header,
+            params.query,
+            params.body,
         )
         try:
             async with httpx.AsyncClient(
@@ -367,13 +432,13 @@ class Resource:
                         response = await client.put(
                             url=url,
                             params=query_params,
-                            data=json.dumps(body_params),
+                            json=body_params,
                         )
                     case Methods.PATCH:
                         response = await client.patch(
                             url=url,
                             params=query_params,
-                            data=json.dumps(body_params),
+                            json=body_params,
                         )
                     case Methods.DELETE:
                         response = await client.delete(
@@ -428,40 +493,14 @@ class Resource:
                 data="error occured while making request",
             )
 
-    def __validate_request(
-        self,
-        request_type: Type[BaseModel] | None,
-        request_data: BaseModel | None,
-    ):
-        if not request_data or (
-            request_type and isinstance(request_data, request_type)
-        ):
-            return True
-        return False
-
     def get_matching_handler(
-        self, method: Methods, url: str, **kwargs
+        self, method: Methods, path: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
-        for key, handler in self.routes.items():
-            if method != key.method:
-                continue
-
-            req_url = join_url(self.base_url, self.route, url)
-            if seen_params := handler.extract_params(req_url):
-                for k, v in seen_params.items():
-                    if v is not None:
-                        kwargs[k] = v
-
-            if kwargs:
-                handler_url, remaining_params = replace_params(
-                    handler.url, kwargs, handler.path_params
-                )
-                if remaining_params:
-                    continue
-                req_url = handler_url
-
-            if handler.url_regex.fullmatch(req_url):
-                return handler, req_url
+        for handler in self.routes.values():
+            parsed_path = handler.parse_path(method=method, path=path, **kwargs)
+            if parsed_path is not None:
+                url = join_url(self.base_url, self.route, parsed_path)
+                return handler, url
 
     def _bind_handler(
         self, base_url: str | None = None, *, handler: ResourceHandler
@@ -475,15 +514,11 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
-        _, handler_route, handler_path_params = compile_path(handler.route)
-        handler.url = join_url(base_url, self.route, handler.route)
-        url_regex, handler_url, _ = compile_path(handler.url)
+        handler.path_regex, handler.path_format, handler.param_types = compile_path(
+            handler.route
+        )
 
-        handler.url_regex = url_regex
-        handler.path_params = handler_path_params
-        handler.url = handler_url
-
-        self.routes[HandlerKey(*(handler.method, handler_route))] = handler
+        self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
 
     def initialize_handlers(
         self,

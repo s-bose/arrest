@@ -5,7 +5,7 @@ from pydantic import BaseModel, ValidationError
 from respx.patterns import M
 
 from arrest.http import Methods
-from arrest.params import ParamTypes, Query
+from arrest.params import Query
 from arrest.resource import Resource
 from tests import TEST_DEFAULT_SERVICE_URL
 
@@ -39,7 +39,7 @@ async def test_request_query_params(service, mock_httpx, mocker):
     handler, _ = get_matching_handler.spy_return
     assert handler.route == "/profile"
     params = extract_request_params.spy_return
-    assert params[ParamTypes.query] == {"limit": 1, "q": "abc"}
+    assert params.query == httpx.QueryParams({"limit": 1, "q": "abc"})
 
 
 @pytest.mark.asyncio

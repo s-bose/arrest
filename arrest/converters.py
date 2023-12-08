@@ -8,6 +8,8 @@ import uuid
 from typing import Any, ClassVar, Generic, Mapping, Pattern, TypeVar
 from uuid import UUID
 
+from arrest.exceptions import ConversionError
+
 T = TypeVar("T")
 
 # Match parameters in URL paths, eg. '{param}', and '{param:int}'
@@ -18,7 +20,7 @@ class Converter(Generic[T]):
     regex: ClassVar[str] = ""
 
     def to_str(self, value: T) -> str:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class IntegerConverter(Converter[int]):
@@ -58,6 +60,7 @@ class UUIDConverter(Converter[uuid.UUID]):
     regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
     def to_str(self, value: Any | UUID) -> str:
+        value = UUID(str(value))
         return str(value)
 
 
@@ -79,7 +82,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
 
     regex : "/(?P<username>[^/]+)"
     format : "/{username}"
-    path_params : dict[username: Converter[str]()]
+    param_types : dict[username: Converter[str]()]
     """
     path_regex = "^"
     path_format = ""
@@ -98,7 +101,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
         converter = CONVERTER_REGEX[converter_type]
 
         path_regex += re.escape(path[idx : match.start()])
-        path_regex += f"(?P<{param_name}>{converter.regex})?"
+        path_regex += f"(?P<{param_name}>{converter.regex})"
 
         path_format += path[idx : match.start()]
         path_format += "{%s}" % param_name
@@ -122,13 +125,17 @@ def replace_params(
     param_types: dict[str, Converter[Any]] | None,
 ) -> tuple[str, dict[str, str]]:
     for key, value in list(path_params.items()):
-        if "{" + key + "}" in path:
-            if not param_types:
-                strval = str(value)
-            else:
-                strval = param_types[key].to_str(value)
-            path = path.replace("{" + key + "}", strval)
-            path_params.pop(key)
+        try:
+            if "{" + key + "}" in path:
+                if not param_types:
+                    strval = str(value)
+                else:
+                    strval = param_types[key].to_str(value)
+                path = path.replace("{" + key + "}", strval)
+                path_params.pop(key)
+        except (TypeError, ValueError) as exc:
+            raise ConversionError(*exc.args) from exc
+
     return path, path_params
 
 

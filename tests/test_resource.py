@@ -153,4 +153,4 @@ def test_resource_multiple_handler_same_signature():
     key, handler = list(res.routes.items())[-1]
 
     assert key.method, key.route == ("GET", "/audit/{audit_id}")
-    assert isinstance(handler.path_params["audit_id"], UUIDConverter)
+    assert isinstance(handler.param_types["audit_id"], UUIDConverter)

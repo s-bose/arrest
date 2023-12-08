@@ -19,3 +19,7 @@ class NotFoundException(ArrestError):
 
 class HandlerNotFound(ArrestError):
     pass
+
+
+class ConversionError(ArrestError):
+    pass
