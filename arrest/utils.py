@@ -22,7 +22,7 @@ def extract_model_field(model: BaseModel, field: str) -> dict:
     default = {}
 
     if PYDANTIC_VERSION.startswith("2."):
-        value = model.model_dump_json(include={field})
+        value = model.model_dump_json(include={field}, by_alias=True)
     else:
         value = model.json(include={field})
     value = orjson.loads(value)

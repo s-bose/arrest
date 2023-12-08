@@ -343,7 +343,8 @@ class Resource:
             a dictionary containing `header`, `body`, `query` params in separate dicts
         """
 
-        header_params = headers or dict(self.headers)
+        header_params = headers or {}
+        header_params |= self.headers
         query_params = query or {}
         body_params = {}
 
@@ -354,9 +355,9 @@ class Resource:
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
             model_fields: dict = (
-                request_type.__fields__
+                request_data.__fields__
                 if PYDANTIC_VERSION.startswith("2.")
-                else request_type.model_fields
+                else request_data.model_fields
             )
 
             for field, field_info in model_fields.items():

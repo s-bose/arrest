@@ -20,8 +20,8 @@ async def test_request_header_params(service, mock_httpx, mocker):
 
     class UserRequest(BaseModel):
         limit: int = Query()
-        x_max_age: str = Header(...)
-        x_user_agent: str = Header(...)
+        x_max_age: str = Header(alias="x-max-age")
+        x_user_agent: str = Header(serialization_alias="x-user-agent")
         name: str = Body(...)
         email: str
         password: str
@@ -55,7 +55,7 @@ async def test_request_header_params(service, mock_httpx, mocker):
     assert params.header == httpx.Headers(
         {
             "x_max_age": "20",
-            "x_user_agent": "mozila",
+            "x-user-agent": "mozila",
             "Content-Type": "application/json",
         }
     )
