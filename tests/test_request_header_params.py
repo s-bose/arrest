@@ -1,8 +1,9 @@
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from respx.patterns import M
 
+from arrest._config import PYDANTIC_V2
 from arrest.http import Methods
 from arrest.params import Body, Header
 from arrest.resource import Resource
@@ -15,7 +16,7 @@ from arrest.resource import Resource
             {"x-resource-header": "123"},
             None,
             {
-                "x_max_age": "20",
+                "x-max-age": "20",
                 "x-user-agent": "mozila",
                 "x-resource-header": "123",
             },
@@ -24,7 +25,7 @@ from arrest.resource import Resource
             None,
             {"x-kwarg-header": "abc"},
             {
-                "x_max_age": "20",
+                "x-max-age": "20",
                 "x-user-agent": "mozila",
                 "x-kwarg-header": "abc",
             },
@@ -33,7 +34,7 @@ from arrest.resource import Resource
             {"x-resource-header": "123"},
             {"x-kwarg-header": "abc"},
             {
-                "x_max_age": "20",
+                "x-max-age": "20",
                 "x-user-agent": "mozila",
                 "x-kwarg-header": "abc",
                 "x-resource-header": "123",
@@ -54,11 +55,23 @@ async def test_request_header_params(
     )
 
     class UserRequest(BaseModel):
-        x_max_age: str = Header(alias="x-max-age")
-        x_user_agent: str = Header(serialization_alias="x-user-agent")
+        if PYDANTIC_V2:
+            x_max_age: str = Header(serialization_alias="x-max-age")
+            x_user_agent: str = Header(serialization_alias="x-user-agent")
+        else:
+            x_max_age: str = Header(alias="x-max-age")
+            x_user_agent: str = Header(alias="x-user-agent")
+
         name: str = Body(...)
         email: str
         password: str
+
+        if PYDANTIC_V2:
+            model_config = ConfigDict(populate_by_name=True)
+        else:
+
+            class Config:
+                allow_population_by_field_name = True
 
     service.add_resource(
         Resource(

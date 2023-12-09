@@ -19,28 +19,14 @@ class UserRequest(BaseModel):
 
 
 @pytest.mark.parametrize(
-    "request_body, pydantic_version",
+    "request_body",
     [
-        (
-            UserRequest(limit=1, name="bob", email="abc@mail.com", dob=None),
-            "1.",
-        ),
-        (
-            UserRequest(limit=1, name="bob", email="abc@mail.com", dob=None),
-            "2.",
-        ),
-        (
-            {"limit": 1, "name": "bob", "email": "abc@mail.com", "dob": None},
-            "1.",
-        ),
-        (
-            {"limit": 1, "name": "bob", "email": "abc@mail.com", "dob": None},
-            "2.",
-        ),
+        UserRequest(limit=1, name="bob", email="abc@mail.com", dob=None),
+        {"limit": 1, "name": "bob", "email": "abc@mail.com", "dob": None},
     ],
 )
 @pytest.mark.asyncio
-async def test_request_body_params(service, mock_httpx, mocker, request_body, pydantic_version):
+async def test_request_body_params(service, mock_httpx, mocker, request_body):
     patterns = [
         M(url__regex="/user/*", method__in=["POST"]),
     ]
@@ -48,8 +34,6 @@ async def test_request_body_params(service, mock_httpx, mocker, request_body, py
     mock_httpx.route(*patterns, name="http_request").mock(
         return_value=httpx.Response(200, json={"status": "OK"})
     )
-
-    mocker.patch("arrest.utils.PYDANTIC_VERSION", new=pydantic_version, autospec=False)
 
     service.add_resource(
         Resource(

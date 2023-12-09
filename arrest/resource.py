@@ -6,8 +6,8 @@ import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
-from pydantic.version import VERSION as PYDANTIC_VERSION
 
+from arrest._config import PYDANTIC_V2
 from arrest.converters import compile_path
 from arrest.defaults import TIMEOUT_DEFAULT
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
@@ -353,20 +353,19 @@ class Resource:
 
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
-            model_fields: dict = (
-                request_data.__fields__ if PYDANTIC_VERSION.startswith("2.") else request_data.model_fields
-            )
+            model_fields: dict = request_data.model_fields if PYDANTIC_V2 else request_data.__fields__
 
-            for field, field_info in model_fields.items():
+            for field_name, field in model_fields.items():
+                field_info = field if PYDANTIC_V2 else field.field_info
                 field_info = cast(Param, field_info)
                 if not hasattr(field_info, "_param_type") and isinstance(field_info, FieldInfo):
-                    body_params |= extract_model_field(request_data, field)
+                    body_params |= extract_model_field(request_data, field_name)
                 elif field_info._param_type == ParamTypes.query:
-                    query_params |= extract_model_field(request_data, field)
+                    query_params |= extract_model_field(request_data, field_name)
                 elif field_info._param_type == ParamTypes.header:
-                    header_params |= extract_model_field(request_data, field)
+                    header_params |= extract_model_field(request_data, field_name)
                 elif field_info._param_type == ParamTypes.body:
-                    body_params |= extract_model_field(request_data, field)
+                    body_params |= extract_model_field(request_data, field_name)
 
         else:
             body_params = request_data

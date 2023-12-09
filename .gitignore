@@ -5,3 +5,4 @@ __pycache__
 .coverage
 dist/*
 site/*
+.tox

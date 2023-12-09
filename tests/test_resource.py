@@ -132,7 +132,7 @@ def test_resource_handler_pydantic(handler, exception):
 
 def test_resource_handler_pydantic_validation_error():
     with pytest.raises(ValueError):
-        Resource(route="/payments", handlers=[{"method": Methods.GET, "route": 123}])
+        Resource(route="/payments", handlers=[{"method": Methods.GET, "route": XYZ()}])
 
 
 def test_resource_handler_empty():

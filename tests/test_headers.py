@@ -1,8 +1,9 @@
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from respx.patterns import M
 
+from arrest._config import PYDANTIC_V2
 from arrest.http import Methods
 from arrest.params import Header
 from arrest.resource import Resource
@@ -49,10 +50,22 @@ async def test_header_params_in_request(service, mock_httpx, mocker):
     )
 
     class UserRequest(BaseModel):
-        x_user_agent: str = Header(serialization_alias="x-user-agent")
+        if PYDANTIC_V2:
+            x_user_agent: str = Header(serialization_alias="x-user-agent")
+        else:
+            x_user_agent: str = Header(alias="x-user-agent")
+
         name: str
         email: str
         password: str
+
+        if PYDANTIC_V2:
+            model_config = ConfigDict(populate_by_name=True)
+
+        else:
+
+            class Config:
+                allow_population_by_field_name = True
 
     service.add_resource(
         Resource(
