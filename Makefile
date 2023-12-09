@@ -18,3 +18,6 @@ test:
 
 coverage:
 	poetry run pytest --cov=arrest --cov-report=term-missing --cov-report=html
+
+tox:
+	tox -- --cov=arrest --cov-report=term-missing --cov-report=term
