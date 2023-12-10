@@ -137,12 +137,31 @@ This is useful when you want to group together all the components of your reques
 !!! warning
     Arrest does NOT convert any non-str values to str and convert `snake_case` to `kebab-case` before sending the fields as headers in the request.
     If you want to send `kebab-case` headers you need to:
+
     1. specify them as `kebab-case` in the dictionary passed to the `headers` keyword or Resource class definition.
-    2. Use `serialization_alias` in your pydantic field info.
+
+    2. Use `alias` in your pydantic field (if you are using pydantic@v2 then you need to use `serialization_alias` instead).
+
+    3. Set the pydantic config to `allow_population_by_field_name` (if pydantic@v2, use `ConfigDict.populate_by_name`).
 
     ```python
     class UserRequest(BaseModel):
         x_user_agent: str = Header(serialization_alias="x-user-agent")
+
+        model_config = ConfigDict(populate_by_name=True)
+
+    await service.user.post("/", request=UserRequest(x_user_agent="mozila"))
+    # header = {"x-user-agent": "mozila"}
+    ```
+
+    ```python
+    # using pydantic@v1
+
+    class UserRequest(BaseModel):
+        x_user_agent: str = Header(alias="x-user-agent")
+
+        class Config:
+            allow_population_by_field_name = True
 
     await service.user.post("/", request=UserRequest(x_user_agent="mozila"))
     # header = {"x-user-agent": "mozila"}
