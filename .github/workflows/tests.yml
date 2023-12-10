@@ -49,6 +49,8 @@ jobs:
       run: poetry run bandit .
     - name: Run saftey
       run: poetry run safety check
+    - name: Run tox
+      run: poetry run tox
 
     - name: Codecov coverage
       uses: codecov/codecov-action@v3
