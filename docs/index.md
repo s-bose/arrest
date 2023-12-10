@@ -32,7 +32,7 @@ $ pip install arrest
 
 ### using `poetry`
 ```shell
-$ poetry install arrest
+$ poetry add arrest
 ```
 
 ### using `github`
