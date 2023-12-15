@@ -1,6 +1,5 @@
 import posixpath
 from typing import Any, Type
-from urllib.parse import urljoin
 
 import orjson
 from pydantic import BaseModel
@@ -9,10 +8,10 @@ from arrest._config import PYDANTIC_V2
 
 
 def join_url(base_url: str, *urls: list[str]) -> str:
-    path = posixpath.join(*[url.lstrip("/") for url in urls])
+    path = posixpath.join(base_url, *[url.lstrip("/") for url in urls])
     if not urls[-1].endswith("/"):
         path = path.rstrip("/")
-    return urljoin(base_url, path)
+    return path
 
 
 def extract_model_field(model: BaseModel, field: str) -> dict:  # pragma: no cover

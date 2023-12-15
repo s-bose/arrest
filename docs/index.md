@@ -68,7 +68,7 @@ Arrest attempts to simplify this by letting you create a single configuration us
 
 Just define your service, i.e, the main server url, and a set of resources, e.g, `/users`, `/articles`.
 We assume the RESTful apis provided by the service are [resource-oriented](https://cloud.google.com/apis/design/resources#resources).
-python
+
 ```python
 from arrest import Service, Resource
 
