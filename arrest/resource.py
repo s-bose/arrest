@@ -410,7 +410,9 @@ class Resource:
             params.body,
         )
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
+            async with httpx.AsyncClient(
+                base_url=self.base_url, timeout=self.timeout, headers=headers
+            ) as client:
                 match method:
                     case Methods.GET:
                         response = await client.get(url=url, params=query_params)
@@ -485,7 +487,7 @@ class Resource:
         for handler in self.routes.values():
             parsed_path = handler.parse_path(method=method, path=path, **kwargs)
             if parsed_path is not None:
-                url = join_url(self.base_url, self.route, parsed_path)
+                url = join_url(self.route, parsed_path)
                 return handler, url
 
     def _bind_handler(self, base_url: str | None = None, *, handler: ResourceHandler) -> None:
