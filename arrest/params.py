@@ -32,15 +32,11 @@ class Query(Param):
         super().__init__(default, **kwargs)
 
 
-class _Header(Param):
+class Header(Param):
     _param_type = ParamTypes.header
 
     def __init__(self, default: Any = PydanticUndefined, **kwargs: Unpack[Any]) -> None:
         super().__init__(default, **kwargs)
-
-
-def Header(**kwargs):
-    return _Header(**kwargs)
 
 
 class Body(Param):

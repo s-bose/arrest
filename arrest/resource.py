@@ -6,8 +6,9 @@ import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
+from typing_extensions import Unpack
 
-from arrest._config import PYDANTIC_V2
+from arrest._config import PYDANTIC_V2, HttpxClientInputs
 from arrest.converters import compile_path
 from arrest.defaults import TIMEOUT_DEFAULT
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
@@ -43,14 +44,15 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        headers: Optional[dict] = None,
-        timeout: Optional[int] = TIMEOUT_DEFAULT,
+        # headers: Optional[dict] = None,
+        # timeout: Optional[int] = TIMEOUT_DEFAULT,
         response_model: Optional[Type[BaseModel]] = None,
         handlers: Union[
             list[ResourceHandler],
             list[Mapping[str, Any]],
             list[tuple[Any, ...]],
         ] = None,
+        **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
 
@@ -81,8 +83,8 @@ class Resource:
         # - params (query_params)
         # - auth
         # - cookies
-        self.headers = headers
-        self.timeout = httpx.Timeout(timeout=timeout, connect=timeout)
+        # self.headers = headers
+        # self.timeout = httpx.Timeout(timeout=timeout, connect=timeout)
 
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
@@ -552,3 +554,13 @@ class Resource:
                     raise ValueError("invalid handler type specified")
             except ValidationError:
                 raise ValueError("cannot initialize handler signature")
+
+    def initialize_httpx_client(self, **kwargs: Unpack[HttpxClientInputs]):
+        timeout = kwargs.get("timeout")
+        if not timeout:
+            timeout = httpx.Timeout(timeout=TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
+
+        if isinstance(timeout, int):
+            timeout = httpx.Timeout(timeout=timeout, connect=timeout)
+
+        return httpx.AsyncClient(base_url=self.base_url, **kwargs)

@@ -2,6 +2,9 @@ import itertools
 from functools import partial
 from typing import Any, Optional
 
+from typing_extensions import Unpack
+
+from arrest._config import HttpxClientInputs
 from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
@@ -13,6 +16,7 @@ class Service:
         name: str,
         url: str,
         resources: Optional[list[Resource]] = [],
+        **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
         A python class to define a service.
@@ -39,6 +43,8 @@ class Service:
         self.put = partial(self.request, method=Methods.PUT)
         self.patch = partial(self.request, method=Methods.PATCH)
         self.delete = partial(self.request, method=Methods.DELETE)
+        self.head = partial(self.request, method=Methods.HEAD)
+        self.options = partial(self.request, method=Methods.OPTIONS)
 
     def add_resource(self, resource: Resource) -> None:
         """
