@@ -28,6 +28,5 @@ class HttpxClientInputs(TypedDict, total=False):
     max_redirects: Optional[int]
     event_hooks: Optional[Mapping[str, list[Callable[..., Any]]]]
     transport: Optional[AsyncBaseTransport]
-    app: Optional[Callable[..., Any]]
     trust_env: Optional[bool]
     default_encoding: Union[str, Callable[[bytes], str]]

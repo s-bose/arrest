@@ -2,6 +2,7 @@ import itertools
 from functools import partial
 from typing import Any, Optional
 
+import httpx
 from typing_extensions import Unpack
 
 from arrest._config import HttpxClientInputs
@@ -16,6 +17,7 @@ class Service:
         name: str,
         url: str,
         resources: Optional[list[Resource]] = [],
+        client: Optional[httpx.AsyncClient] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -36,7 +38,7 @@ class Service:
         self.url = url
         self.resources: dict[str, Resource] = {}
         for resource in resources:
-            self.add_resource(resource)
+            self.add_resource(resource, client=client, **kwargs)
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
@@ -46,7 +48,12 @@ class Service:
         self.head = partial(self.request, method=Methods.HEAD)
         self.options = partial(self.request, method=Methods.OPTIONS)
 
-    def add_resource(self, resource: Resource) -> None:
+    def add_resource(
+        self,
+        resource: Resource,
+        client: Optional[httpx.AsyncClient] = None,
+        **kwargs: Unpack[HttpxClientInputs],
+    ) -> None:
         """
         Add a new resource to the service
 
@@ -56,6 +63,7 @@ class Service:
         """
         resource.base_url = self.url
         resource.initialize_handlers(base_url=self.url)
+        resource.initialize_httpx(client=client, **kwargs)
         self.resources[resource.name] = resource
         setattr(self, resource.name, resource)
 

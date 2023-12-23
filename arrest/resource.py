@@ -44,14 +44,13 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        # headers: Optional[dict] = None,
-        # timeout: Optional[int] = TIMEOUT_DEFAULT,
         response_model: Optional[Type[BaseModel]] = None,
         handlers: Union[
             list[ResourceHandler],
             list[Mapping[str, Any]],
             list[tuple[Any, ...]],
         ] = None,
+        client: Optional[httpx.AsyncClient] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -61,34 +60,26 @@ class Resource:
                 Unique name of the resource
             route:
                 Unique route to the resource
-            headers:
-                Dictionary of header key-value pairs for
-                all requests under the resource
-            timeout:
-                Timeout for all requests under the resource
             response_model:
                 Pydantic datamodel to wrap the json response
             handlers:
                 List of handlers
+            kwargs:
+                Additional httpx.AsyncClient parameters
         """
+
+        self._client: Optional[httpx.AsyncClient] = None
+        self._httpx_args: Optional[HttpxClientInputs] = None
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
         derived_name = name if name else self.route.strip("/").split("/")[0]
         self.name = derived_name if derived_name else "root"
         self.response_model = response_model
-
-        # TODO - add the following default params to init
-        # - headers X
-        # - params (query_params)
-        # - auth
-        # - cookies
-        # self.headers = headers
-        # self.timeout = httpx.Timeout(timeout=timeout, connect=timeout)
-
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
         self.initialize_handlers(handlers=handlers)
+        self.initialize_httpx(client=client, **kwargs)
 
     async def request(
         self,
@@ -151,7 +142,7 @@ class Resource:
 
         response_type = handler.response or self.response_model or None
 
-        response = await self.__make_request(
+        response = await self._build_request(
             url=url, method=method, params=params, response_type=response_type
         )
 
@@ -344,8 +335,6 @@ class Resource:
         """
 
         header_params = headers or {}
-        if self.headers:
-            header_params |= self.headers
         query_params = query or {}
         body_params = {}
 
@@ -378,7 +367,7 @@ class Resource:
             body=jsonify(body_params),
         )
 
-    async def __make_request(
+    async def _build_request(
         self,
         url: str,
         method: Methods,
@@ -406,65 +395,32 @@ class Resource:
         Any
             a json object or a parsed pydantic object
         """
-        headers, query_params, body_params = (
-            params.header,
-            params.query,
-            params.body,
-        )
+
         try:
-            async with httpx.AsyncClient(
-                base_url=self.base_url, timeout=self.timeout, headers=headers
-            ) as client:
-                match method:
-                    case Methods.GET:
-                        response = await client.get(url=url, params=query_params)
-                    case Methods.POST:
-                        response = await client.post(
-                            url=url,
-                            params=query_params,
-                            json=body_params,
-                        )
-                    case Methods.PUT:
-                        response = await client.put(
-                            url=url,
-                            params=query_params,
-                            json=body_params,
-                        )
-                    case Methods.PATCH:
-                        response = await client.patch(
-                            url=url,
-                            params=query_params,
-                            json=body_params,
-                        )
-                    case Methods.DELETE:
-                        response = await client.delete(
-                            url=url,
-                            params=query_params,
-                        )
-                    case Methods.HEAD:
-                        response = await client.head(url=url, params=query_params)
+            if self._client:
+                response = await self._make_request(
+                    client=self._client, url=url, method=method, params=params
+                )
+            else:
+                async with httpx.AsyncClient(base_url=self.base_url, **self._httpx_args) as client:
+                    response = await self._make_request(client=client, url=url, method=method, params=params)
 
-                    case Methods.OPTIONS:
-                        response = await client.options(url=url, params=query_params)
+            status_code = response.status_code
+            logger.debug(f"{method!s} {url} returned with status code {status_code!s}")
+            response.raise_for_status()
+            response_body = response.json()
 
-                status_code = response.status_code
-                logger.debug(f"{method!s} {url} returned with status code {status_code!s}")
-                response.raise_for_status()
-                response_body = response.json()
+            # parse response to pydantic model
+            parsed_response = response_body
+            if response_type:
+                if isinstance(response_body, list):
+                    parsed_response = [response_type(**item) for item in response_body]
+                elif isinstance(response_body, dict):
+                    parsed_response = response_type(**response_body)
+                else:
+                    raise ValueError(f"could not parse response to pydantic model {response_type.__name__}")
 
-                # parse response to pydantic model
-                parsed_response = response_body
-                if response_type:
-                    if isinstance(response_body, list):
-                        parsed_response = [response_type(**item) for item in response_body]
-                    elif isinstance(response_body, dict):
-                        parsed_response = response_type(**response_body)
-                    else:
-                        raise ValueError(
-                            f"could not parse response to pydantic model {response_type.__name__}"
-                        )
-
-                return parsed_response
+            return parsed_response
 
         # exception handling
         except httpx.HTTPStatusError as exc:
@@ -482,6 +438,52 @@ class Resource:
                 status_code=httpx.codes.INTERNAL_SERVER_ERROR,
                 data="error occured while making request",
             )
+
+    async def _make_request(
+        self, client: httpx.AsyncClient, url: str, method: Methods, params: Params
+    ) -> httpx.Response:
+        header_params, query_params, body_params = (
+            params.header,
+            params.query,
+            params.body,
+        )
+        match method:
+            case Methods.GET:
+                response = await client.get(url=url, params=query_params, headers=header_params)
+            case Methods.POST:
+                response = await client.post(
+                    url=url,
+                    params=query_params,
+                    headers=header_params,
+                    json=body_params,
+                )
+            case Methods.PUT:
+                response = await client.put(
+                    url=url,
+                    params=query_params,
+                    headers=header_params,
+                    json=body_params,
+                )
+            case Methods.PATCH:
+                response = await client.patch(
+                    url=url,
+                    params=query_params,
+                    headers=header_params,
+                    json=body_params,
+                )
+            case Methods.DELETE:
+                response = await client.delete(
+                    url=url,
+                    params=query_params,
+                    headers=header_params,
+                )
+            case Methods.HEAD:
+                response = await client.head(url=url, params=query_params, headers=header_params)
+
+            case Methods.OPTIONS:
+                response = await client.options(url=url, params=query_params, headers=header_params)
+
+        return response
 
     def get_matching_handler(
         self, method: Methods, path: str, **kwargs
@@ -555,12 +557,17 @@ class Resource:
             except ValidationError:
                 raise ValueError("cannot initialize handler signature")
 
-    def initialize_httpx_client(self, **kwargs: Unpack[HttpxClientInputs]):
-        timeout = kwargs.get("timeout")
-        if not timeout:
-            timeout = httpx.Timeout(timeout=TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
+    def initialize_httpx(
+        self, client: Optional[httpx.AsyncClient], **kwargs: Unpack[HttpxClientInputs]
+    ) -> None:
+        if client:
+            self._client = client
+        else:
+            timeout = kwargs.get("timeout")
+            if not timeout:
+                kwargs["timeout"] = httpx.Timeout(timeout=TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
 
-        if isinstance(timeout, int):
-            timeout = httpx.Timeout(timeout=timeout, connect=timeout)
+            if isinstance(timeout, int):
+                kwargs["timeout"] = httpx.Timeout(timeout=timeout, connect=timeout)
 
-        return httpx.AsyncClient(base_url=self.base_url, **kwargs)
+            self._httpx_args = HttpxClientInputs(**kwargs)
