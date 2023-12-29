@@ -562,6 +562,9 @@ class Resource:
     ) -> None:
         if client:
             self._client = client
+        elif self._httpx_args:
+            # already initialized
+            self._httpx_args |= kwargs
         else:
             timeout = kwargs.get("timeout")
             if not timeout:
