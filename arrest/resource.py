@@ -2,6 +2,7 @@
 import inspect
 from typing import Any, Mapping, Optional, Type, Union, cast
 
+import backoff
 import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
@@ -10,7 +11,7 @@ from typing_extensions import Unpack
 
 from arrest._config import PYDANTIC_V2, HttpxClientInputs
 from arrest.converters import compile_path
-from arrest.defaults import TIMEOUT_DEFAULT
+from arrest.defaults import DEFAULT_TIMEOUT, MAX_RETRIES
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
@@ -367,6 +368,16 @@ class Resource:
             body=jsonify(body_params),
         )
 
+    @backoff.on_exception(
+        backoff.expo,
+        (
+            httpx.HTTPError,
+            httpx.TimeoutException,
+            ArrestHTTPException,
+        ),
+        max_tries=MAX_RETRIES,
+        jitter=backoff.full_jitter,
+    )
     async def _build_request(
         self,
         url: str,
@@ -568,7 +579,7 @@ class Resource:
         else:
             timeout = kwargs.get("timeout")
             if not timeout:
-                kwargs["timeout"] = httpx.Timeout(timeout=TIMEOUT_DEFAULT, connect=TIMEOUT_DEFAULT)
+                kwargs["timeout"] = httpx.Timeout(timeout=DEFAULT_TIMEOUT, connect=DEFAULT_TIMEOUT)
 
             if isinstance(timeout, int):
                 kwargs["timeout"] = httpx.Timeout(timeout=timeout, connect=timeout)

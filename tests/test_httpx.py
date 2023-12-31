@@ -3,7 +3,7 @@ import pytest
 import respx
 
 from arrest import Resource, Service
-from arrest.defaults import TIMEOUT_DEFAULT
+from arrest.defaults import DEFAULT_TIMEOUT
 
 
 @pytest.mark.parametrize(
@@ -23,7 +23,7 @@ def test_httpx_client_kwargs(service: Service, service_args: dict, resource_args
 
 @pytest.mark.parametrize(
     "timeout_arg, expected_timeout",
-    [(10, httpx.Timeout(10)), (httpx.Timeout(40), httpx.Timeout(40)), (None, httpx.Timeout(TIMEOUT_DEFAULT))],
+    [(10, httpx.Timeout(10)), (httpx.Timeout(40), httpx.Timeout(40)), (None, httpx.Timeout(DEFAULT_TIMEOUT))],
 )
 def test_httpx_client_timeout(timeout_arg: int | httpx.Timeout, expected_timeout: httpx.Timeout):
     resource = Resource(name="abc", route="/abc", timeout=timeout_arg)
