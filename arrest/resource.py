@@ -1,4 +1,5 @@
 # pylint: disable=W0707
+import functools
 import inspect
 from typing import Any, Mapping, Optional, Type, Union, cast
 
@@ -74,6 +75,7 @@ class Resource:
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
+
         derived_name = name if name else self.route.strip("/").split("/")[0]
         self.name = derived_name if derived_name else "root"
         self.response_model = response_model
@@ -81,6 +83,32 @@ class Resource:
 
         self.initialize_handlers(handlers=handlers)
         self.initialize_httpx(client=client, **kwargs)
+
+    def handler(
+        self,
+        path: str,
+    ) -> Any:
+        url = join_url(self.base_url, self.route, path)
+
+        def wrapper(func):
+            @functools.wraps(func)
+            @backoff.on_exception(
+                backoff.expo,
+                (
+                    httpx.HTTPError,
+                    httpx.TimeoutException,
+                ),
+                max_tries=MAX_RETRIES,
+                jitter=backoff.full_jitter,
+            )
+            async def wrapped(*args, **kwargs):
+                return await func(self, url, *args, **kwargs)
+
+            if getattr(self, func.__name__, None) is None:
+                setattr(self, func.__name__, wrapped)
+            return wrapped
+
+        return wrapper
 
     async def request(
         self,

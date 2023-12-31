@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from arrest.converters import UUIDConverter
 from arrest.http import Methods
 from arrest.resource import Resource, ResourceHandler
+from arrest.service import Service
 
 
 class XYZ:
@@ -154,3 +155,16 @@ def test_resource_multiple_handler_same_signature():
 
     assert key.method, key.route == ("GET", "/audit/{audit_id}")
     assert isinstance(handler.param_types["audit_id"], UUIDConverter)
+
+
+@pytest.mark.asyncio
+async def test_resource_decorator():
+    res = Resource(route="/user", handlers=[("GET", "/"), ("POST", "/")])
+    svc = Service(name="example", url="http://www.example.com/api")
+    svc.add_resource(res)
+
+    @res.handler("/")
+    async def get_user_xml(self, url):
+        return url
+
+    assert await res.get_user_xml() == "http://www.example.com/api/user/"
