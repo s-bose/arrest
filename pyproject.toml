@@ -24,6 +24,9 @@ pydantic = ">=1.10.13"
 python = "^3.10"
 httpx = "^0.24.1"
 orjson = "^3.9.10"
+pyyaml = "^6.0.1"
+openapi-pydantic = "^0.4.0"
+backoff = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

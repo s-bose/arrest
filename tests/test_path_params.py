@@ -7,7 +7,7 @@ import pytest
 from arrest.http import Methods
 from arrest.resource import Resource
 
-base_url = "http://example.com/user"
+base_url = "/user"
 dummy_uuid = uuid.uuid4()
 dummy_date = datetime.now()
 

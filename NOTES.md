@@ -36,4 +36,4 @@ user.post("/profile/123/comments/", comments=456) # will work
 ```
 
 
-# TODO: disallow addition of conflicting handlers
+# TODO add support for httpx params (or a wholeass client)

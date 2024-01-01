@@ -11,7 +11,7 @@ from tests import TEST_DEFAULT_SERVICE_URL
 
 
 @pytest.mark.asyncio
-async def test_request_query_params(service, mock_httpx, mocker):
+async def test_request_query_params(service, mock_httpx):
     patterns = [
         M(url__regex="/user/*", method__in=["GET", "POST"]),
     ]
@@ -33,13 +33,11 @@ async def test_request_query_params(service, mock_httpx, mocker):
         )
     )
 
-    get_matching_handler = mocker.spy(service.user, "get_matching_handler")
-    extract_request_params = mocker.spy(service.user, "extract_request_params")
     await service.user.post("/profile", request=UserRequest(limit=1, q="abc"))
-    handler, _ = get_matching_handler.spy_return
-    assert handler.route == "/profile"
-    params = extract_request_params.spy_return
-    assert params.query == httpx.QueryParams({"limit": 1, "q": "abc"})
+
+    assert len(mock_httpx["http_request"].calls) == 1
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert httpx.QueryParams(req.url.query) == httpx.QueryParams({"limit": 1, "q": "abc"})
 
 
 @pytest.mark.asyncio
