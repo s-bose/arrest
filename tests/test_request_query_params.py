@@ -11,7 +11,7 @@ from tests import TEST_DEFAULT_SERVICE_URL
 
 
 @pytest.mark.asyncio
-async def test_request_query_params(service, mock_httpx, mocker):
+async def test_request_query_params(service, mock_httpx):
     patterns = [
         M(url__regex="/user/*", method__in=["GET", "POST"]),
     ]
