@@ -32,6 +32,10 @@ class Service:
                 Base url of the service
             resources:
                 A list of resources provided by the service
+            client:
+                An httpx.AsyncClient instance
+            kwargs:
+                Additional httpx.AsyncClient parameters. [see more](api.md/#httpx-client-arguments)
         """
 
         self.name = name

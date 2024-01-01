@@ -18,7 +18,6 @@ class HttpxClientInputs(TypedDict, total=False):
     cookies: Optional[_types.CookieTypes]
     verify: Optional[_types.VerifyTypes]
     cert: Optional[_types.CertTypes]
-    http1: Optional[bool]
     http2: Optional[bool]
     proxies: Optional[_types.ProxiesTypes]
     mounts: Optional[Mapping[str, AsyncBaseTransport]]

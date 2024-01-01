@@ -66,8 +66,10 @@ class Resource:
                 Pydantic datamodel to wrap the json response
             handlers:
                 List of handlers
+            client:
+                An httpx.AsyncClient instance
             kwargs:
-                Additional httpx.AsyncClient parameters
+                Additional httpx.AsyncClient parameters, [see more](api.md/#httpx-client-arguments)
         """
 
         self._client: Optional[httpx.AsyncClient] = None

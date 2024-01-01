@@ -164,7 +164,11 @@ async def test_resource_decorator():
     svc.add_resource(res)
 
     @res.handler("/")
-    async def get_user_xml(self, url):
-        return url
+    async def get_user_xml(self, url, my_arg: int):
+        url_new = f"{url}xyz/{my_arg}"
+        return url_new, self.base_url
 
-    assert await res.get_user_xml() == "http://www.example.com/api/user/"
+    assert await res.get_user_xml(123) == (
+        "http://www.example.com/api/user/xyz/123",
+        "http://www.example.com/api",
+    )

@@ -31,7 +31,10 @@ theme:
 
 nav:
   - Introduction: index.md
-  - Getting Started: getting-started.md
+  - Getting Started:
+    - getting-started.md
+    - Configuring your request: configuring-request.md
+    - Resources and Services: resources-services.md
   - Developer's Note: dev-note.md
   - API Documentation: api.md
 
