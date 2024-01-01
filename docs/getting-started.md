@@ -179,7 +179,7 @@ See [API Documentation](api.md) for further details.
 ## Adding a custom handler
 If you want to add a custom function to handle an api request and have complete control over the request and response, you can use the `Resource.handler` decorator to decorate an async function and write your own custom logic.
 You have to specify the path relative to the resource in the decorators argument.
-This function will be added as a method to the same resource you're decorating it with and can be accessed as `await resource.function_name(...)`
+This function will be registered as a method to the same resource you're decorating it with and can be accessed as `await resource.function_name(...)`
 
 
 !!! Important
