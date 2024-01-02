@@ -180,7 +180,7 @@ See [API Documentation](api.md) for further details.
 If you want to add a custom function to handle an api request and have complete control over the request and response, you can use the `Resource.handler` decorator to decorate an async function and write your own custom logic.
 You have to specify the path relative to the resource in the decorators argument.
 This function will be registered as a method to the same resource you're decorating it with and can be accessed as `await resource.function_name(...)`
-
+You can also invoke the function as a free function as `await function_name(...)`
 
 !!! Important
     Creating a handler this way does not have any data validation or pydantic wrapping enabled. Neither does it do exception handling.
@@ -232,4 +232,7 @@ Once defined you have to access the function via the resource instance, as it is
 
 
     metadata = await svc.user.download_user_metadata(meta_id=123)
+
+    # or
+    metadata = await download_user_metadata(meta_id=123)
     ```

@@ -31,3 +31,7 @@ jobs:
       run: |
         poetry config pypi-token.pypi $PYPI_TOKEN
         poetry publish
+    - name: Build docs
+      run: poetry run mkdocs build -f
+    - name: Publish Docs
+      run: poetry run mkdocs gh-deploy

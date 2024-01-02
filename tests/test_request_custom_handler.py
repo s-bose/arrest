@@ -35,4 +35,5 @@ async def test_request_custom_handler(service, mock_httpx):
     assert resp1 == resp2 == {"status": "OK"}
 
     resp3 = await service.user.get_posts(post_id=123)
-    assert resp3 == {"user": "john doe", "email": "john@doe.com"}
+    resp4 = await get_posts(post_id=456)
+    assert resp3 == resp4 == {"user": "john doe", "email": "john@doe.com"}
