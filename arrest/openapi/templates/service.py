@@ -1,5 +1,4 @@
-from arrest import Service, Resource
-from arrest import Service, Resource
+from arrest import Resource, Service
 
 {% for res in resource_list %}
 {{ res }}

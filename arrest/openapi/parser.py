@@ -10,7 +10,7 @@ import io
 import itertools
 import json
 from pathlib import Path
-from typing import IO, Optional, Union, NoReturn, Generator
+from typing import IO, Generator, NoReturn, Optional, Union
 
 import backoff
 import httpx
@@ -19,13 +19,12 @@ from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope,
 from openapi_pydantic import OpenAPI, Server
 from openapi_pydantic.v3 import v3_0_3, v3_1_0
 
-from arrest.logging import logger
+from arrest import Resource, Service
 from arrest._config import PYDANTIC_V2
 from arrest.defaults import MAX_RETRIES, OPENAPI_SCHEMA_FILENAME, OPENAPI_SERVICE_FILENAME
-from arrest.utils import join_url
+from arrest.logging import logger
 from arrest.openapi._config import Format
-
-from arrest import Service, Resource
+from arrest.utils import join_url
 
 
 class OpenAPIGenerator:
