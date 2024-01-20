@@ -16,6 +16,7 @@ class Service:
         self,
         name: str,
         url: str,
+        description: Optional[str] = None,
         resources: Optional[list[Resource]] = [],
         client: Optional[httpx.AsyncClient] = None,
         **kwargs: Unpack[HttpxClientInputs],
@@ -40,6 +41,7 @@ class Service:
 
         self.name = name
         self.url = url
+        self.description = description
         self.resources: dict[str, Resource] = {}
         for resource in resources:
             self.add_resource(resource, client=client, **kwargs)
