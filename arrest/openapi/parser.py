@@ -16,7 +16,7 @@ import backoff
 import httpx
 import yaml
 from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
-from openapi_pydantic import OpenAPI, Server
+from openapi_pydantic import OpenAPI, Server, PathItem, Operation, Response, Reference
 from openapi_pydantic.v3 import v3_0_3, v3_1_0
 
 from arrest import Resource, Service
@@ -99,6 +99,19 @@ class OpenAPIGenerator:
                 yield url.format(**kwargs)
 
     def _build_arrest_resources(self, openapi: OpenAPI):
+        if not openapi.paths:
+            return None
+
+        for key, group in itertools.groupby(openapi.paths.keys(), key=lambda path: path[1:].split("/")[0]):
+            routes = list(group)
+            path_items = [openapi.paths.get(route) for route in routes]
+            for route, path_item in zip(routes, path_items):
+                route = route.removeprefix(f"/{key}")
+
+    def _extract_request_body(self):
+        ...
+
+    def _extract_params(self):
         ...
 
     @classmethod
