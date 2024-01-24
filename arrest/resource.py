@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional, Type, Union, cast
 import backoff
 import httpx
 from httpx import Headers, QueryParams
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, parse_obj_as
 from pydantic.fields import FieldInfo
 from typing_extensions import Unpack
 
@@ -454,6 +454,7 @@ class Resource:
             # parse response to pydantic model
             parsed_response = response_body
             if response_type:
+                response_type
                 if isinstance(response_body, list):
                     parsed_response = [response_type(**item) for item in response_body]
                 elif isinstance(response_body, dict):

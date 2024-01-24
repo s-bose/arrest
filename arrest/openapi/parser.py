@@ -6,12 +6,12 @@ Note: only supports >=v3.0 specifications
 Dependencies:
     - datamodel-code-generator
 """
+from typing import IO, Generator, Optional, Union, Any
 import io
 import itertools
 import json
 import os
 from pathlib import Path
-from typing import IO, Generator, Optional
 
 import backoff
 import httpx
