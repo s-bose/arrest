@@ -1254,20 +1254,6 @@ files = [
 setuptools = "*"
 
 [[package]]
-name = "openapi-pydantic"
-version = "0.4.0"
-description = "Pydantic OpenAPI schema implementation"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "openapi_pydantic-0.4.0-py3-none-any.whl", hash = "sha256:8f782be72a4792bf6b5bbc4cf694fda2ca0719c0354ee6a062179982544fb5c0"},
-    {file = "openapi_pydantic-0.4.0.tar.gz", hash = "sha256:22c43e0da5f479d28e11c083d6d3492e09a6ef9e2b3201ccddbfbc8786db1ffb"},
-]
-
-[package.dependencies]
-pydantic = ">=1.8"
-
-[[package]]
 name = "orjson"
 version = "3.9.10"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
@@ -2532,4 +2518,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "16d30e5fada629bf4c4a12a4fb65585d7712148a424db2b2ede7678ff3acb08b"
+content-hash = "e06a2ee2458bb2e18cb330d2aefee422f9d011185a70d168edbec9310a8d89ad"

@@ -1,0 +1,3 @@
+{% macro print_handler_tuple(handler)  -%}
+("{{ handler.method }}", "{{ handler.route }}", )
+{%- endmacro -%}

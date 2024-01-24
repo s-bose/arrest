@@ -1,10 +1,8 @@
 from arrest import Resource, Service
 
-{% for res in resource_list %}
-{{ res }}
-{% endfor %}
+from .resources import {{  }}
 
-{{ service_identifier }} = Service(
+{{ service_id }} = Service(
     name={{ service_name }},
     url={{ service_url }},
     resources=[]
