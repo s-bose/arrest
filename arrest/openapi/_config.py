@@ -1,7 +1,7 @@
 from pathlib import Path
 from arrest.common import StrEnum
 
-TEMPLATE_DIR = Path("openapi/templates")
+TEMPLATE_DIR = "templates"
 
 
 class Format(StrEnum):

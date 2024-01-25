@@ -1,14 +1,17 @@
-from arrest import Resource
-from {{ schema }} import {{ schema_imports|join(', ') }}
+{% macro print_handler_tuple(handler)  -%}
+("{{ handler.method }}", "{{ handler.route }}", {{ handler.request }}, {{ handler.response }}),
+{%- endmacro -%}
 
-{% for resource in resource_list %}
+from arrest import Resource
+from .{{ schema_module }} import {{ schema_imports|join(', ') }}
+
+{% for resource in resources %}
 
 {{ resource.name }} = Resource(
     name="{{ resource.name }}",
     route="{{ resource.route }}",
     handlers=[{% for handler in resource.handlers %}
-                {{ handler|tojson }}
-            {% endfor %}
+        {{ print_handler_tuple(handler) }}{% endfor %}
     ]
 )
 

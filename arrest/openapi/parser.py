@@ -22,13 +22,22 @@ from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope,
 from arrest.utils import join_url
 
 from arrest.http import Methods
-from arrest import Resource, Service
+from arrest import Service
 from arrest._config import PYDANTIC_V2
-from arrest.defaults import MAX_RETRIES, OPENAPI_SCHEMA_FILENAME, SERVICE_FILENAME, RESOURCE_FILENAME
+from arrest.defaults import (
+    MAX_RETRIES,
+    OPENAPI_DIRECTORY,
+    OPENAPI_SCHEMA_FILENAME,
+    SERVICE_FILENAME,
+    RESOURCE_FILENAME,
+)
 from arrest.logging import logger
 from arrest.openapi._config import Format
-from arrest.openapi.spec import OpenAPI, Server, PathItem, Operation, Response, Reference
-from arrest.openapi.utils import get_ref_schema
+from arrest.openapi.spec import OpenAPI, Server, PathItem, Operation, Reference
+from arrest.openapi.resource_template import ResourceSchema, HandlerSchema, ResourceTemplate
+from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
+
+from arrest.openapi.utils import get_ref_schema, sanitize_name
 
 
 class OpenAPIGenerator:
@@ -38,9 +47,11 @@ class OpenAPIGenerator:
         *,
         openapi_path: str,
         output_path: Optional[Union[str, Path]] = None,
+        dir_name: Optional[str] = None,
     ) -> None:
         self.url = join_url(base_url, openapi_path) if base_url else openapi_path
         self.output_path = output_path
+        self.dir_name = dir_name
 
     @backoff.on_exception(
         backoff.expo,
@@ -64,14 +75,19 @@ class OpenAPIGenerator:
         fmt = fmt if fmt else self.url.split(".")[-1]
         openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
 
-        schema_path = self.output_path / OPENAPI_SCHEMA_FILENAME
-        service_path = self.output_path / SERVICE_FILENAME
-        resource_path = self.output_path / RESOURCE_FILENAME
+        service_name = self.dir_name or self.get_service_name(openapi)
+        output_path = self.output_path / service_name
+        schema_path = output_path / OPENAPI_SCHEMA_FILENAME
 
-        schema_module = await self._generate_schema_models(input_bytes=openapi_bytes, schema_path=schema_path)
-        return list(self._build_arrest_resources(openapi=openapi, schema_module=schema_module))
+        Path.mkdir(output_path, exist_ok=True)
 
-    async def _generate_schema_models(self, input_bytes: bytes, schema_path: Path | str) -> None:
+        await self.generate_component_schema(input_bytes=openapi_bytes, schema_path=schema_path)
+        resources = self.generate_resource_file(
+            openapi=openapi, schema_path=schema_path, resource_path=output_path
+        )
+        self.generate_service_file(openapi=openapi, service_path=output_path, resources=resources)
+
+    async def generate_component_schema(self, input_bytes: bytes, schema_path: Path | str) -> None:
         generate(
             input_=input_bytes.decode("utf-8"),
             input_file_type=InputFileType.OpenAPI,
@@ -83,18 +99,51 @@ class OpenAPIGenerator:
         )
         logger.info(f"generated pydantic models from schema definitions in : {schema_path}")
 
-    def _build_arrest_service(
-        self, openapi: OpenAPI, service_name: Optional[str] = None
-    ) -> Generator[Service, None, None]:
-        name = service_name or openapi.info.title
-        name = "_".join(name.replace("-", "_").split(" "))
+    def generate_service_file(
+        self,
+        *,
+        openapi: OpenAPI,
+        service_name: Optional[str] = None,
+        service_path: Path | str,
+        resources: list[ResourceSchema],
+    ):
+        services = list(
+            self._build_arrest_service(openapi=openapi, service_name=service_name, resources=resources)
+        )
 
-        for server in openapi.servers:
+        ServiceTemplate(services=services, destination_path=service_path).render()
+        logger.info(f"generated arrest services in : {service_path}")
+
+    def get_service_name(self, openapi: OpenAPI, service_name: Optional[str] = None) -> str:
+        name = service_name or openapi.info.title or OPENAPI_DIRECTORY
+        return sanitize_name(name)
+
+    def generate_resource_file(
+        self, openapi: OpenAPI, schema_path: Path | str, resource_path: Path | str
+    ) -> list[ResourceSchema]:
+        resources = list(self._build_arrest_resources(openapi=openapi))
+        path, _ = os.path.splitext(schema_path)
+        module = path.split("/")[-1]
+
+        ResourceTemplate(schema_module=module, resources=resources, destination_path=resource_path).render()
+        logger.info(f"generated arrest resources in : {resource_path}")
+        return resources
+
+    def _build_arrest_service(
+        self, openapi: OpenAPI, service_name: Optional[str] = None, resources: list[ResourceSchema] = None
+    ) -> Generator[Service, None, None]:
+        name = service_name or self.get_service_name(openapi)
+
+        resource_names = [res.name for res in resources]
+        for index, server in enumerate(openapi.servers):
             for url in self._extract_url(server):
-                yield Service(
+                service_id = f"{name}_{index}" if index else name
+                yield ServiceSchema(
+                    service_id=service_id,
                     name=name,
                     url=url,
                     description=server.description,
+                    resources=resource_names,
                 )
 
     def _extract_url(self, server: Server) -> Generator[str, None, None]:
@@ -111,7 +160,7 @@ class OpenAPIGenerator:
                 kwargs = {k: v for k, v in zip(variables.keys(), values)}
                 yield url.format(**kwargs)
 
-    def _build_arrest_resources(self, openapi: OpenAPI, schema_module: Any):
+    def _build_arrest_resources(self, openapi: OpenAPI) -> Generator[ResourceSchema, None, None]:
         def prefix(path: str) -> str:
             """
             ("/root/xyz/123") -> "root"
@@ -125,41 +174,39 @@ class OpenAPIGenerator:
         for key, group in itertools.groupby(openapi.paths.keys(), key=prefix):
             routes = list(group)
             path_items = [openapi.paths.get(route) for route in routes]
-            handlers = []
+            handlers: list[HandlerSchema] = []
             for route, path_item in zip(routes, path_items):
                 route = route.removeprefix(f"/{key}")
-                handlers.extend(
-                    self._build_handlers(route=route, path_item=path_item, schema_module=schema_module)
-                )
-            yield Resource(name=key, route=f"/{key}", handlers=handlers)
+                handlers.extend(self._build_handlers(route=route, path_item=path_item))
 
-    def _build_handlers(self, route: str, path_item: PathItem, schema_module: Any) -> list[tuple]:
+            yield ResourceSchema(name=key, route=f"/{key}", handlers=handlers)
+
+    def _build_handlers(self, route: str, path_item: PathItem) -> list[HandlerSchema]:
         handlers = []
         for method in list(Methods):
             operation: Operation
             if operation := getattr(path_item, str(method).lower(), None):
-                request_class = self.get_request_schema(operation, schema_module)
-                response_class = self.get_response_schema(operation, schema_module)
+                request_class = self.get_request_schema(operation)
+                response_class = self.get_response_schema(operation)
 
-                handlers.append((method, route, request_class, response_class))
+                handlers.append(
+                    HandlerSchema(route=route, method=method, request=request_class, response=response_class)
+                )
 
         return handlers
 
-    def get_request_schema(self, operation: Operation, module: Any) -> Optional[Any]:
+    def get_request_schema(self, operation: Operation) -> Optional[str]:
         if not (request_body := operation.requestBody):
             logger.debug("no request body defined")
             return None
 
-        request_schema = None
         if isinstance(request_body, Reference):
-            request_schema = get_ref_schema(request_body)
+            return get_ref_schema(request_body)
 
         if media := request_body.content.get("application/json", None):
-            request_schema = get_ref_schema(media.media_type_schema)
+            return get_ref_schema(media.media_type_schema)
 
-        return module.__dict__.get(request_schema, None)
-
-    def get_response_schema(self, operation: Operation, module: Any) -> Optional[Any]:
+    def get_response_schema(self, operation: Operation) -> Optional[str]:
         if not operation.responses or not (
             success_response := operation.responses.get(str(httpx.codes.OK), None)
         ):
@@ -167,12 +214,10 @@ class OpenAPIGenerator:
             return None
 
         if isinstance(success_response, Reference):
-            response_schema = get_ref_schema(success_response)
+            return get_ref_schema(success_response)
 
         if success_response.content and (media := success_response.content.get("application/json", None)):
-            response_schema = get_ref_schema(media.media_type_schema)
-
-        return module.__dict__.get(response_schema)
+            return get_ref_schema(media.media_type_schema)
 
     @classmethod
     def load_dict(cls, fmt: Format, data: IO) -> dict:

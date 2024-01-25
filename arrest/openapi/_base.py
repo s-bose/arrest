@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from pathlib import Path
 from functools import lru_cache, cached_property
 
@@ -10,12 +9,13 @@ from arrest._config import PYDANTIC_V2
 
 @lru_cache()
 def get_template(template_filepath: Path) -> Template:
-    loader = FileSystemLoader(str(TEMPLATE_DIR / template_filepath.parent))
+    template_dir = Path(__file__).parents[0] / TEMPLATE_DIR
+    loader = FileSystemLoader(str(template_dir / template_filepath.parent))
     environment = Environment(loader=loader)
     return environment.get_template(template_filepath.name)
 
 
-class TemplateBase(ABC):
+class TemplateBase:
     def __init__(self, source: str, params: BaseModel, destination_path: Path | str) -> None:
         self.source = Path(source)
         self.params = params
@@ -25,7 +25,6 @@ class TemplateBase(ABC):
     def template(self):
         return get_template(template_filepath=self.source)
 
-    @abstractmethod
     def render(self):
         kwargs: dict = self.params.model_dump() if PYDANTIC_V2 else self.params.dict()
         content = self.template.render(**kwargs)

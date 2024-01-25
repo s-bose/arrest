@@ -1,8 +1,5 @@
+import regex as re
 from typing import Any
-import os
-import importlib
-from functools import lru_cache
-
 from arrest.openapi.spec import Reference
 
 
@@ -11,9 +8,6 @@ def get_ref_schema(reference: Reference | Any) -> str | None:
         return ref.split("/")[-1]
 
 
-@lru_cache()
-def inspect_module(module_path: str) -> Any:
-    path, _ = os.path.splitext(module_path)
-    filename = path.split("/")[-1]
-    module = importlib.import_module(filename, path)
-    return module
+def sanitize_name(name: str) -> str:
+    name = name.lower().replace(" ", "_")
+    return re.sub(r"[^\P{P}]+", "_", name)
