@@ -1,5 +1,6 @@
-import regex as re
+import re
 from typing import Any
+
 from arrest.openapi.spec import Reference
 
 
@@ -10,4 +11,4 @@ def get_ref_schema(reference: Reference | Any) -> str | None:
 
 def sanitize_name(name: str) -> str:
     name = name.lower().replace(" ", "_")
-    return re.sub(r"[^\P{P}]+", "_", name)
+    return re.sub("[^A-Za-z0-9]+", "_", name)

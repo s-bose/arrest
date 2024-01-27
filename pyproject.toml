@@ -71,12 +71,21 @@ exclude = '''
 '''
 
 [tool.coverage.run]
-omit = [".*", "*/site-packages/*", "*/tests/*"]
+omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]
 source = ["arrest"]
 
 [tool.coverage.report]
 fail_under = 100
-exclude_also = ["except ImportError"]
+exclude_lines = [
+    "if self.debug:",
+    "pragma: no cover",
+    "except ImportError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if not TYPE_CHECKING:",
+    "class Config:",
+]
 
 [tool.isort]
 line_length = 110

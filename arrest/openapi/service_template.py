@@ -1,5 +1,6 @@
-from typing import ClassVar, Optional
 from pathlib import Path
+from typing import ClassVar, Optional
+
 from pydantic import BaseModel
 
 from arrest.openapi._base import TemplateBase
@@ -27,7 +28,7 @@ class ServiceTemplate(TemplateBase):
             resource_imports.update(service.resources)
 
         super().__init__(
-            self.TEMPLATE_FILEPATH,
+            source=self.TEMPLATE_FILEPATH,
             params=ServiceParams(resource_imports=resource_imports, services=services),
             destination_path=destination_path,
         )

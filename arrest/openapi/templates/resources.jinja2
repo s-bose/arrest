@@ -3,10 +3,8 @@
 {%- endmacro -%}
 
 from arrest import Resource
-from .{{ schema_module }} import {{ schema_imports|join(', ') }}
-
+from .{{ schema_module }} import {{ schema_imports|sort|join(', ') }}
 {% for resource in resources %}
-
 {{ resource.name }} = Resource(
     name="{{ resource.name }}",
     route="{{ resource.route }}",
@@ -14,5 +12,4 @@ from .{{ schema_module }} import {{ schema_imports|join(', ') }}
         {{ print_handler_tuple(handler) }}{% endfor %}
     ]
 )
-
 {% endfor %}

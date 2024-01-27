@@ -6,38 +6,30 @@ Note: only supports >=v3.0 specifications
 Dependencies:
     - datamodel-code-generator
 """
-from typing import IO, Generator, Optional, Union, Any
-import os
-import importlib
 import io
 import itertools
 import json
+import os
 from pathlib import Path
-from functools import lru_cache
+from typing import IO, Generator, Optional, Union
 
 import backoff
 import httpx
 import yaml
 from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
-from arrest.utils import join_url
 
-from arrest.http import Methods
 from arrest import Service
 from arrest._config import PYDANTIC_V2
-from arrest.defaults import (
-    MAX_RETRIES,
-    OPENAPI_DIRECTORY,
-    OPENAPI_SCHEMA_FILENAME,
-    SERVICE_FILENAME,
-    RESOURCE_FILENAME,
-)
+from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME
+from arrest.http import Methods
 from arrest.logging import logger
 from arrest.openapi._config import Format
-from arrest.openapi.spec import OpenAPI, Server, PathItem, Operation, Reference
-from arrest.openapi.resource_template import ResourceSchema, HandlerSchema, ResourceTemplate
+from arrest.openapi.init_template import InitTemplate
+from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, ResourceTemplate
 from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
-
+from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
 from arrest.openapi.utils import get_ref_schema, sanitize_name
+from arrest.utils import join_url
 
 
 class OpenAPIGenerator:
@@ -67,7 +59,7 @@ class OpenAPIGenerator:
                 return response.read()
 
         else:
-            with open(self.url, "rb", encoding="utf-8") as file:
+            with open(self.url, "rb") as file:
                 return file.read()
 
     async def generate_schema(self, fmt: Optional[Format] = None):
@@ -86,6 +78,7 @@ class OpenAPIGenerator:
             openapi=openapi, schema_path=schema_path, resource_path=output_path
         )
         self.generate_service_file(openapi=openapi, service_path=output_path, resources=resources)
+        InitTemplate(destination_path=output_path).render_and_save()
 
     async def generate_component_schema(self, input_bytes: bytes, schema_path: Path | str) -> None:
         generate(
@@ -111,7 +104,7 @@ class OpenAPIGenerator:
             self._build_arrest_service(openapi=openapi, service_name=service_name, resources=resources)
         )
 
-        ServiceTemplate(services=services, destination_path=service_path).render()
+        ServiceTemplate(services=services, destination_path=service_path).render_and_save()
         logger.info(f"generated arrest services in : {service_path}")
 
     def get_service_name(self, openapi: OpenAPI, service_name: Optional[str] = None) -> str:
@@ -125,7 +118,9 @@ class OpenAPIGenerator:
         path, _ = os.path.splitext(schema_path)
         module = path.split("/")[-1]
 
-        ResourceTemplate(schema_module=module, resources=resources, destination_path=resource_path).render()
+        ResourceTemplate(
+            schema_module=module, resources=resources, destination_path=resource_path
+        ).render_and_save()
         logger.info(f"generated arrest resources in : {resource_path}")
         return resources
 

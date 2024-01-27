@@ -1,17 +1,16 @@
-from typing import Optional, ClassVar
 from pathlib import Path
+from typing import ClassVar, Optional
+
 from pydantic import BaseModel
 
 from arrest.openapi._base import TemplateBase
-
-NONE = "None"
 
 
 class HandlerSchema(BaseModel):
     route: str
     method: str
-    request: Optional[str] = NONE
-    response: Optional[str] = NONE
+    request: Optional[str] = None
+    response: Optional[str] = None
 
 
 class ResourceSchema(BaseModel):
@@ -40,7 +39,7 @@ class ResourceTemplate(TemplateBase):
         schema_imports = {imp for imp in schema_imports if imp is not None}
 
         super().__init__(
-            self.TEMPLATE_FILEPATH,
+            source=self.TEMPLATE_FILEPATH,
             params=ResourceParams(
                 schema_module=schema_module, schema_imports=schema_imports, resources=resources
             ),

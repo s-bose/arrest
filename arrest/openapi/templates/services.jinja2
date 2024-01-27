@@ -1,13 +1,9 @@
-from arrest import Resource, Service
-
-from .resources import {{ resource_imports|join(', ') }}
-
+from arrest import Service
+from .resources import {{ resource_imports|sort|join(', ') }}
 {% for service in services %}
-
 {{ service.service_id|lower }} = Service(
     name="{{ service.name|lower }}",
     url="{{ service.url }}",
-    resources=[{{ service.resources|join(', ') }}]
+    resources=[{{ service.resources|sort|join(', ') }}]
 )
-
 {% endfor %}

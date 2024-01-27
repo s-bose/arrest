@@ -1,10 +1,12 @@
-import sys
 import asyncio
-from pathlib import Path
+import sys
 from argparse import Namespace
+from pathlib import Path
+
 import argcomplete
-from arrest.openapi.parser import OpenAPIGenerator
+
 from arrest.cli.arguments import arg_parser
+from arrest.openapi.parser import OpenAPIGenerator
 
 
 def main():

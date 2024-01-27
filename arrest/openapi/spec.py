@@ -5,6 +5,7 @@ supports openapi >= v3.0
 from typing import Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Extra, Field
+
 from arrest._config import PYDANTIC_V2
 
 

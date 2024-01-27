@@ -1,4 +1,5 @@
-from pathlib import Path
+# pragma: no cover
+
 from arrest.common import StrEnum
 
 TEMPLATE_DIR = "templates"
