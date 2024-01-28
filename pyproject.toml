@@ -58,7 +58,6 @@ build-backend = "poetry.core.masonry.api"
 target-version = ["py310"]
 color = false
 line-length = 110
-
 exclude = '''
 /(
     \.git
@@ -69,6 +68,14 @@ exclude = '''
     | venv
 )/
 '''
+force-exclude = '''
+/(
+    | tests/fixtures/*
+)/
+'''
+
+[tool.pytest.ini_options]
+filterwarnings = ["ignore::pydantic.PydanticDeprecatedSince20"]
 
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]

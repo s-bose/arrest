@@ -78,15 +78,14 @@
           "200": {
             "description": "Successful operation",
             "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              },
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": ["name"],
-                  "properties": {
-                      "name": {"type": "string"},
-                      "address": {"$ref": "#/components/schemas/Address"},
-                      "age": {"type": "integer", "format": "int32", "minimum": 0}
-                  }
+                  "$ref": "#/components/schemas/Pet"
                 }
               }
             }
@@ -334,9 +333,7 @@
         },
         "security": [
           {
-            "api_key": [
-
-            ]
+            "api_key": []
           },
           {
             "petstore_auth": [
@@ -525,9 +522,7 @@
         },
         "security": [
           {
-            "api_key": [
-
-            ]
+            "api_key": []
           }
         ]
       }
@@ -812,9 +807,7 @@
         "summary": "Logs out current logged in user session",
         "description": "",
         "operationId": "logoutUser",
-        "parameters": [
-
-        ],
+        "parameters": [],
         "responses": {
           "default": {
             "description": "successful operation"

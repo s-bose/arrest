@@ -11,7 +11,7 @@ import itertools
 import json
 import os
 from pathlib import Path
-from typing import IO, Generator, Optional, Union
+from typing import IO, Generator, Optional
 
 import backoff
 import httpx
@@ -19,7 +19,6 @@ import yaml
 from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
 
 from arrest import Service
-from arrest._config import PYDANTIC_V2
 from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME
 from arrest.http import Methods
 from arrest.logging import logger
@@ -30,6 +29,7 @@ from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
 from arrest.openapi.utils import get_ref_schema, sanitize_name
 from arrest.utils import join_url
+from arrest.exceptions import ArrestError
 
 
 class OpenAPIGenerator:
@@ -38,12 +38,36 @@ class OpenAPIGenerator:
         base_url: Optional[str] = None,
         *,
         openapi_path: str,
-        output_path: Optional[Union[str, Path]] = None,
+        output_path: str,
         dir_name: Optional[str] = None,
+        use_pydantic_v2: Optional[bool] = False,
     ) -> None:
-        self.url = join_url(base_url, openapi_path) if base_url else openapi_path
-        self.output_path = output_path
-        self.dir_name = dir_name
+        """
+        class for generating Arrest services, resources and schema
+        components from OpenAPI specification (>= v3.0)
+        Generates three files:
+
+        1. models.py (contains OpenAPI Schema component definitions)
+        2. resources.py (Arrest Resources based on the path items)
+        3. services.py (Arrest Services using the resources)
+
+
+        Parameters:
+            base_url:
+                (optional) base url for your application
+            openapi_path:
+                either partial path (e.g. /api/openapi.json) or full
+                path to the OpenAPI specification (json or yaml)
+            output_path:
+                path where the generated files will be saved
+            dir_name:
+                (optional) specify the folder name containing the files
+
+        """
+        self.url: str = join_url(base_url, openapi_path) if base_url else openapi_path
+        self.output_path: str = output_path
+        self.dir_name: str = dir_name
+        self.use_pydantic_v2 = use_pydantic_v2
 
     @backoff.on_exception(
         backoff.expo,
@@ -67,8 +91,12 @@ class OpenAPIGenerator:
         fmt = fmt if fmt else self.url.split(".")[-1]
         openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
 
+        output_path = Path(self.output_path)
+        if not output_path.exists():
+            raise ArrestError("output path does not exist")
+
         service_name = self.dir_name or self.get_service_name(openapi)
-        output_path = self.output_path / service_name
+        output_path = output_path / service_name
         schema_path = output_path / OPENAPI_SCHEMA_FILENAME
 
         Path.mkdir(output_path, exist_ok=True)
@@ -87,7 +115,7 @@ class OpenAPIGenerator:
             openapi_scopes=[OpenAPIScope.Schemas],
             output=schema_path,
             output_model_type=DataModelType.PydanticV2BaseModel
-            if PYDANTIC_V2
+            if self.use_pydantic_v2
             else DataModelType.PydanticBaseModel,
         )
         logger.info(f"generated pydantic models from schema definitions in : {schema_path}")
@@ -126,13 +154,15 @@ class OpenAPIGenerator:
 
     def _build_arrest_service(
         self, openapi: OpenAPI, service_name: Optional[str] = None, resources: list[ResourceSchema] = None
-    ) -> Generator[Service, None, None]:
+    ) -> Generator[ServiceSchema, None, None]:
         name = service_name or self.get_service_name(openapi)
 
         resource_names = [res.name for res in resources]
-        for index, server in enumerate(openapi.servers):
-            for url in self._extract_url(server):
-                service_id = f"{name}_{index}" if index else name
+        for idx, server in enumerate(openapi.servers):
+            for idxx, url in enumerate(self._extract_url(server)):
+                suffix = f"_{idx}" if idx else ""
+                suffix += f"_{idxx}" if idxx else ""
+                service_id = f"{name}{suffix}"
                 yield ServiceSchema(
                     service_id=service_id,
                     name=name,
@@ -162,9 +192,6 @@ class OpenAPIGenerator:
             ("/root/{id}") -> "root"
             """
             return path[1:].split("/")[0]
-
-        if not openapi.paths:
-            return None
 
         for key, group in itertools.groupby(openapi.paths.keys(), key=prefix):
             routes = list(group)
