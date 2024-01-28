@@ -18,7 +18,7 @@ from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, Params, ParamTypes
-from arrest.utils import extract_model_field, join_url, jsonify, validate_request_model
+from arrest.utils import extract_model_field, join_url, jsonify, validate_model
 
 
 class Resource:
@@ -371,7 +371,7 @@ class Resource:
 
         if request_type:
             # perform type validation on `request_data`
-            request_data = validate_request_model(type_=request_type, obj=request_data)
+            request_data = validate_model(type_=request_type, obj=request_data)
 
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
@@ -388,6 +388,14 @@ class Resource:
                     header_params |= extract_model_field(request_data, field_name)
                 elif field_info._param_type == ParamTypes.body:
                     body_params |= extract_model_field(request_data, field_name)
+
+        elif isinstance(request_data, list):
+            for obj in request_data:
+                header_params, query_params, body_params = extract_request(obj)
+                
+
+        elif isinstance(request_data, dict):
+            ...
 
         else:
             body_params = request_data
