@@ -18,8 +18,8 @@ import httpx
 import yaml
 from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
 
-from arrest import Service
 from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME
+from arrest.exceptions import ArrestError
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.openapi._config import Format
@@ -29,7 +29,6 @@ from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
 from arrest.openapi.utils import get_ref_schema, sanitize_name
 from arrest.utils import join_url
-from arrest.exceptions import ArrestError
 
 
 class OpenAPIGenerator:
@@ -75,19 +74,18 @@ class OpenAPIGenerator:
         max_tries=MAX_RETRIES,
         jitter=backoff.full_jitter,
     )
-    async def download_openapi_spec(self) -> bytes:
+    def download_openapi_spec(self) -> bytes:
         if self.url.startswith("http"):
-            async with httpx.AsyncClient() as client:
-                response = await client.get(self.url)
-                response.raise_for_status()
-                return response.read()
+            response = httpx.get(self.url)
+            response.raise_for_status()
+            return response.read()
 
         else:
             with open(self.url, "rb") as file:
                 return file.read()
 
-    async def generate_schema(self, fmt: Optional[Format] = None):
-        openapi_bytes = await self.download_openapi_spec()
+    def generate_schema(self, fmt: Optional[Format] = None):
+        openapi_bytes = self.download_openapi_spec()
         fmt = fmt if fmt else self.url.split(".")[-1]
         openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
 
@@ -101,14 +99,14 @@ class OpenAPIGenerator:
 
         Path.mkdir(output_path, exist_ok=True)
 
-        await self.generate_component_schema(input_bytes=openapi_bytes, schema_path=schema_path)
+        self.generate_component_schema(input_bytes=openapi_bytes, schema_path=schema_path)
         resources = self.generate_resource_file(
             openapi=openapi, schema_path=schema_path, resource_path=output_path
         )
         self.generate_service_file(openapi=openapi, service_path=output_path, resources=resources)
         InitTemplate(destination_path=output_path).render_and_save()
 
-    async def generate_component_schema(self, input_bytes: bytes, schema_path: Path | str) -> None:
+    def generate_component_schema(self, input_bytes: bytes, schema_path: Path | str) -> None:
         generate(
             input_=input_bytes.decode("utf-8"),
             input_file_type=InputFileType.OpenAPI,

@@ -1,8 +1,19 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from arrest.openapi.parser import OpenAPIGenerator
-from arrest.openapi.service_template import ServiceSchema
-from arrest.openapi.spec import OpenAPI, Info, PathItem, Operation, Server, Reference
+from arrest.openapi.spec import (
+    Info,
+    MediaType,
+    OpenAPI,
+    Operation,
+    PathItem,
+    Reference,
+    RequestBody,
+    Response,
+    Server,
+)
 
 
 @pytest.mark.parametrize(
@@ -61,15 +72,106 @@ def test_generate_services(servers, service_ids, urls):
         assert service.resources == []
 
 
-def test_generate_resources():
+@pytest.mark.parametrize(
+    "responses, request_body, parsed_request, parsed_response",
+    [
+        ({"200": Reference(ref="#/components/schemas/User")}, None, None, "User"),
+        (
+            {
+                "200": Response(
+                    content={"application/json": MediaType(schema=Reference(ref="#/components/schemas/User"))}
+                )
+            },
+            None,
+            None,
+            "User",
+        ),
+        (
+            {
+                "200": Response(
+                    content={
+                        "application/json": MediaType(
+                            schema={"type": "array", "items": {"$ref": "#/components/schemas/Pet"}}
+                        )
+                    }
+                )
+            },
+            None,
+            None,
+            None,
+        ),
+        ({"400": Reference(ref="#/components/schemas/User")}, None, None, None),
+        (
+            {
+                "200": Response(
+                    content={
+                        "application/xml": MediaType(
+                            schema={"type": "array", "items": {"$ref": "#/components/schemas/Pet"}}
+                        )
+                    }
+                )
+            },
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            Reference(ref="#/components/schemas/User"),
+            "User",
+            None,
+        ),
+        (
+            None,
+            RequestBody(
+                content={"application/json": MediaType(schema=Reference(ref="#/components/schemas/User"))}
+            ),
+            "User",
+            None,
+        ),
+        (
+            None,
+            RequestBody(
+                content={"application/json": MediaType(schema=Reference(ref="#/components/schemas/User"))}
+            ),
+            "User",
+            None,
+        ),
+        (
+            None,
+            RequestBody(
+                content={
+                    "application/json": MediaType(
+                        schema={"type": "array", "items": {"$ref": "#/components/schemas/Pet"}}
+                    )
+                }
+            ),
+            None,
+            None,
+        ),
+        (
+            {"200": Reference(ref="#/components/schemas/UserResponse")},
+            Reference(ref="#/components/schemas/UserRequest"),
+            "UserRequest",
+            "UserResponse",
+        ),
+    ],
+)
+def test_generate_resources(responses, request_body, parsed_request, parsed_response):
     generator = OpenAPIGenerator(openapi_path=MagicMock(), output_path=MagicMock())
 
     openapi = OpenAPI(
         info=Info(title="api", version="0.1"),
-        paths={
-            "/user": PathItem(get=Operation(responses={"200": Reference(ref="#/components/schemas/User")}))
-        },
+        paths={"/user/items": PathItem(get=Operation(responses=responses, requestBody=request_body))},
     )
 
     resources = list(generator._build_arrest_resources(openapi=openapi))
     assert len(resources) == 1
+
+    assert len(resources[0].handlers) == 1
+    handler = resources[0].handlers[0]
+
+    assert handler.method == "GET"
+    assert handler.route == "/items"
+    assert handler.request == parsed_request
+    assert handler.response == parsed_response

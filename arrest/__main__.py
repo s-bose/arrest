@@ -1,4 +1,3 @@
-import asyncio
 import sys
 from argparse import Namespace
 from pathlib import Path
@@ -10,8 +9,6 @@ from arrest.openapi.parser import OpenAPIGenerator
 
 
 def main():
-    loop = asyncio.new_event_loop()
-
     namespace = Namespace()
     argcomplete.autocomplete(arg_parser)
 
@@ -19,8 +16,7 @@ def main():
     output = Path().resolve(namespace.output)
 
     generator = OpenAPIGenerator(openapi_path=namespace.url, output_path=output, dir_name=namespace.dir)
-    loop.run_until_complete(generator.generate_schema())
-    loop.close()
+    generator.generate_schema()
 
 
 if __name__ == "__main__":

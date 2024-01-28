@@ -1,12 +1,12 @@
+import os
+from tempfile import TemporaryDirectory
+
 import pytest
 from httpx import Response
-import os
 
-from tempfile import TemporaryDirectory
 from arrest.common import StrEnum
-from arrest.openapi import OpenAPIGenerator
 from arrest.exceptions import ArrestError
-
+from arrest.openapi import OpenAPIGenerator
 from tests import TEST_DEFAULT_SERVICE_URL
 
 FIXTURE_PATH = "tests/fixtures"
@@ -46,7 +46,7 @@ async def test_openapi_generate_from_file(openapi_version, fixture_file):
 
     with TemporaryDirectory() as tempdir:
         openapi = OpenAPIGenerator(openapi_path=filepath, output_path=tempdir)
-        await openapi.generate_schema()
+        openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
         assert set(list(FileNames)) == set(generated_files)
@@ -73,7 +73,7 @@ async def test_openapi_generate_from_http(openapi_version, url_stub, fixture_fil
 
     with TemporaryDirectory() as tempdir:
         openapi = OpenAPIGenerator(openapi_path=f"{TEST_DEFAULT_SERVICE_URL}/{url_stub}", output_path=tempdir)
-        await openapi.generate_schema()
+        openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
         assert set(list(FileNames)) == set(generated_files)
@@ -89,4 +89,4 @@ async def test_generate_invalid_file():
 
     openapi = OpenAPIGenerator(openapi_path=filepath, output_path="/does/not/exist")
     with pytest.raises(ArrestError):
-        await openapi.generate_schema()
+        openapi.generate_schema()
