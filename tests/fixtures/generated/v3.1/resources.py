@@ -1,5 +1,4 @@
 from arrest import Resource
-
 from .models import Pet, Pets
 
 pets = Resource(

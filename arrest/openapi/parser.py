@@ -16,12 +16,17 @@ from typing import IO, Generator, Optional
 import backoff
 import httpx
 import yaml
-from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
 
 from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME
 from arrest.exceptions import ArrestError
 from arrest.http import Methods
 from arrest.logging import logger
+
+try:
+    from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
+except ImportError:
+    logger.warning("Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`")
+
 from arrest.openapi._config import Format
 from arrest.openapi.init_template import InitTemplate
 from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, ResourceTemplate
@@ -147,7 +152,7 @@ class OpenAPIGenerator:
         ResourceTemplate(
             schema_module=module, resources=resources, destination_path=resource_path
         ).render_and_save()
-        logger.info(f"generated arrest resources in : {resource_path}")
+        logger.info(f"generated arrest resources in : {resource_path}/resources.py")
         return resources
 
     def _build_arrest_service(

@@ -41,7 +41,7 @@ def main(args: Optional[Sequence[str]] = None):
         arg_parser.print_help(file=sys.stdout)
         return Exit.ERROR
 
-    if not namespace.output:
+    if not (output := namespace.output):
         output = Path().resolve(namespace.output)
         print(f"No output path specified. Using current directory {output!s}", file=sys.stdout)
 
