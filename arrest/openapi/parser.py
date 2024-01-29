@@ -131,7 +131,7 @@ class OpenAPIGenerator:
         )
 
         ServiceTemplate(services=services, destination_path=service_path).render_and_save()
-        logger.info(f"generated arrest services in : {service_path}")
+        logger.info(f"generated arrest services in : {service_path}/services.py")
 
     def get_service_name(self, openapi: OpenAPI, service_name: Optional[str] = None) -> str:
         name = service_name or openapi.info.title or OPENAPI_DIRECTORY

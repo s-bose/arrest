@@ -1,4 +1,5 @@
 from arrest import Service
+
 from .resources import pets
 
 swagger_petstore = Service(

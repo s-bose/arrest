@@ -10,7 +10,7 @@ from arrest.cli.arguments import arg_parser
 from arrest.openapi.parser import OpenAPIGenerator
 
 
-class Exit(enum.Enum):
+class Exit(int, enum.Enum):
     """Exit reasons."""
 
     OK = 0
@@ -22,12 +22,29 @@ def main(args: Optional[Sequence[str]] = None):
     namespace = Namespace()
     argcomplete.autocomplete(arg_parser)
 
-    arg_parser.parse_args(namespace=namespace)
-
     if args is None:  # pragma: no cover
         args = sys.argv[1:]
 
-    output = Path().resolve(namespace.output)
+    _, unknown_args = arg_parser.parse_known_args(args, namespace=namespace)
+
+    if unknown_args:
+        print("unrecognized arguments: {}".format(" ".join(unknown_args)))
+        arg_parser.print_help(file=sys.stdout)
+        return Exit.ERROR
+
+    if not args:
+        arg_parser.print_help(file=sys.stdout)
+        return Exit.ERROR
+
+    if not namespace.url:
+        print("Missing `--url`. An http or file url needs to be specified", file=sys.stdout)
+        arg_parser.print_help(file=sys.stdout)
+        return Exit.ERROR
+
+    if not namespace.output:
+        output = Path().resolve(namespace.output)
+        print(f"No output path specified. Using current directory {output!s}", file=sys.stdout)
+
     use_pydantic_v2 = namespace.pydantic == "v2"
 
     try:
@@ -37,8 +54,11 @@ def main(args: Optional[Sequence[str]] = None):
             dir_name=namespace.dir,
             use_pydantic_v2=use_pydantic_v2,
         )
+
         generator.generate_schema()
+        print("Files generated successfully", file=sys.stdout)
         return Exit.OK
+
     except Exception:
         import traceback
 
