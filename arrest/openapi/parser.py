@@ -11,7 +11,7 @@ import itertools
 import json
 import os
 from pathlib import Path
-from typing import IO, Any, Generator, Optional, Union
+from typing import IO, Generator, Optional
 
 import backoff
 import httpx

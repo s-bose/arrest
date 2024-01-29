@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional, Type, Union, cast
 import backoff
 import httpx
 from httpx import Headers, QueryParams
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError
 from pydantic.fields import FieldInfo
 from typing_extensions import Unpack
 

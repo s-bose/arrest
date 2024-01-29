@@ -12,4 +12,4 @@ arg_parser.add_argument(
 
 arg_parser.add_argument("--pydantic", choices=["v1", "v2"], default="v1")
 arg_parser.add_argument("-u", "--url", required=True, help="HTTP or file url for the openapi schema")
-arg_parser.add_argument("-d", "--dir", default=None)
+arg_parser.add_argument("-d", "--dir", default=None, help="Directory containing the files")

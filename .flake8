@@ -10,3 +10,4 @@ exclude =
     .mypy_cache,
     .venv,
     venv
+    .tox
