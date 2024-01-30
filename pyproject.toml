@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-pydantic = ">=1.10.13"
+pydantic = "^2.6.0"
 python = "^3.10"
 httpx = "^0.24.1"
 orjson = "^3.9.10"
@@ -77,9 +77,6 @@ force-exclude = '''
 )/
 '''
 
-[tool.pytest.ini_options]
-filterwarnings = ["ignore::pydantic.PydanticDeprecatedSince20"]
-
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]
 source = ["arrest"]
@@ -95,6 +92,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "if not TYPE_CHECKING:",
     "class Config:",
+    "if PYDANTIC_V2",
 ]
 
 [tool.isort]

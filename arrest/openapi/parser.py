@@ -236,12 +236,12 @@ class OpenAPIGenerator:
             return get_ref_schema(media.media_type_schema)
 
     def get_response_schema(self, operation: Operation) -> Optional[str]:
+        print(operation.responses)
         if not operation.responses or not (
             success_response := operation.responses.get(str(httpx.codes.OK), None)
         ):
             logger.debug("no success (200) response defined")
             return None
-
         if isinstance(success_response, Reference):
             return get_ref_schema(success_response)
 

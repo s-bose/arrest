@@ -53,8 +53,8 @@ class Response(Base):
 
 
 class Operation(Base):
-    responses: Optional[dict[str, Union[Response, Reference]]] = None
-    requestBody: Optional[Union[RequestBody, Reference]] = None
+    responses: Optional[dict[str, Union[Reference, Response]]] = None
+    requestBody: Optional[Union[Reference, RequestBody]] = None
 
 
 class PathItem(Base):
