@@ -2,14 +2,8 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Optional
 
+from jinja2 import Environment, FileSystemLoader, Template
 from pydantic import BaseModel
-
-from arrest.logging import logger
-
-try:
-    from jinja2 import Environment, FileSystemLoader, Template
-except ImportError:
-    logger.warning("Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`")
 
 from arrest._config import PYDANTIC_V2
 from arrest.openapi._config import TEMPLATE_DIR

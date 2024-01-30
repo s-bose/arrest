@@ -2,7 +2,8 @@ import io
 
 import pytest
 
-from arrest.__main__ import Exit, arg_parser, main
+from arrest.__main__ import arg_parser, main
+from arrest.common import Exit
 from arrest.exceptions import ArrestError
 
 CaptureFixture = pytest.CaptureFixture

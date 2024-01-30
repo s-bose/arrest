@@ -10,6 +10,7 @@ import io
 import itertools
 import json
 import os
+import sys
 from pathlib import Path
 from typing import IO, Generator, Optional
 
@@ -25,7 +26,7 @@ from arrest.logging import logger
 try:
     from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
 except ImportError:
-    logger.warning("Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`")
+    sys.exit(1)
 
 from arrest.openapi._config import Format
 from arrest.openapi.init_template import InitTemplate

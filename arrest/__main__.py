@@ -1,4 +1,3 @@
-import enum
 import sys
 from argparse import Namespace
 from pathlib import Path
@@ -6,16 +5,18 @@ from typing import Optional, Sequence
 
 import argcomplete
 
+from arrest.common import Exit
+from arrest.logging import logger
+
+try:
+    import datamodel_code_generator
+    import jinja2
+except ImportError:
+    logger.warning("Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`")
+    sys.exit(Exit.ERROR)
+
 from arrest.cli.arguments import arg_parser
 from arrest.openapi.parser import OpenAPIGenerator
-
-
-class Exit(int, enum.Enum):
-    """Exit reasons."""
-
-    OK = 0
-    ERROR = 1
-    KeyboardInterrupt = 2
 
 
 def main(args: Optional[Sequence[str]] = None):

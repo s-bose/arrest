@@ -5,6 +5,17 @@ Arrest uses [datamodel-code-generator](https://github.com/koxudaxi/datamodel-cod
 
 ## Usage
 
+```bash
+pip install "arrest[openapi]"
+
+poetry add 'arrest[openapi]'
+```
+
+This installs two additional dependencies.
+1. [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator)
+2. [jinja2](https://github.com/pallets/jinja/)
+
+
 
 
 !!! Note
