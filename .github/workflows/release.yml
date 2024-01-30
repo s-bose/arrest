@@ -34,6 +34,6 @@ jobs:
     - name: Install dependencies
       run: poetry install --with docs
     - name: Build docs
-      run: poetry run mkdocs build -f -
+      run: poetry run mkdocs build
     - name: Publish Docs
       run: poetry run mkdocs gh-deploy
