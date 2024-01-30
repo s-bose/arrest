@@ -359,6 +359,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenAPI Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dev-note/" class="md-nav__link">
         
   
@@ -769,6 +789,39 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#openapigenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAPIGenerator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenAPIGenerator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arrest.openapi.OpenAPIGenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAPIGenerator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arrest.openapi.OpenAPIGenerator.generate_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_schema()
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1140,6 +1193,39 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openapigenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAPIGenerator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenAPIGenerator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arrest.openapi.OpenAPIGenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAPIGenerator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arrest.openapi.OpenAPIGenerator.generate_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_schema()
+    </span>
+  </a>
   
 </li>
         
@@ -2337,6 +2423,280 @@ response</p>
   </div>
 
 </div><p>raised when Arrest cannot convert path-parameter type using any of the existing converters</p>
+<h2 id="openapigenerator">OpenAPIGenerator</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="arrest.openapi.OpenAPIGenerator"></a>
+  <div class="doc doc-contents first">
+
+  
+      <p>class for generating Arrest services, resources and schema
+components from OpenAPI specification (&gt;= v3.0)
+Generates three files:</p>
+<ol>
+<li>models.py (contains OpenAPI Schema component definitions)</li>
+<li>resources.py (Arrest Resources based on the path items)</li>
+<li>services.py (Arrest Services using the resources)</li>
+</ol>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>url</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>an HTTP url or full path to the OpenAPI specification (json or yaml)</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>output_path</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>path where the generated files will be saved</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dir_name</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>(optional) specify the folder name containing the files</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+                <details class="quote">
+                  <summary>Source code in <code>arrest/openapi/parser.py</code></summary>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">dir_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_pydantic_v2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    class for generating Arrest services, resources and schema</span>
+<span class="sd">    components from OpenAPI specification (&gt;= v3.0)</span>
+<span class="sd">    Generates three files:</span>
+
+<span class="sd">    1. models.py (contains OpenAPI Schema component definitions)</span>
+<span class="sd">    2. resources.py (Arrest Resources based on the path items)</span>
+<span class="sd">    3. services.py (Arrest Services using the resources)</span>
+
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        url:</span>
+<span class="sd">            an HTTP url or full path to the OpenAPI specification (json or yaml)</span>
+<span class="sd">        output_path:</span>
+<span class="sd">            path where the generated files will be saved</span>
+<span class="sd">        dir_name:</span>
+<span class="sd">            (optional) specify the folder name containing the files</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">url</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">output_path</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">dir_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">dir_name</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">use_pydantic_v2</span> <span class="o">=</span> <span class="n">use_pydantic_v2</span>
+</code></pre></div></td></tr></table></div>
+                </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="arrest.openapi.OpenAPIGenerator.generate_schema" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">generate_schema</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Generates the boilerplate files against an OpenAPI Spec</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>fmt</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="arrest.openapi._config.Format">Format</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>specification format [json, yaml, yml]</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>arrest/openapi/parser.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Format</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates the boilerplate files against an OpenAPI Spec</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        fmt (Optional[Format], optional): specification format [json, yaml, yml]</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ArrestError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">openapi_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_openapi_spec</span><span class="p">()</span>
+    <span class="n">fmt</span> <span class="o">=</span> <span class="n">fmt</span> <span class="k">if</span> <span class="n">fmt</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">openapi</span><span class="p">:</span> <span class="n">OpenAPI</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_openapi</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">openapi_bytes</span><span class="p">))</span>
+
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">ArrestError</span><span class="p">(</span><span class="s2">&quot;output path does not exist&quot;</span><span class="p">)</span>
+
+    <span class="n">service_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir_name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_service_name</span><span class="p">(</span><span class="n">openapi</span><span class="p">)</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="n">service_name</span>
+    <span class="n">schema_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="n">OPENAPI_SCHEMA_FILENAME</span>
+
+    <span class="n">Path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">generate_component_schema</span><span class="p">(</span><span class="n">input_bytes</span><span class="o">=</span><span class="n">openapi_bytes</span><span class="p">,</span> <span class="n">schema_path</span><span class="o">=</span><span class="n">schema_path</span><span class="p">)</span>
+    <span class="n">resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_resource_file</span><span class="p">(</span>
+        <span class="n">openapi</span><span class="o">=</span><span class="n">openapi</span><span class="p">,</span> <span class="n">schema_path</span><span class="o">=</span><span class="n">schema_path</span><span class="p">,</span> <span class="n">resource_path</span><span class="o">=</span><span class="n">output_path</span>
+    <span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">generate_service_file</span><span class="p">(</span><span class="n">openapi</span><span class="o">=</span><span class="n">openapi</span><span class="p">,</span> <span class="n">service_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">)</span>
+    <span class="n">InitTemplate</span><span class="p">(</span><span class="n">destination_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">)</span><span class="o">.</span><span class="n">render_and_save</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 

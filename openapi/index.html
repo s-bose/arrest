@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../configuring-request/">
+        <link rel="prev" href="../resources-services/">
       
       
-        <link rel="next" href="../openapi/">
+        <link rel="next" href="../dev-note/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Resources and Services - Arrest</title>
+        <title>OpenAPI Integration - Arrest</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#resources" class="md-skip">
+        <a href="#usage" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Resources and Services
+              OpenAPI Integration
             
           </span>
         </div>
@@ -248,8 +248,6 @@
       
   
   
-    
-  
   
   
     
@@ -260,12 +258,12 @@
       
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -279,7 +277,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Getting Started
@@ -332,6 +330,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources-services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resources and Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -346,7 +372,7 @@
           
   
   <span class="md-ellipsis">
-    Resources and Services
+    OpenAPI Integration
   </span>
   
 
@@ -357,7 +383,7 @@
         
   
   <span class="md-ellipsis">
-    Resources and Services
+    OpenAPI Integration
   </span>
   
 
@@ -377,77 +403,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
+  <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
-      Resources
+      Usage
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Resources">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#resource-wide-response-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      Resource-wide response model
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-a-client-directly" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using a client directly
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-httpx-arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using httpx arguments
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#services" class="md-nav__link">
+  <a href="#cli-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      Services
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Services">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-a-client-directly_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using a client directly
+      CLI Arguments
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#using-httpx-arguments_1" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#what-works-and-what-does-not" class="md-nav__link">
     <span class="md-ellipsis">
-      Using httpx arguments
+      What works and what does not
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -455,34 +433,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../openapi/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    OpenAPI Integration
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -552,77 +502,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
+  <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
-      Resources
+      Usage
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Resources">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#resource-wide-response-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      Resource-wide response model
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-a-client-directly" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using a client directly
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-httpx-arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using httpx arguments
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#services" class="md-nav__link">
+  <a href="#cli-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      Services
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Services">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-a-client-directly_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using a client directly
+      CLI Arguments
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#using-httpx-arguments_1" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#what-works-and-what-does-not" class="md-nav__link">
     <span class="md-ellipsis">
-      Using httpx arguments
+      What works and what does not
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -641,110 +543,165 @@
                   
 
 
-  <h1>Resources and Services</h1>
+  <h1>OpenAPI Integration</h1>
 
-<h2 id="resources">Resources</h2>
-<p>A resource can be thought of as an entity that provides one or more HTTP verb accessors and / or subresources.</p>
-<p>Resources have a base <code>route</code>, a <code>name</code>, (or derived from <code>route</code>), and a list of handlers.</p>
-<p>Handlers are a list of paths and their correspnding HTTP verb. These are the many different ways of interacting with the said resource.</p>
-<p>For example, you can define a resource as followed:</p>
-<div class="highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
-    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;PUT&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/posts&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/posts&quot;</span><span class="p">),</span>
-    <span class="p">]</span>
-<span class="p">)</span>
-</code></pre></div>
-<hr />
-<h3 id="resource-wide-response-model">Resource-wide response model</h3>
-<p>You can define a resource-level response model if you want to streamline the output structure for all the handlers to the same response model.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Resource</span>
-
-<span class="k">class</span> <span class="nc">UserResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="o">...</span>
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
-    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;PUT&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-    <span class="p">],</span>
-    <span class="n">response_model</span><span class="o">=</span><span class="n">UserResponse</span>
-<span class="p">)</span>
-</code></pre></div>
-<hr />
-<h3 id="using-a-client-directly">Using a client directly</h3>
-<p>You can choose to run with your own <code>httpx.AsyncClient</code> instance. Simply set the <code>client</code> field to your resource.</p>
-<div class="highlight"><pre><span></span><code><span class="o">...</span>
-<span class="kn">import</span> <span class="nn">httpx</span>
-
-<span class="n">my_client</span> <span class="o">=</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
-    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span>
-    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;PUT&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-    <span class="p">],</span>
-    <span class="n">response_model</span><span class="o">=</span><span class="n">UserResponse</span><span class="p">,</span>
-    <span class="n">client</span><span class="o">=</span><span class="n">my_client</span>
-<span class="p">)</span>
-</code></pre></div>
-<p>You can also use any instance that is a subclass of <code>httpx.AsyncClient</code> (e.g. <a href="https://docs.authlib.org/en/latest/client/httpx.html#httpx-oauth-2-0">AsyncOauth2Client from authlib</a>)</p>
-<p>The caveat is that you have to manually close the client after you are done. Usually by <code>await client.aclose()</code> or something else.</p>
+<p>Arrest additionally offers integration to <a href="https://swagger.io/specification/">OpenAPI specification</a> (formerly Swagger).</p>
+<p>With it, you can generate the necessary boilerplates for Arrest services and resources directly from the API route specifications.
+Arrest uses <a href="https://github.com/koxudaxi/datamodel-code-generator">datamodel-code-generator</a> under the hood to generate the data transfer models in Pydantic, and add Arrest resource and service templates on top of that.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>There is also a <code>client</code> field in <code>Services</code>. You can also use it to set a service-wide shared client instance</p>
+<p>this feature is experimental and does not quite cover the extensive range of features of OpenAPI
+specification. We will be gradually rolling out new features from OpenAPI specification that also
+suits the functionalities of Arrest.</p>
 </div>
-<hr />
-<h3 id="using-httpx-arguments">Using httpx arguments</h3>
-<p>You can directly pass most of the httpx client arguments as kwargs for the Resource instance. This allows you to have a more fine-grained control on configuring the httpx client.</p>
-<p>For the full list of available arguments, please check <a href="../api/#httpx-client-arguments">here</a></p>
-<h2 id="services">Services</h2>
-<p>Services are the main entrypoint to your API calls. A service is a single url endpoint of a server whose REST APIs you are going to interface.
-A service has the following core fields.</p>
-<ul>
-<li><em>name</em> - name of the service</li>
-<li><em>url</em> - URl of the service (without any trailing slashes)</li>
-<li><em>resources</em> - a list of resources for this service</li>
-</ul>
-<hr />
-<h3 id="using-a-client-directly_1">Using a client directly</h3>
-<p>You can choose to run with your own <code>httpx.AsyncClient</code> instance. Simply set the <code>client</code> field to your service.</p>
-<p>This client will override any client set by any resource, and will be shared across all the http calls.</p>
-<div class="highlight"><pre><span></span><code><span class="o">...</span>
-<span class="kn">import</span> <span class="nn">httpx</span>
+<h2 id="usage">Usage</h2>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;arrest[openapi]&quot;</span>
 
-<span class="n">my_client</span> <span class="o">=</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+poetry<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;arrest[openapi]&#39;</span>
+</code></pre></div>
+<p>This installs two additional dependencies.
+1. <a href="https://github.com/koxudaxi/datamodel-code-generator">datamodel-code-generator</a>
+2. <a href="https://github.com/pallets/jinja/">jinja2</a></p>
+<p>Once installed, you can use the CLI interface to provide a OpenAPI Specification url (http or a filepath) and it will generate the files from the spec.</p>
+<div class="highlight"><pre><span></span><code>arrest<span class="w"> </span>--url<span class="w"> </span>https://petstore3.swagger.io/api/v3/openapi.json
+</code></pre></div>
+<p>This generates 3 files.
+1. <code>models.py</code> - a file containing all the schema definitions found in the OpenAPI Spec <code>/components/schemas</code>, generated by <code>datamodel-code-generator</code></p>
+<ol>
+<li>
+<p><code>resources.py</code> - a set of Arrest resource definitions based on the defined routes in the Spec <code>/paths</code></p>
+</li>
+<li>
+<p><code>services.py</code> - a list of Arrest services based on the Spec <code>/servers</code>, if there is a server definition with <code>serverVariables</code>, Arrest will generate as many service instance as there are unique server urls from all the combinations of <code>serverVariables</code></p>
+</li>
+</ol>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code>&gt;&gt;&gt;<span class="w"> </span>arrest<span class="w"> </span>--url<span class="w"> </span>https://petstore3.swagger.io/api/v3.1/openapi_3.1.json<span class="w"> </span>-o<span class="w"> </span>path/to/destination
+</code></pre></div>
+<p>this will create a directory named <code>swagger_petstore_openapi_3_1</code> (based on the <code>title</code> in the OpenAPI specification) in <code>path/to/destination</code>, inside which it will generate the following</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># swagger_petstore_openapi_3_1/models.py</span>
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
-    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span>
+<span class="c1"># generated by datamodel-codegen:</span>
+<span class="c1">#   filename:  &lt;stdin&gt;</span>
+<span class="c1">#   timestamp: 2024-01-29T18:57:34+00:00</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Pet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">Pets</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">__root__</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Pet</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Error</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">code</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+
+
+
+<span class="c1"># swagger_petstore_openapi_3_1/resources.py</span>
+
+<span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Resource</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Pet</span><span class="p">,</span> <span class="n">Pets</span>
+
+<span class="n">pets</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pets&quot;</span><span class="p">,</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/pets&quot;</span><span class="p">,</span>
     <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
-        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;PUT&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;/{user_id:int}&quot;</span><span class="p">),</span>
-    <span class="p">],</span>
-    <span class="n">response_model</span><span class="o">=</span><span class="n">UserResponse</span><span class="p">,</span>
-    <span class="n">client</span><span class="o">=</span><span class="n">my_client</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Pets</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/</span><span class="si">{petId}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Pet</span><span class="p">),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+
+<span class="c1"># swagger_petstore_openapi_3_1/services.py</span>
+
+<span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Service</span>
+<span class="kn">from</span> <span class="nn">.resources</span> <span class="kn">import</span> <span class="n">pet</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">user</span>
+
+<span class="n">swagger_petstore_openapi_3_0</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;swagger_petstore_openapi_3_0&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;/api/v3&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">pet</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">user</span><span class="p">]</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>As stated previously, you are in charge of closing the client.</p>
-<hr />
-<h3 id="using-httpx-arguments_1">Using httpx arguments</h3>
-<p>You can directly pass most of the httpx client arguments as kwargs for the Service instance.</p>
-<p>This will override these fields if also set from any resource under this service.</p>
-<p>For the full list of available arguments, please check <a href="../api/#httpx-client-arguments">here</a></p>
+<p>The files generated are not black-formatted or isort-formatted. Hence further customization is left to the user.</p>
+</div>
+<h2 id="cli-arguments">CLI Arguments</h2>
+<div class="highlight"><pre><span></span><code>usage:
+    arrest [options] --help
+
+generate arrest services and resources from various definitions
+
+options:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        output directory for generated files (default: current working directory)
+  --pydantic {v1,v2}    pydantic version to generate the schema definitions
+  -u URL, --url URL     HTTP or file url for the openapi schema
+  -d DIR, --dir DIR     Folder containing the files (default: OpenAPI specification title)
+</code></pre></div>
+<p>By default Arrest will look for the <code>title</code> of the specification and use that to name the directory that contains these files.
+If it can't find one, it will use <code>api</code> as the directory name instead.
+Alternatively you can specify your own custom name by providing <code>-d</code> or <code>--dir</code></p>
+<p><code>--pydantic</code> is used to denote the pydantic version (<code>v1</code> or <code>v2</code>) that the generated schema definitions will use (defaults to <code>v1</code>)</p>
+<h2 id="what-works-and-what-does-not">What works and what does not</h2>
+<ol>
+<li>
+<p>Currently, Arrest is able to only work on singular pydantic types and not types like <code>list[BaseModel]</code> or <code>dict[str, BaseModel]</code> as request / response models.
+As a result, schema definitions in OpenAPI that are of the following types:
+<div class="highlight"><pre><span></span><code>{
+    &quot;type&quot;: &quot;array&quot;,
+    &quot;items&quot;: {
+        &quot;$ref&quot;: &quot;#/components/Schemas/User&quot;
+    }
+}
+</code></pre></div>
+are not parsed. Same for any schema definitions that don't have a <code>$ref</code> to a model definition.</p>
+</li>
+<li>
+<p><code>Parameters</code> such as path or query or headers are not parsed currently. Although formatted path interpolation is available. If your path definition is something like <code>/abc/{xyz}</code>,
+the Arrest resource <code>abc</code> will have a handler with path <code>/{xyz}</code> and you can pass <code>xyz</code> as a kwarg when calling this route.</p>
+</li>
+</ol>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><span class="n">abc</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;abc&quot;</span><span class="p">,</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/abc&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/</span><span class="si">{xyz}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+
+<span class="k">await</span> <span class="n">my_service</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+<span class="c1"># or</span>
+<span class="k">await</span> <span class="n">my_service</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/123&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ol>
+<li>OpenAPI Security definitions are not parsed.</li>
+</ol>
+<p>There is a bit of manual intervention needed if the extraction from the OpenAPI Spec is incomplete.
+You can subclass the generated schema classes and add extra parameters as <code>Header()</code> or <code>Query()</code> parameters.</p>
+<p>Additionally, you can use it as a module and extend its functionalities.
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest.openapi</span> <span class="kn">import</span> <span class="n">OpenAPIGenerator</span>
+
+<span class="o">...</span>
+</code></pre></div></p>
+<p>For more info, check the <a href="../api/#openapigenerator">api documentation</a></p>
 
 
 
