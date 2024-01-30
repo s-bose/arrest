@@ -32,7 +32,7 @@ jobs:
           poetry-version: ${{ matrix.poetry-version }}
 
     - name: Install dependencies
-      run: poetry install
+      run: poetry install --all-extras
 
     - name: Upgrade pip
       run: poetry run pip install --upgrade pip
