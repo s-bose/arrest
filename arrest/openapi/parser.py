@@ -34,15 +34,13 @@ from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, Reso
 from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
 from arrest.openapi.utils import get_ref_schema, sanitize_name
-from arrest.utils import join_url
 
 
 class OpenAPIGenerator:
     def __init__(
         self,
-        base_url: Optional[str] = None,
         *,
-        openapi_path: str,
+        url: str,
         output_path: str,
         dir_name: Optional[str] = None,
         use_pydantic_v2: Optional[bool] = False,
@@ -58,18 +56,15 @@ class OpenAPIGenerator:
 
 
         Parameters:
-            base_url:
-                (optional) base url for your application
-            openapi_path:
-                either partial path (e.g. /api/openapi.json) or full
-                path to the OpenAPI specification (json or yaml)
+            url:
+                an HTTP url or full path to the OpenAPI specification (json or yaml)
             output_path:
                 path where the generated files will be saved
             dir_name:
                 (optional) specify the folder name containing the files
 
         """
-        self.url: str = join_url(base_url, openapi_path) if base_url else openapi_path
+        self.url: str = url
         self.output_path: str = output_path
         self.dir_name: str = dir_name
         self.use_pydantic_v2 = use_pydantic_v2
@@ -91,6 +86,14 @@ class OpenAPIGenerator:
                 return file.read()
 
     def generate_schema(self, fmt: Optional[Format] = None):
+        """Generates the boilerplate files against an OpenAPI Spec
+
+        Parameters:
+            fmt (Optional[Format], optional): specification format [json, yaml, yml]
+
+        Raises:
+            ArrestError
+        """
         openapi_bytes = self.download_openapi_spec()
         fmt = fmt if fmt else self.url.split(".")[-1]
         openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
@@ -247,9 +250,9 @@ class OpenAPIGenerator:
 
     @classmethod
     def load_dict(cls, fmt: Format, data: IO) -> dict:
-        if fmt == "json":
+        if fmt == Format.json:
             return json.load(data)
-        elif fmt == "yaml":
+        elif fmt in (Format.yaml, Format.yml):
             return yaml.load(data, yaml.SafeLoader)
 
     @classmethod

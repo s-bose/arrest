@@ -50,7 +50,7 @@ def main(args: Optional[Sequence[str]] = None):
 
     try:
         generator = OpenAPIGenerator(
-            openapi_path=namespace.url,
+            url=namespace.url,
             output_path=output,
             dir_name=namespace.dir,
             use_pydantic_v2=use_pydantic_v2,

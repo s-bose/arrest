@@ -45,7 +45,7 @@ async def test_openapi_generate_from_file(openapi_version, fixture_file):
     filepath = os.path.join(FIXTURE_PATH, fixture_file)
 
     with TemporaryDirectory() as tempdir:
-        openapi = OpenAPIGenerator(openapi_path=filepath, output_path=tempdir)
+        openapi = OpenAPIGenerator(url=filepath, output_path=tempdir)
         openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
@@ -72,7 +72,7 @@ async def test_openapi_generate_from_http(openapi_version, url_stub, fixture_fil
         mock_httpx.get(url=url_stub).mock(return_value=Response(200, content=file.read()))
 
     with TemporaryDirectory() as tempdir:
-        openapi = OpenAPIGenerator(openapi_path=f"{TEST_DEFAULT_SERVICE_URL}/{url_stub}", output_path=tempdir)
+        openapi = OpenAPIGenerator(url=f"{TEST_DEFAULT_SERVICE_URL}/{url_stub}", output_path=tempdir)
         openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
@@ -87,6 +87,6 @@ async def test_openapi_generate_from_http(openapi_version, url_stub, fixture_fil
 async def test_generate_invalid_file():
     filepath = os.path.join(FIXTURE_PATH, "openapi_petstore.json")
 
-    openapi = OpenAPIGenerator(openapi_path=filepath, output_path="/does/not/exist")
+    openapi = OpenAPIGenerator(url=filepath, output_path="/does/not/exist")
     with pytest.raises(ArrestError):
         openapi.generate_schema()

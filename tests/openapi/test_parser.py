@@ -50,7 +50,7 @@ from arrest.openapi.spec import (
     ],
 )
 def test_generate_services(servers, service_ids, urls):
-    generator = OpenAPIGenerator(openapi_path=MagicMock(), output_path=MagicMock())
+    generator = OpenAPIGenerator(url=MagicMock(), output_path=MagicMock())
 
     openapi = OpenAPI(
         info=Info(title="api", version="0.1"),
@@ -158,7 +158,7 @@ def test_generate_services(servers, service_ids, urls):
     ],
 )
 def test_generate_resources(responses, request_body, parsed_request, parsed_response):
-    generator = OpenAPIGenerator(openapi_path=MagicMock(), output_path=MagicMock())
+    generator = OpenAPIGenerator(url=MagicMock(), output_path=MagicMock())
 
     openapi = OpenAPI(
         info=Info(title="api", version="0.1"),
