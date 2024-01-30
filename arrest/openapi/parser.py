@@ -151,7 +151,7 @@ class OpenAPIGenerator:
     ) -> list[ResourceSchema]:
         resources = list(self._build_arrest_resources(openapi=openapi))
         path, _ = os.path.splitext(schema_path)
-        module = path.split("/")[-1]
+        module = Path(path).stem
 
         ResourceTemplate(
             schema_module=module, resources=resources, destination_path=resource_path
@@ -236,7 +236,6 @@ class OpenAPIGenerator:
             return get_ref_schema(media.media_type_schema)
 
     def get_response_schema(self, operation: Operation) -> Optional[str]:
-        print(operation.responses)
         if not operation.responses or not (
             success_response := operation.responses.get(str(httpx.codes.OK), None)
         ):
