@@ -109,3 +109,7 @@ raised when no matching resource is found for the service
 ### ConversionError
 ::: arrest.exceptions.ConversionError
 raised when Arrest cannot convert path-parameter type using any of the existing converters
+
+
+## OpenAPIGenerator
+::: arrest.openapi.OpenAPIGenerator

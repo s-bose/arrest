@@ -1,0 +1,15 @@
+{% macro print_handler_tuple(handler)  -%}
+("{{ handler.method }}", "{{ handler.route }}", {{ handler.request }}, {{ handler.response }}),
+{%- endmacro -%}
+
+from arrest import Resource
+from .{{ schema_module }} import {{ schema_imports|sort|join(', ') }}
+{% for resource in resources %}
+{{ resource.name }} = Resource(
+    name="{{ resource.name }}",
+    route="{{ resource.route }}",
+    handlers=[{% for handler in resource.handlers %}
+        {{ print_handler_tuple(handler) }}{% endfor %}
+    ]
+)
+{% endfor %}

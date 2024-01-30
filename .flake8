@@ -10,3 +10,6 @@ exclude =
     .mypy_cache,
     .venv,
     venv
+    .tox
+per-file-ignores =
+    __main__.py: F401
