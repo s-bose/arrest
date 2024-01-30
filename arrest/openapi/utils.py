@@ -5,7 +5,6 @@ from arrest.openapi.spec import Reference
 
 
 def get_ref_schema(reference: Reference | Any) -> str | None:
-    print(f"{reference=}")
     if ref := getattr(reference, "ref", None):
         return ref.split("/")[-1]
 

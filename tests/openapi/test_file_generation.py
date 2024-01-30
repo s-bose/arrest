@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -9,7 +10,7 @@ from arrest.exceptions import ArrestError
 from arrest.openapi import OpenAPIGenerator
 from tests import TEST_DEFAULT_SERVICE_URL
 
-FIXTURE_PATH = "tests/fixtures"
+FIXTURE_PATH = Path("tests/fixtures")
 
 
 class FileNames(StrEnum):
@@ -26,6 +27,7 @@ def validate_file_contents(src_dir: str, dst_dir: str, filename: FileNames) -> b
             if line1.startswith("#") and line2.startswith("#"):
                 continue
             if line1 != line2:
+                print(f"{line1}\n{line2}")
                 return False
 
         return True
