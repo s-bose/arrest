@@ -90,7 +90,7 @@ class Service:
 
         if resource not in self.resources:
             raise ResourceNotFound(message=f"resource {resource} not found")
-        return await self.resources[resource].request(path=f"/{suffix}", method=method, **kwargs)
+        return await self.rewsources[resource].request(path=f"/{suffix}", method=method, **kwargs)
 
     def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
         if hasattr(self, key):

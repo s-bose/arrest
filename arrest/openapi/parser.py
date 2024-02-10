@@ -18,7 +18,7 @@ import backoff
 import httpx
 import yaml
 
-from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME
+from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME, ROOT_RESOURCE
 from arrest.exceptions import ArrestError
 from arrest.http import Methods
 from arrest.logging import logger
@@ -201,6 +201,8 @@ class OpenAPIGenerator:
             return path[1:].split("/")[0]
 
         for key, group in itertools.groupby(openapi.paths.keys(), key=prefix):
+            if not key:
+                key = ROOT_RESOURCE
             routes = list(group)
             path_items = [openapi.paths.get(route) for route in routes]
             handlers: list[HandlerSchema] = []
@@ -208,7 +210,7 @@ class OpenAPIGenerator:
                 route = route.removeprefix(f"/{key}")
                 handlers.extend(self._build_handlers(route=route, path_item=path_item))
 
-            yield ResourceSchema(name=key, route=f"/{key}", handlers=handlers)
+            yield ResourceSchema(name=sanitize_name(key), route=f"/{key}", handlers=handlers)
 
     def _build_handlers(self, route: str, path_item: PathItem) -> list[HandlerSchema]:
         handlers = []
