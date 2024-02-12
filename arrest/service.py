@@ -6,9 +6,11 @@ import httpx
 from typing_extensions import Unpack
 
 from arrest._config import HttpxClientInputs
+from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
+from arrest.utils import extract_resource_and_suffix
 
 
 class Service:
@@ -78,6 +80,11 @@ class Service:
         Helper function to make a request directly
         from the service level
 
+        Note:
+            If you provide `path` as an empty string or `/`, this would
+            try to find a root resource definition, if any
+
+
         Parameters:
             path:
                 Requested path needs to have the following syntax:
@@ -85,12 +92,13 @@ class Service:
             method:
                 Requested HTTP Method
         """
-        parts = path.strip("/").split("/")
-        resource, suffix = parts[0], "/".join(parts[1:])
 
+        resource, suffix = extract_resource_and_suffix(path=path)
+        if len(resource) == 0:
+            resource = ROOT_RESOURCE
         if resource not in self.resources:
             raise ResourceNotFound(message=f"resource {resource} not found")
-        return await self.rewsources[resource].request(path=f"/{suffix}", method=method, **kwargs)
+        return await self.resources[resource].request(path=suffix, method=method, **kwargs)
 
     def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
         if hasattr(self, key):
