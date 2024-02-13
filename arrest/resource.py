@@ -90,8 +90,6 @@ class Resource:
         self,
         path: str,
     ) -> Any:
-        url = join_url(self.base_url, self.route, path)
-
         def wrapper(func):
             @functools.wraps(func)
             @backoff.on_exception(
@@ -104,6 +102,7 @@ class Resource:
                 jitter=backoff.full_jitter,
             )
             async def wrapped(*args, **kwargs):
+                url = join_url(self.base_url, self.route, path)
                 return await func(self, url, *args, **kwargs)
 
             if getattr(self, func.__name__, None) is None:

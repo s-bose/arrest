@@ -27,7 +27,6 @@ def validate_file_contents(src_dir: str, dst_dir: str, filename: FileNames) -> b
             if line1.startswith("#") and line2.startswith("#"):
                 continue
             if line1 != line2:
-                print(f"{line1}\n{line2}")
                 return False
 
         return True

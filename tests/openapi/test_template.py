@@ -56,7 +56,6 @@ def test_resource_template():
         with open(f"{tmpdir}/resources.py", "r") as file:
             content = file.read()
 
-        print(content)
         assert content == (
             "from arrest import Resource\n"
             "from .models import UserRequest, UserResponse\n"
