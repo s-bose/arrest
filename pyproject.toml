@@ -96,7 +96,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "if not TYPE_CHECKING:",
     "class Config:",
-    "if PYDANTIC_V2",
+    "if PYDANTIC_V2:",
 ]
 
 [tool.isort]

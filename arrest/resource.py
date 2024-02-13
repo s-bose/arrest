@@ -12,7 +12,7 @@ from typing_extensions import Unpack
 
 from arrest._config import PYDANTIC_V2, HttpxClientInputs
 from arrest.converters import compile_path
-from arrest.defaults import DEFAULT_TIMEOUT, MAX_RETRIES
+from arrest.defaults import DEFAULT_TIMEOUT, MAX_RETRIES, ROOT_RESOURCE
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
@@ -79,7 +79,7 @@ class Resource:
         self.route = route
 
         derived_name = name if name else self.route.strip("/").split("/")[0]
-        self.name = derived_name if derived_name else "root"
+        self.name = derived_name if derived_name else ROOT_RESOURCE
         self.response_model = response_model
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
