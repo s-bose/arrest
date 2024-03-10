@@ -1,5 +1,7 @@
 from arrest import Service
+{% if resource_imports|length > 0 -%}
 from .resources import {{ resource_imports|sort|join(', ') }}
+{%- endif %}
 {% for service in services %}
 {{ service.service_id|lower }} = Service(
     name="{{ service.name|lower }}",
