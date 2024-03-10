@@ -38,6 +38,7 @@ nav:
   - OpenAPI Integration: openapi.md
   - Developer's Note: dev-note.md
   - API Documentation: api.md
+  - What's new?: whats-new.md
 
 markdown_extensions:
   - pymdownx.superfences
