@@ -195,22 +195,23 @@ class OpenAPIGenerator:
     def _build_arrest_resources(self, openapi: OpenAPI) -> Generator[ResourceSchema, None, None]:
         def prefix(path: str) -> str:
             """
-            ("/root/xyz/123") -> "root"
-            ("/root/{id}") -> "root"
+            ("/base/xyz/123") -> "base"
+            ("/base/{id}") -> "base"
             """
             return path[1:].split("/")[0]
 
         for key, group in itertools.groupby(openapi.paths.keys(), key=prefix):
-            if not key:
-                key = ROOT_RESOURCE
             routes = list(group)
             path_items = [openapi.paths.get(route) for route in routes]
             handlers: list[HandlerSchema] = []
             for route, path_item in zip(routes, path_items):
-                route = route.removeprefix(f"/{key}")
+                if key:
+                    route = route.removeprefix(f"/{key}")
                 handlers.extend(self._build_handlers(route=route, path_item=path_item))
-
-            yield ResourceSchema(name=sanitize_name(key), route=f"/{key}", handlers=handlers)
+            if key:
+                yield ResourceSchema(name=sanitize_name(key), route=f"/{key}", handlers=handlers)
+            else:
+                yield ResourceSchema(name=ROOT_RESOURCE, route=key, handlers=handlers)
 
     def _build_handlers(self, route: str, path_item: PathItem) -> list[HandlerSchema]:
         handlers = []

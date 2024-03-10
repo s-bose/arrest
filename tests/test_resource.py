@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from arrest.converters import UUIDConverter
+from arrest.defaults import ROOT_RESOURCE
 from arrest.http import Methods
 from arrest.resource import Resource, ResourceHandler
 from arrest.service import Service
@@ -172,3 +173,10 @@ async def test_resource_decorator():
         "http://www.example.com/api/user/xyz/123",
         "http://www.example.com/api",
     )
+
+
+@pytest.mark.parametrize(argnames="route", argvalues=["", "/"])
+def test_root_resource(route: str):
+    res = Resource(route=route)
+    assert res.route == route
+    assert res.name == ROOT_RESOURCE

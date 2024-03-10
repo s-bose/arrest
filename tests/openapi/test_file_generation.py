@@ -33,16 +33,17 @@ def validate_file_contents(src_dir: str, dst_dir: str, filename: FileNames) -> b
 
 
 @pytest.mark.parametrize(
-    "openapi_version, fixture_file",
+    "fixture_dir, fixture_file",
     [
         ("v3", "openapi_petstore.json"),
         ("v3.1", "openapi_petstore_3.1.json"),
         ("v3", "openapi_petstore.yaml"),
         ("v3.1", "openapi_petstore_3.1.yaml"),
+        ("v3.1_with_root", "openapi_petstore_3.1_with_root.json"),
     ],
 )
 @pytest.mark.asyncio
-async def test_openapi_generate_from_file(openapi_version, fixture_file):
+async def test_openapi_generate_from_file(fixture_dir, fixture_file):
     filepath = os.path.join(FIXTURE_PATH, fixture_file)
 
     with TemporaryDirectory() as tempdir:
@@ -52,7 +53,7 @@ async def test_openapi_generate_from_file(openapi_version, fixture_file):
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
         assert set(list(FileNames)) == set(generated_files)
 
-        fixture_dir = os.path.join(FIXTURE_PATH, "generated", openapi_version)
+        fixture_dir = os.path.join(FIXTURE_PATH, "generated", fixture_dir)
         for filename in list(FileNames):
             assert validate_file_contents(src_dir=dir_name, dst_dir=fixture_dir, filename=filename)
 
