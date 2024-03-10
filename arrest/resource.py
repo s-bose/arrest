@@ -1,7 +1,7 @@
 # pylint: disable=W0707
 import functools
 import inspect
-from typing import Any, Mapping, Optional, Type, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
 
 import backoff
 import httpx
@@ -48,9 +48,9 @@ class Resource:
         route: Optional[str],
         response_model: Optional[Type[BaseModel]] = None,
         handlers: Union[
-            list[ResourceHandler],
-            list[Mapping[str, Any]],
-            list[tuple[Any, ...]],
+            List[ResourceHandler],
+            List[Mapping[str, Any]],
+            List[Tuple[Any, ...]],
         ] = None,
         client: Optional[httpx.AsyncClient] = None,
         **kwargs: Unpack[HttpxClientInputs],
@@ -78,13 +78,16 @@ class Resource:
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
 
-        derived_name = name if name else self.route.strip("/").split("/")[0]
-        self.name = derived_name if derived_name else ROOT_RESOURCE
+        self.name = self.get_resource_name(name=name)
         self.response_model = response_model
-        self.routes: dict[HandlerKey, ResourceHandler] = {}
+        self.routes: Dict[HandlerKey, ResourceHandler] = {}
 
         self.initialize_handlers(handlers=handlers)
         self.initialize_httpx(client=client, **kwargs)
+
+    def get_resource_name(self, name: Optional[str]) -> str:
+        derived_name = name if name else self.route.strip("/").split("/")[0]
+        return derived_name if derived_name else ROOT_RESOURCE
 
     def handler(
         self,
