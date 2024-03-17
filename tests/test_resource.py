@@ -1,9 +1,13 @@
 from contextlib import nullcontext as noraise
 from datetime import datetime
+from typing import Any, List, Mapping, Tuple, Type
+from typing_extensions import Unpack
 
+from httpx import AsyncClient
 import pytest
 from pydantic import BaseModel
 
+from arrest._config import HttpxClientInputs
 from arrest.converters import UUIDConverter
 from arrest.defaults import ROOT_RESOURCE
 from arrest.http import Methods
@@ -160,7 +164,13 @@ def test_resource_multiple_handler_same_signature():
 
 @pytest.mark.asyncio
 async def test_resource_decorator():
-    res = Resource(route="/user", handlers=[("GET", "/"), ("POST", "/")])
+    class UserResource(Resource):
+        def __init__(self, **kwargs) -> None:
+            super().__init__(route="/user", handlers=[("GET", "/"), ("POST", "/")], **kwargs)
+
+    res = UserResource()
+
+    # res = Resource(route="/user", handlers=[("GET", "/"), ("POST", "/")])
     svc = Service(name="example", url="http://www.example.com/api")
     svc.add_resource(res)
 
