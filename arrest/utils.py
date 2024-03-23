@@ -1,16 +1,20 @@
-import posixpath
-from typing import Any, Type, TypeVar
-from pathlib import PurePath
-from types import GeneratorType
 import dataclasses
 import enum
+import posixpath
 from collections import deque
+from pathlib import PurePath
+from types import GeneratorType
+from typing import Any, Type, TypeVar
 
 import orjson
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
+
+try:
+    from pydantic import TypeAdapter
+except ImportError:
+    pass
 
 from arrest._config import PYDANTIC_V2
-
 
 if not PYDANTIC_V2:  # pragma: no cover
     try:
