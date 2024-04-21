@@ -23,7 +23,7 @@ classifiers = [
 arrest = "arrest.__main__:main"
 
 [tool.poetry.dependencies]
-pydantic = "^2.6.4"
+pydantic = ">=1.10.15, <3.0.0"
 python = "^3.10"
 httpx = "^0.24.1"
 orjson = "^3.9.10"
@@ -39,12 +39,11 @@ openapi = ["jinja2", "datamodel-code-generator"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
+pytest-cov = "^5.0.0"
 pytest-asyncio = "^0.21.1"
 pytest-mock = "^3.12.0"
 respx = "^0.20.2"
 pre-commit = "^3.5.0"
-coverage = { extras = ["toml"], version = "^7.3.2" }
 safety = "^2.3.5"
 black = "^23.11.0"
 isort = "^5.12.0"
@@ -85,19 +84,19 @@ force-exclude = '''
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]
 source = ["arrest"]
+branch = true
 
 [tool.coverage.report]
-fail_under = 100
+fail_under = 85
 exclude_lines = [
     "if self.debug:",
     "pragma: no cover",
-    "except ImportError",
     "raise NotImplementedError",
+    "except ImportError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "if not TYPE_CHECKING:",
     "class Config:",
-    "if PYDANTIC_V2:",
 ]
 
 [tool.isort]

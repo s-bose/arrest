@@ -57,6 +57,15 @@ async def test_openapi_generate_from_file(fixture_dir, fixture_file):
         for filename in list(FileNames):
             assert validate_file_contents(src_dir=dir_name, dst_dir=fixture_dir, filename=filename)
 
+@pytest.mark.asyncio
+async def test_openapi_generate_from_file_invalid_extension():
+    filepath = os.path.join(FIXTURE_PATH, "openapi_petstore.toml")
+    
+    with pytest.raises(NotImplementedError):
+        with TemporaryDirectory() as tempdir:
+            openapi = OpenAPIGenerator(url=filepath, output_path=tempdir)
+            openapi.generate_schema()
+
 
 @pytest.mark.parametrize(
     "openapi_version, url_stub, fixture_file",

@@ -17,10 +17,10 @@ test:
 	poetry run pytest -vvv
 
 coverage:
-	poetry run pytest --cov=arrest --cov-report=term-missing --cov-report=html
+	poetry run pytest tests --cov=arrest --cov-report=term-missing --cov-report=html
 
 serve:
 	serve htmlcov/ -p 3000
 
 tox:
-	tox -- --cov=arrest --cov-report=term-missing --cov-report=term
+	tox -- --cov=arrest --cov-append --cov-report=term-missing --cov-report=term

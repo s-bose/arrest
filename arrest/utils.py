@@ -51,7 +51,7 @@ def extract_model_field(model: BaseModel, field: str) -> dict:
 
     if PYDANTIC_V2:
         value = model.model_dump_json(include={field}, by_alias=True)
-    else:  # pragma: no cover
+    else:
         value = model.json(include={field}, by_alias=True)
     value = orjson.loads(value)
     if not value:
@@ -104,9 +104,6 @@ def jsonable_encoder(obj: Any) -> Any:
         else:
             obj_dict = obj.dict()
 
-        if "__root__" in obj_dict:
-            obj_dict = obj_dict["__root__"]
-
         return jsonable_encoder(obj_dict)
 
     if dataclasses.is_dataclass(obj):
@@ -115,8 +112,8 @@ def jsonable_encoder(obj: Any) -> Any:
     if isinstance(obj, enum.Enum):
         return obj.value
 
-    if isinstance(obj, PurePath):
-        return str(obj)
+    # if isinstance(obj, PurePath):
+    #     return str(obj)
 
     if isinstance(obj, (str, int, float, type(None))):
         return obj

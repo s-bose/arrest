@@ -21,25 +21,25 @@ from arrest.resource import Resource
                 "x-resource-header": "123",
             },
         ),
-        # (
-        #     None,
-        #     {"x-kwarg-header": "abc"},
-        #     {
-        #         "x-max-age": "20",
-        #         "x-user-agent": "mozila",
-        #         "x-kwarg-header": "abc",
-        #     },
-        # ),
-        # (
-        #     {"x-resource-header": "123"},
-        #     {"x-kwarg-header": "abc"},
-        #     {
-        #         "x-max-age": "20",
-        #         "x-user-agent": "mozila",
-        #         "x-kwarg-header": "abc",
-        #         "x-resource-header": "123",
-        #     },
-        # ),
+        (
+            None,
+            {"x-kwarg-header": "abc"},
+            {
+                "x-max-age": "20",
+                "x-user-agent": "mozila",
+                "x-kwarg-header": "abc",
+            },
+        ),
+        (
+            {"x-resource-header": "123"},
+            {"x-kwarg-header": "abc"},
+            {
+                "x-max-age": "20",
+                "x-user-agent": "mozila",
+                "x-kwarg-header": "abc",
+                "x-resource-header": "123",
+            },
+        ),
     ],
 )
 @pytest.mark.asyncio

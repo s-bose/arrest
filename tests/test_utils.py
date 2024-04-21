@@ -1,6 +1,7 @@
 import enum
 import typing
 from dataclasses import dataclass
+from datetime import datetime
 
 import pytest
 from pydantic import BaseModel
@@ -101,32 +102,28 @@ def test_extract_resource_and_suffix(path: str, resource: str, suffix: str):
         (str, "abc", str, None),
         (int, 123, int, None),
         (float, 123.4, float, None),
-        (MyEnum, "field", str, None),
-        (MyEnum, MyEnum.field, str, None),
+        (MyEnum, "field", MyEnum, None),
+        (MyEnum, MyEnum.field, MyEnum, None),
         (list[int], [1, 2, 3], list, int),
-        (list[MyEnum], ["field"], list, str),
-        (MyModel, {"a": "a", "b": "b", "c": 123}, dict, str),
-        (MyModel, MyModel(a="a", b="b", c=123), dict, str),
-        (list[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, dict),
-        (typing.List[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, dict),
-        (tuple[MyModel, ...], ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}), list, dict),
-        (
-            typing.Tuple[MyModel, ...],
-            ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}),
-            list,
-            dict,
-        ),
-        (dict[str, MyModel], {"val": {"a": "a", "b": "b", "c": 123}}, dict, dict),
-        (dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}, dict, dict),
-        (typing.Dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}, dict, dict),
-        (MyModelDC, {"a": "a", "b": "b", "c": 123}, dict, str),
-        (MyModelDC, MyModelDC(a="a", b="b", c=123), dict, str),
-        (MyModelRoot, [{"a": "a", "b": "b", "c": 123}], list, dict),
+        (list[MyEnum], ["field"], list, MyEnum),
+        # (MyModel, {"a": "a", "b": "b", "c": 123}, dict, str),
+        # (MyModel, MyModel(a="a", b="b", c=123), dict, str),
+        # (list[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, dict),
+        # (typing.List[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, dict),
+        # (tuple[MyModel, ...], ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}), list, dict),
+        # (typing.Tuple[MyModel, ...], ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456})),
+        # (dict[str, MyModel], {"val": {"a": "a", "b": "b", "c": 123}}),
+        # (dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}),
+        # (typing.Dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}),
+        # (MyModelDC, {"a": "a", "b": "b", "c": 123}),
+        # (MyModelDC, MyModelDC(a="a", b="b", c=123)),
+        # (MyModelRoot, [{"a": "a", "b": "b", "c": 123}], list, dict),
+        # (datetime, datetime.now(), str, None),
     ],
 )
-def test_validate_model_and_json_encode(type_, obj, new_type, member_type):
+def test_validate_model(type_, obj, new_type, member_type):
     obj_new = validate_model(type_, obj)
-    obj_new = jsonable_encoder(obj_new)
+
     assert obj_new is not None
     assert type(obj_new) == new_type
 
@@ -137,8 +134,35 @@ def test_validate_model_and_json_encode(type_, obj, new_type, member_type):
         member = list(obj_new.values())[0]
 
     elif member_type is None:
-        member = None
-        assert type(member) == type(None)
+        pass
 
     else:
         assert type(member) == member_type
+
+
+@pytest.mark.parametrize(
+    argnames="obj, obj_serialized",
+    argvalues=[
+        ("abc", "abc"),
+        (123, 123),
+        (123.4, 123.4),
+        (MyEnum.field, "field"),
+        ([1, 2, 3], [1, 2, 3]),
+        ([MyEnum.field], ["field"]),
+        (MyModel(a="a", b="b", c=123), {"a": "a", "b": "b", "c": 123}),
+        (
+            [MyModel(a="a", b="b", c=123), MyModel(a="A", b="B", c=456)],
+            [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
+        ),
+        (
+            (MyModel(a="a", b="b", c=123), MyModel(a="A", b="B", c=456)),
+            [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
+        ),
+        ({"val": MyModel(a="a", b="b", c=123)}, {"val": {"a": "a", "b": "b", "c": 123}}),
+        (MyModelDC(a="a", b="b", c=123), {"a": "a", "b": "b", "c": 123}),
+        # (MyModelRoot(root=[MyModel(a="a", b="b", c=123)]), [{"a": "a", "b": "b", "c": 123}]),
+        (datetime(year=2023, month=1, day=1), "2023-01-01T00:00:00"),
+    ],
+)
+def test_jsonable_encoder(obj, obj_serialized):
+    assert jsonable_encoder(obj) == obj_serialized

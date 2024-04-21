@@ -1,5 +1,5 @@
 import pytest
-from typing import Optional, TypeAlias, List, Dict, Optional
+from typing import Optional, TypeAlias, List, Dict
 from datetime import datetime
 from pydantic import BaseModel
 from arrest.utils import validate_model

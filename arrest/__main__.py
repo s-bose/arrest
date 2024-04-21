@@ -11,7 +11,7 @@ from arrest.logging import logger
 try:
     import datamodel_code_generator
     import jinja2
-except ImportError:
+except ImportError: # pragma: no cover
     logger.warning("Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`")
     sys.exit(Exit.ERROR)
 
@@ -68,4 +68,4 @@ def main(args: Optional[Sequence[str]] = None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main()) # pragma: no cover

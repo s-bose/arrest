@@ -25,7 +25,7 @@ from arrest.logging import logger
 
 try:
     from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
-except ImportError:
+except ImportError: # pragma: no cover
     sys.exit(1)
 
 from arrest.openapi._config import Format
@@ -256,6 +256,8 @@ class OpenAPIGenerator:
             return json.load(data)
         elif fmt in (Format.yaml, Format.yml):
             return yaml.load(data, yaml.SafeLoader)
+        else:
+            raise NotImplementedError
 
     @classmethod
     def parse_openapi(cls, fmt: Format, data: IO) -> OpenAPI:

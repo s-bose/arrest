@@ -18,7 +18,7 @@ from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, Params, ParamTypes
-from arrest.utils import extract_model_field, join_url, jsonify, validate_model
+from arrest.utils import extract_model_field, join_url, jsonable_encoder, validate_model
 
 
 class Resource:
@@ -364,7 +364,7 @@ class Resource:
             kwargs:
                 optional keyword-arguments containing query parameters
         Returns:
-            a dictionary containing `header`, `body`, `query` params in separate dicts
+            a `Params` object containing `header`, `body`, `query` fields
         """
 
         header_params = headers or {}
@@ -391,21 +391,13 @@ class Resource:
                 elif field_info._param_type == ParamTypes.body:
                     body_params |= extract_model_field(request_data, field_name)
 
-        elif isinstance(request_data, list):
-            for obj in request_data:
-                header_params, query_params, body_params = extract_request(obj)
-                
-
-        elif isinstance(request_data, dict):
-            ...
-
         else:
             body_params = request_data
 
         return Params(
             header=Headers(header_params),
             query=QueryParams(query_params),
-            body=jsonify(body_params),
+            body=jsonable_encoder(body_params),
         )
 
     @backoff.on_exception(

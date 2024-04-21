@@ -56,3 +56,7 @@
 - Feat: Add support for root-level resources.
 
     You can now define root-level resources (i.e., having base routes of either `""` or `"/"`)
+
+- Feat: Add support for passing any Python-type* to the request and response type definitions for handlers.
+
+- TODO - do we need the resource-level `response_model=` definition?
