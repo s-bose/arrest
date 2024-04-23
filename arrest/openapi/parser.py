@@ -25,7 +25,7 @@ from arrest.logging import logger
 
 try:
     from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     sys.exit(1)
 
 from arrest.openapi._config import Format

@@ -106,28 +106,45 @@ def test_extract_resource_and_suffix(path: str, resource: str, suffix: str):
         (MyEnum, MyEnum.field, MyEnum, None),
         (list[int], [1, 2, 3], list, int),
         (list[MyEnum], ["field"], list, MyEnum),
-        # (MyModel, {"a": "a", "b": "b", "c": 123}, dict, str),
-        # (MyModel, MyModel(a="a", b="b", c=123), dict, str),
-        # (list[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, dict),
-        # (typing.List[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, dict),
-        # (tuple[MyModel, ...], ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}), list, dict),
-        # (typing.Tuple[MyModel, ...], ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456})),
-        # (dict[str, MyModel], {"val": {"a": "a", "b": "b", "c": 123}}),
-        # (dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}),
-        # (typing.Dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}),
-        # (MyModelDC, {"a": "a", "b": "b", "c": 123}),
-        # (MyModelDC, MyModelDC(a="a", b="b", c=123)),
-        # (MyModelRoot, [{"a": "a", "b": "b", "c": 123}], list, dict),
-        # (datetime, datetime.now(), str, None),
+        (MyModel, {"a": "a", "b": "b", "c": 123}, MyModel, None),
+        (MyModel, MyModel(a="a", b="b", c=123), MyModel, None),
+        (list[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, MyModel),
+        (
+            typing.List[MyModel],
+            [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
+            list,
+            MyModel,
+        ),
+        (
+            tuple[MyModel, ...],
+            ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}),
+            tuple,
+            MyModel,
+        ),
+        (
+            typing.Tuple[MyModel, ...],
+            ({"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}),
+            tuple,
+            MyModel,
+        ),
+        (dict[str, MyModel], {"val": {"a": "a", "b": "b", "c": 123}}, dict, MyModel),
+        (dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}, dict, MyModel),
+        (typing.Dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}, dict, MyModel),
+        (MyModelDC, {"a": "a", "b": "b", "c": 123}, MyModelDC, None),
+        (MyModelDC, MyModelDC(a="a", b="b", c=123), MyModelDC, None),
+        (MyModelRoot, [{"a": "a", "b": "b", "c": 123}], MyModelRoot, None),
+        (datetime, datetime.now(), datetime, None),
+        (datetime, "2024-04-24 02:25:14.954853", datetime, None),
     ],
 )
 def test_validate_model(type_, obj, new_type, member_type):
     obj_new = validate_model(type_, obj)
 
     assert obj_new is not None
-    assert type(obj_new) == new_type
+    assert isinstance(obj_new, new_type)
 
-    if isinstance(obj_new, list):
+    member = None
+    if isinstance(obj_new, (list, tuple)):
         member = obj_new[0]
 
     elif isinstance(obj_new, dict):
@@ -137,7 +154,7 @@ def test_validate_model(type_, obj, new_type, member_type):
         pass
 
     else:
-        assert type(member) == member_type
+        assert isinstance(member, member_type)
 
 
 @pytest.mark.parametrize(
@@ -160,6 +177,15 @@ def test_validate_model(type_, obj, new_type, member_type):
         ),
         ({"val": MyModel(a="a", b="b", c=123)}, {"val": {"a": "a", "b": "b", "c": 123}}),
         (MyModelDC(a="a", b="b", c=123), {"a": "a", "b": "b", "c": 123}),
+        (
+            [MyModelDC(a="a", b="b", c=123), MyModelDC(a="A", b="B", c=456)],
+            [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
+        ),
+        (
+            (MyModelDC(a="a", b="b", c=123), MyModelDC(a="A", b="B", c=456)),
+            [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
+        ),
+        ({"val": MyModelDC(a="a", b="b", c=123)}, {"val": {"a": "a", "b": "b", "c": 123}}),
         # (MyModelRoot(root=[MyModel(a="a", b="b", c=123)]), [{"a": "a", "b": "b", "c": 123}]),
         (datetime(year=2023, month=1, day=1), "2023-01-01T00:00:00"),
     ],
