@@ -1,9 +1,20 @@
 import httpx
 import pytest
+from typing import Any
+import logging
 
-from arrest.exceptions import ArrestHTTPException, HandlerNotFound, ResourceNotFound
+from arrest.exceptions import ArrestHTTPException, ArrestError, HandlerNotFound, ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
+
+
+class HTTPException(Exception):
+    def __init__(self, status_code: int, detail: Any) -> None:
+        self.status_code = status_code
+        self.detail = detail
+
+    def __str__(self) -> str:
+        return f"{self.status_code}: {self.detail}"
 
 
 @pytest.mark.asyncio
@@ -97,3 +108,50 @@ async def test_resource_not_found(service):
 
     with pytest.raises(ResourceNotFound):
         await service.request("/dashboard/profile", method=Methods.POST)
+
+
+@pytest.mark.parametrize(
+    argnames="exc_raised, expected_exc_caught, detail",
+    argvalues=[
+        (ArrestError("Internal Error"), HTTPException, "Something went wrong"),
+        (ArrestHTTPException(status_code=404, data="Not found"), HTTPException, "Not found"),
+        (ValueError("foo is not bar"), None, None),
+    ],
+)
+@pytest.mark.asyncio
+async def test_custom_exception_handler(service, mocker, exc_raised, expected_exc_caught, detail):
+    def http_exc_handler(exc: ArrestHTTPException):
+        raise HTTPException(status_code=exc.status_code, detail=exc.data)
+
+    def err_handler(_exc: ArrestError):
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
+    def generic_err_handler(_exc: Exception):
+        logging.warning("Something went wrong")
+
+    service.add_exception_handlers(
+        exc_handlers={
+            Exception: generic_err_handler,
+            ArrestHTTPException: http_exc_handler,
+            ArrestError: err_handler,
+        }
+    )
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                ("GET", ""),
+            ],
+        )
+    )
+
+    mocker.patch("arrest.resource.Resource._prepare_and_send_request", side_effect=exc_raised)
+
+    if not expected_exc_caught:
+        assert await service.user.get("") is None
+    else:
+        with pytest.raises(expected_exc_caught) as exc:
+            await service.user.get("")
+            if detail:
+                assert exc.value.detail == detail
