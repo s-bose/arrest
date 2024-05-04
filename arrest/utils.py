@@ -1,10 +1,11 @@
 import dataclasses
 import enum
 import posixpath
+import re
 from collections import deque
 from pathlib import PurePath
 from types import GeneratorType
-from typing import Any, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 
 import orjson
 from pydantic import BaseModel
@@ -15,6 +16,7 @@ except ImportError:
     pass
 
 from arrest._config import PYDANTIC_V2
+from arrest.types import ExceptionHandler, ExceptionHandlers
 
 if not PYDANTIC_V2:  # pragma: no cover
     try:
@@ -23,6 +25,11 @@ if not PYDANTIC_V2:  # pragma: no cover
         pass
 
 T = TypeVar("T")
+
+
+def sanitize_name(name: str) -> str:
+    name = name.lower().replace(" ", "_")
+    return re.sub("[^A-Za-z0-9]+", "_", name)
 
 
 def join_url(base_url: str, *urls: list[str]) -> str:
@@ -147,3 +154,14 @@ def jsonable_encoder(obj: Any) -> Any:
             raise ValueError(errors) from e
 
     return jsonable_encoder(data)
+
+
+def lookup_exception_handler(
+    exc_handlers: Optional[ExceptionHandlers], exc: Exception
+) -> Optional[ExceptionHandler]:
+    if not exc_handlers:
+        return None
+
+    for cls in type(exc).__mro__:
+        if cls in exc_handlers:
+            return exc_handlers[cls]

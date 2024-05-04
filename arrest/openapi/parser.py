@@ -33,7 +33,8 @@ from arrest.openapi.init_template import InitTemplate
 from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, ResourceTemplate
 from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
-from arrest.openapi.utils import get_ref_schema, sanitize_name
+from arrest.openapi.utils import get_ref_schema
+from arrest.utils import sanitize_name
 
 
 class OpenAPIGenerator:
