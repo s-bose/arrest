@@ -3,17 +3,30 @@ import enum
 import posixpath
 from collections import deque
 from pathlib import PurePath
+import logging
+from functools import wraps
 from types import GeneratorType
 from typing import Any, Type, TypeVar
 
 import orjson
 from pydantic import BaseModel
 
+import tenacity
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+    after_log,
+)
+
 try:
     from pydantic import TypeAdapter
 except ImportError:
     pass
 
+from arrest.logging import logger
 from arrest._config import PYDANTIC_V2
 
 if not PYDANTIC_V2:  # pragma: no cover
@@ -147,3 +160,24 @@ def jsonable_encoder(obj: Any) -> Any:
             raise ValueError(errors) from e
 
     return jsonable_encoder(data)
+
+
+def retry(*, n_retries: int, exceptions: tuple[Exception]):
+    def wrapper(func):
+        @wraps(func)
+        async def wrapped(*args, **kwargs):
+            __retrying = tenacity.Retrying(
+                stop=tenacity.stop_after_attempt(n_retries),
+                wait=tenacity.wait_random_exponential(
+                    multiplier=1, max=60
+                ),  # Randomly wait up to 2^x * 1 seconds between each retry
+                retry=(tenacity.retry_if_exception_type(exceptions)),
+                before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+                after=tenacity.after_log(logger, logging.INFO),
+                reraise=True,
+            )
+            return await __retrying(func, *args, **kwargs)
+
+        return wrapped
+
+    return wrapper

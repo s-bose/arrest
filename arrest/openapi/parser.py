@@ -14,7 +14,6 @@ import sys
 from pathlib import Path
 from typing import IO, Generator, Optional
 
-import backoff
 import httpx
 import yaml
 
@@ -22,6 +21,7 @@ from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILEN
 from arrest.exceptions import ArrestError
 from arrest.http import Methods
 from arrest.logging import logger
+from arrest.utils import retry
 
 try:
     from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
@@ -69,11 +69,9 @@ class OpenAPIGenerator:
         self.dir_name: str = dir_name
         self.use_pydantic_v2 = use_pydantic_v2
 
-    @backoff.on_exception(
-        backoff.expo,
-        (httpx.HTTPError, httpx.TimeoutException),
-        max_tries=MAX_RETRIES,
-        jitter=backoff.full_jitter,
+    @retry(
+        n_retries=MAX_RETRIES,
+        exceptions=(httpx.HTTPError, httpx.TimeoutException, httpx.RequestError, Exception),
     )
     def download_openapi_spec(self) -> bytes:
         if self.url.startswith("http"):

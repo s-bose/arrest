@@ -2,8 +2,7 @@
 import functools
 import inspect
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
-
-import backoff
+import logging
 import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
@@ -12,13 +11,13 @@ from typing_extensions import Unpack
 
 from arrest._config import PYDANTIC_V2, HttpxClientInputs
 from arrest.converters import compile_path
-from arrest.defaults import DEFAULT_TIMEOUT, MAX_RETRIES, ROOT_RESOURCE
+from arrest.defaults import DEFAULT_TIMEOUT, ROOT_RESOURCE
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, Params, ParamTypes
-from arrest.utils import extract_model_field, join_url, jsonable_encoder, validate_model
+from arrest.utils import extract_model_field, join_url, jsonable_encoder, validate_model, retry
 
 
 class Resource:
@@ -53,6 +52,7 @@ class Resource:
             List[Tuple[Any, ...]],
         ] = None,
         client: Optional[httpx.AsyncClient] = None,
+        retry: Optional[int] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -68,6 +68,8 @@ class Resource:
                 List of handlers
             client:
                 An httpx.AsyncClient instance
+            retry:
+                Optional argument to specify the number of retries
             kwargs:
                 Additional httpx.AsyncClient parameters, [see more](api.md/#httpx-client-arguments)
         """
@@ -77,6 +79,7 @@ class Resource:
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
+        self.retry = retry
 
         self.name = self.get_resource_name(name=name)
         self.response_model = response_model
@@ -95,15 +98,6 @@ class Resource:
     ) -> Any:
         def wrapper(func):
             @functools.wraps(func)
-            @backoff.on_exception(
-                backoff.expo,
-                (
-                    httpx.HTTPError,
-                    httpx.TimeoutException,
-                ),
-                max_tries=MAX_RETRIES,
-                jitter=backoff.full_jitter,
-            )
             async def wrapped(*args, **kwargs):
                 url = join_url(self.base_url, self.route, path)
                 return await func(self, url, *args, **kwargs)
@@ -175,9 +169,13 @@ class Resource:
 
         response_type = handler.response or self.response_model or None
 
-        response = await self._build_request(
-            url=url, method=method, params=params, response_type=response_type
+        fn_make_request = (
+            retry(n_retries=self.retry, exceptions=(ArrestHTTPException, Exception))(self.make_request)
+            if self.retry
+            else self.make_request
         )
+
+        response = await fn_make_request(url=url, method=method, params=params, response_type=response_type)
 
         if handler.callback:
             try:
@@ -400,17 +398,7 @@ class Resource:
             body=jsonable_encoder(body_params),
         )
 
-    @backoff.on_exception(
-        backoff.expo,
-        (
-            httpx.HTTPError,
-            httpx.TimeoutException,
-            ArrestHTTPException,
-        ),
-        max_tries=MAX_RETRIES,
-        jitter=backoff.full_jitter,
-    )
-    async def _build_request(
+    async def make_request(
         self,
         url: str,
         method: Methods,
@@ -441,15 +429,15 @@ class Resource:
 
         try:
             if self._client:
-                response = await self._make_request(
+                response = await self.__make_request(
                     client=self._client, url=url, method=method, params=params
                 )
             else:
                 async with httpx.AsyncClient(base_url=self.base_url, **self._httpx_args) as client:
-                    response = await self._make_request(client=client, url=url, method=method, params=params)
+                    response = await self.__make_request(client=client, url=url, method=method, params=params)
 
             status_code = response.status_code
-            logger.debug(f"{method!s} {url} returned with status code {status_code!s}")
+            logger.info(f"{method!s} {url} returned with status code {status_code!s}")
             response.raise_for_status()
             response_body = response.json()
 
@@ -473,7 +461,7 @@ class Resource:
 
         except httpx.TimeoutException:
             raise ArrestHTTPException(
-                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                status_code=httpx.codes.REQUEST_TIMEOUT,
                 data="request timed out",
             )
 
@@ -483,7 +471,7 @@ class Resource:
                 data="error occured while making request",
             )
 
-    async def _make_request(
+    async def __make_request(
         self, client: httpx.AsyncClient, url: str, method: Methods, params: Params
     ) -> httpx.Response:
         header_params, query_params, body_params = (

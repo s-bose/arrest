@@ -56,7 +56,129 @@
 - Feat: Add support for root-level resources.
 
     You can now define root-level resources (i.e., having base routes of either `""` or `"/"`)
+    There can be only one root-level resource, for obvious reasons.
+    You can set them up as normal `Resource` instances with `route=""` or `route="/`" and a corresponding handler `(<Method>, "")` (e.g. `www.example.com`) or `(<Method>, "/")` (e.g. `www.example.com/`)
+
+    In order to make the call to the root-resource, you simply invoke the http methods on the service directly, without specifying a resource.
+
+    ```python
+    await my_service.get("") # or my_service.get("/")
+    ```
+
+    !!! Note
+        This is only applicable if you have a path with no suffix at the root level. i.e. `www.example.com/`.
+        If you want to access `www.example.com/path`, then the following won't work.
+
+        ```python
+        Resource(route="/", handlers=[("GET", "/path")])
+        ...
+
+        await service.get("/path") # throws ResourceNotFound
+        ```
+        
+        Because `/path` constitutes a resource on its own, not a subpath for a root-resource `/`, hence the following would need to be written
+
+        ```python
+        Resource(route="/path", handlers=[("GET", "")])
+        ...
+
+        await service.path.get("") # works!
+        ```
+
+        General rule-of-thumb is, a RESTful resource always has a path prefix, and arrest resources should preferrably be designed around that
+        notion. If you have an endpoint with only the root-level being the accessible API, you might want to create a root-resource with
+        a single handler.
+
+
+- Feat: Standardized retry mechanism with more flexibility
+
+    The previous built-in retry mechanism was too restrictive and lacked configurability. In the new version, there will not be any retry by default.
+    This is to reduce as much side-effect as possible from the HTTP calls in favour of developer expectations. If you want to enable retries there are a few different ways.
+
+    1. Use the standard retry mechanism from httpx transport
+
+        ```python
+
+        from httpx import AsyncHTTPTransport
+        from arrest import Resource, Service
+
+        transport = AsyncHTTPTransport(retries=3)
+
+        my_service = Service(
+            name="myservice",
+            url="http://example.com",
+            resources=[user],
+            transport=transport
+        )
+        ```
+        or, if you are running your own httpx client instance, you can also configure it there.
+
+        ```python
+        my_service = Service(
+            name="myservice",
+            url="http://example.com",
+            resources=[user],
+            client=httpx.AsyncClient(transport=transport)
+        )
+        ```
+
+        This will retry the request in case of `httpx.ConnectError` or `httpx.ConnectTimeout`. [Read more](https://www.python-httpx.org/advanced/transports/)
+
+    2. Use the retry mechanism from arrest
+
+        Arrest provides an additional keyword-argument `retry` either at service-level, or at individual resource-level. 
+        It is defaulted to `None`, should you opt for no retries (the default behaviour). However, you can set it to any
+        valid integer resembling the number of times it should retry.
+        
+        Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retry process.
+        It uses [random exponential backoff](https://tenacity.readthedocs.io/en/latest/api.html#tenacity.wait.wait_random_exponential)
+        and in the event of any exception.
+
+        ```python
+        my_service = Service(
+            name="myservice",
+            url="http://example.com",
+            resources=[user],
+            retry=3
+        )
+        ```
+
+    3. Use your own retry mechanism
+
+        If you want more fine-grained control over your retries, you can disable the in-built retry (`retry=None`), or keep it unset (default None)
+        and write your own decorator that wraps around your anciliary function that calls the arrest service under the decorator.
+        Here is an example using another popular library [backoff](https://github.com/litl/backoff)
+
+        ```python
+        import backoff
+        from arrest.exceptions import ArrestHTTPException
+
+        @backoff.on_exception(
+            backoff.expo,
+            (
+                ArrestHTTPException,
+                Exception
+            ),
+            max_retries=5,
+            jitter=backoff.full_jitter
+        )
+        async def fn_caller():
+            return await my_service.foo.get("/bar")
+        ```
+
+        !!! Note
+            When calling the arrest service, do remember that the original httpx exceptions are rethrown as `ArrestHTTPException`
+            with the appropriate information. These include the following:
+
+            - `httpx.HTTPStatusError` - for capturing HTTP non-200 error codes, rethrown as `ArrestHTTPException` with the 
+                same status code and message
+            -  `httpx.TimeoutException` - for capturing any request timeout, rethrown as `ArrestHTTPException` with the 
+                status code 408 (Request Timeout)
+            - `httpx.RequestError` - any other error during making the request, rethrown as `ArrestHTTPException` with the
+            status code 500 (Internal Server Error)
+            
+            Any other exception will be thrown as-is.
+
 
 - Feat: Add support for passing any Python-type* to the request and response type definitions for handlers.
-
-- TODO - do we need the resource-level `response_model=` definition?
+    * Needs more clarification as to which types are allowed
