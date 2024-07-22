@@ -1,8 +1,9 @@
 # pylint: disable=W0707
 import functools
 import inspect
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
-import logging
+import json
+from typing import Any, List, Mapping, Optional, Tuple, Type, Union, cast
+
 import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
@@ -17,7 +18,15 @@ from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, Params, ParamTypes
-from arrest.utils import extract_model_field, join_url, jsonable_encoder, validate_model, retry
+from arrest.types import ExceptionHandlers
+from arrest.utils import (
+    extract_model_field,
+    join_url,
+    jsonable_encoder,
+    lookup_exception_handler,
+    retry,
+    validate_model,
+)
 
 
 class Resource:
@@ -56,7 +65,6 @@ class Resource:
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
-
         Parameters:
             name:
                 Unique name of the resource
@@ -83,7 +91,9 @@ class Resource:
 
         self.name = self.get_resource_name(name=name)
         self.response_model = response_model
-        self.routes: Dict[HandlerKey, ResourceHandler] = {}
+        self.routes: dict[HandlerKey, ResourceHandler] = {}
+
+        self._exception_handlers: ExceptionHandlers = None
 
         self.initialize_handlers(handlers=handlers)
         self.initialize_httpx(client=client, **kwargs)
@@ -175,7 +185,18 @@ class Resource:
             else self.make_request
         )
 
-        response = await fn_make_request(url=url, method=method, params=params, response_type=response_type)
+        try:
+            response = await fn_make_request(
+                url=url, method=method, params=params, response_type=response_type
+            )
+
+        # custom exception handling
+        except Exception as exc:
+            exc_handler = lookup_exception_handler(self.exception_handlers, exc)
+            if not exc_handler:
+                raise exc
+
+            response = exc_handler(exc)
 
         if handler.callback:
             try:
@@ -287,7 +308,14 @@ class Resource:
         **kwargs,
     ):
         """
-        Makes a `HTTP DELETE` request
+        Makes a `HTTP DELETE` reque        # exception handling
+        except Exception as exc:
+            exc
+            exc_handler = lookup_exception_handler(self.exception_handlers, exc)
+            if not exc_handler:
+                raise exc
+
+            response = exc_handler(exc)st
 
         see [request][arrest.resource.Resource.request]
         """
@@ -406,7 +434,8 @@ class Resource:
         response_type: Optional[Type[BaseModel]],
     ) -> Any:
         """
-        (private) makes the actual http call using httpx
+        (private) prepares and makes a http request,
+        parses the response and raises appropriate exceptions
 
         Parameters
         ----------
@@ -454,9 +483,11 @@ class Resource:
 
             return parsed_response
 
-        # exception handling
         except httpx.HTTPStatusError as exc:
-            err_response_body = exc.response.json()
+            try:
+                err_response_body = exc.response.json()
+            except json.JSONDecodeError:
+                err_response_body = exc.response.read().decode("utf-8", errors="strict")
             raise ArrestHTTPException(status_code=exc.response.status_code, data=err_response_body) from exc
 
         except httpx.TimeoutException:
@@ -474,6 +505,18 @@ class Resource:
     async def __make_request(
         self, client: httpx.AsyncClient, url: str, method: Methods, params: Params
     ) -> httpx.Response:
+        """(private) makes the actual http request using httpx
+
+        Args:
+            client (httpx.AsyncClient)
+            url (str)
+            method (Methods)
+            params (Params)
+
+        Returns:
+            httpx.Response
+        """
+
         header_params, query_params, body_params = (
             params.header,
             params.query,
@@ -606,3 +649,11 @@ class Resource:
                 kwargs["timeout"] = httpx.Timeout(timeout=timeout, connect=timeout)
 
             self._httpx_args = HttpxClientInputs(**kwargs)
+
+    @property
+    def exception_handlers(self):
+        return self._exception_handlers
+
+    @exception_handlers.setter
+    def exception_handlers(self, exc_handlers: ExceptionHandlers):
+        self._exception_handlers = exc_handlers

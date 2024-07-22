@@ -1,13 +1,9 @@
 from contextlib import nullcontext as noraise
 from datetime import datetime
-from typing import Any, List, Mapping, Tuple, Type
-from typing_extensions import Unpack
 
-from httpx import AsyncClient
 import pytest
 from pydantic import BaseModel
 
-from arrest._config import HttpxClientInputs
 from arrest.converters import UUIDConverter
 from arrest.defaults import ROOT_RESOURCE
 from arrest.http import Methods

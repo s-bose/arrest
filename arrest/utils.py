@@ -1,33 +1,26 @@
 import dataclasses
 import enum
-import posixpath
-from collections import deque
-from pathlib import PurePath
+import inspect
 import logging
+import posixpath
+import re
+from collections import deque
 from functools import wraps
 from types import GeneratorType
-from typing import Any, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 
 import orjson
-from pydantic import BaseModel
-
 import tenacity
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential,
-    retry_if_exception_type,
-    before_sleep_log,
-    after_log,
-)
+from pydantic import BaseModel
 
 try:
     from pydantic import TypeAdapter
 except ImportError:
     pass
 
-from arrest.logging import logger
 from arrest._config import PYDANTIC_V2
+from arrest.logging import logger
+from arrest.types import ExceptionHandler, ExceptionHandlers
 
 if not PYDANTIC_V2:  # pragma: no cover
     try:
@@ -36,6 +29,11 @@ if not PYDANTIC_V2:  # pragma: no cover
         pass
 
 T = TypeVar("T")
+
+
+def sanitize_name(name: str) -> str:
+    name = name.lower().replace(" ", "_")
+    return re.sub("[^A-Za-z0-9]+", "_", name)
 
 
 def join_url(base_url: str, *urls: list[str]) -> str:
@@ -165,8 +163,22 @@ def jsonable_encoder(obj: Any) -> Any:
 def retry(*, n_retries: int, exceptions: tuple[Exception]):
     def wrapper(func):
         @wraps(func)
-        async def wrapped(*args, **kwargs):
+        def sync_wrapped(*args, **kwargs):
             __retrying = tenacity.Retrying(
+                stop=tenacity.stop_after_attempt(n_retries),
+                wait=tenacity.wait_random_exponential(
+                    multiplier=1, max=60
+                ),  # Randomly wait up to 2^x * 1 seconds between each retry
+                retry=(tenacity.retry_if_exception_type(exceptions)),
+                before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+                after=tenacity.after_log(logger, logging.INFO),
+                reraise=True,
+            )
+            return __retrying(func, *args, **kwargs)
+
+        @wraps(func)
+        async def wrapped(*args, **kwargs):
+            __retrying = tenacity.AsyncRetrying(
                 stop=tenacity.stop_after_attempt(n_retries),
                 wait=tenacity.wait_random_exponential(
                     multiplier=1, max=60
@@ -178,6 +190,20 @@ def retry(*, n_retries: int, exceptions: tuple[Exception]):
             )
             return await __retrying(func, *args, **kwargs)
 
-        return wrapped
+        if inspect.iscoroutinefunction(func):
+            return wrapped
+
+        return sync_wrapped
 
     return wrapper
+
+
+def lookup_exception_handler(
+    exc_handlers: Optional[ExceptionHandlers], exc: Exception
+) -> Optional[ExceptionHandler]:
+    if not exc_handlers:
+        return None
+
+    for cls in type(exc).__mro__:
+        if cls in exc_handlers:
+            return exc_handlers[cls]

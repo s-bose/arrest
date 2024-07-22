@@ -10,6 +10,7 @@ from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
+from arrest.types import ExceptionHandlers
 from arrest.utils import extract_resource_and_suffix
 
 
@@ -21,6 +22,7 @@ class Service:
         description: Optional[str] = None,
         resources: Optional[list[Resource]] = [],
         client: Optional[httpx.AsyncClient] = None,
+        exception_handlers: ExceptionHandlers = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -40,11 +42,13 @@ class Service:
             kwargs:
                 Additional httpx.AsyncClient parameters. [see more](api.md/#httpx-client-arguments)
         """
-
         self.name = name
         self.url = url
         self.description = description
         self.resources: dict[str, Resource] = {}
+
+        self._exception_handlers: ExceptionHandlers = {} if exception_handlers is None else exception_handlers
+
         for resource in resources:
             self.add_resource(resource, client=client, **kwargs)
 
@@ -72,6 +76,8 @@ class Service:
         resource.base_url = self.url
         resource.initialize_handlers(base_url=self.url)
         resource.initialize_httpx(client=client, **kwargs)
+        resource.exception_handlers = self._exception_handlers
+
         self.resources[resource.name] = resource
         setattr(self, resource.name, resource)
 
@@ -107,3 +113,6 @@ class Service:
 
     def __dir__(self):  # pragma: no cover
         return list(itertools.chain(dir(super()), self.resources))
+
+    def add_exception_handlers(self, exc_handlers: ExceptionHandlers):
+        self._exception_handlers |= exc_handlers
