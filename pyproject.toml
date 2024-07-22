@@ -23,20 +23,19 @@ classifiers = [
 arrest = "arrest.__main__:main"
 
 [tool.poetry.dependencies]
-pydantic = "2.5.2"
+pydantic = ">=1.10.15, <3.0.0"
 python = "^3.10"
 httpx = "^0.24.1"
 orjson = "^3.9.10"
 pyyaml = "^6.0.1"
 jinja2 = { version = "^3.1.3", optional = true }
 argcomplete = "^3.2.2"
-datamodel-code-generator = { version = "^0.25.2", optional = true }
-mypy = "^1.9.0"
+datamodel-code-generator = { version = "0.25.8", optional = true }
 tenacity = "^8.5.0"
-backoff = "^2.2.1"
 
 [tool.poetry.extras]
 openapi = ["jinja2", "datamodel-code-generator"]
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -57,6 +56,10 @@ tox = "^4.11.4"
 mkdocs = "^1.5.3"
 mkdocs-material = "^9.4.14"
 mkdocstrings = { extras = ["python"], version = "^0.24.0" }
+
+
+[tool.poetry.group.openapi.dependencies]
+datamodel-code-generator = "^0.25.8"
 
 [build-system]
 requires = ["poetry-core"]
@@ -85,7 +88,6 @@ force-exclude = '''
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]
 source = ["arrest"]
-branch = true
 
 [tool.coverage.report]
 fail_under = 85
