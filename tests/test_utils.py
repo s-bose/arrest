@@ -17,6 +17,7 @@ from arrest.utils import (
     extract_resource_and_suffix,
     join_url,
     jsonable_encoder,
+    retry,
     validate_model,
 )
 
@@ -186,9 +187,67 @@ def test_validate_model(type_, obj, new_type, member_type):
             [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
         ),
         ({"val": MyModelDC(a="a", b="b", c=123)}, {"val": {"a": "a", "b": "b", "c": 123}}),
-        # (MyModelRoot(root=[MyModel(a="a", b="b", c=123)]), [{"a": "a", "b": "b", "c": 123}]),
         (datetime(year=2023, month=1, day=1), "2023-01-01T00:00:00"),
     ],
 )
 def test_jsonable_encoder(obj, obj_serialized):
     assert jsonable_encoder(obj) == obj_serialized
+
+
+def test_jsonable_encoder_rootmodel():
+    if PYDANTIC_V2:
+        obj = MyModelRoot(root=[MyModel(a="a", b="b", c=123)])
+    else:
+        obj = MyModelRoot(__root__=[MyModel(a="a", b="b", c=123)])
+
+    obj_serialized = [{"a": "a", "b": "b", "c": 123}]
+
+    assert jsonable_encoder(obj) == obj_serialized
+
+
+def test_jsonable_encoder_standard_object():
+    class PlainClass:
+        def __init__(self, first: str, second: int) -> None:
+            self.first = first
+            self.second = second
+
+    obj = PlainClass(first="first", second=123)
+    obj_serialized = {"first": "first", "second": 123}
+
+    assert jsonable_encoder(obj) == obj_serialized
+
+
+def test_jsonable_encoder_object_with_no___dict__():
+    class PlainClass:
+        __slots__ = ()
+
+    obj = PlainClass()
+    with pytest.raises(ValueError):
+        jsonable_encoder(obj)
+
+
+@pytest.mark.asyncio
+async def test_retry_async(mocker):
+    class Foo:
+        @retry(n_retries=3, exceptions=(ValueError))
+        async def fn_async(self):
+            print("baz")
+            raise ValueError()
+
+        @retry(n_retries=2, exceptions=(Exception))
+        def fn_sync():
+            print("baz sync")
+            raise Exception()
+
+    spy = mocker.spy(Foo, "fn_async")
+    spy_sync = mocker.spy(Foo, "fn_sync")
+
+    foo = Foo()
+
+    with pytest.raises(ValueError):
+        await foo.fn_async()
+        assert spy.call_count == 3
+
+    with pytest.raises(Exception):
+        foo.fn_sync()
+        assert spy_sync.call_count == 2

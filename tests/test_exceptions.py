@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any
 
@@ -37,6 +38,50 @@ async def test_http_exception(service, mock_httpx):
         await service.user.post("/profile")
         assert exc.status_code == 400
         assert exc.data == {"msg": "unauthenticated"}
+
+
+@pytest.mark.asyncio
+async def test_non_json_http_exception(service, mock_httpx):
+    mock_httpx.post(url__regex="/user/*", name="http_request").mock(
+        side_effect=httpx.Response(
+            status_code=400, text="<xml>helloworld</xml>", headers={"Content-Type": "application/xml"}
+        )
+    )
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                (Methods.POST, "/profile"),
+            ],
+        )
+    )
+
+    with pytest.raises(ArrestHTTPException) as exc:
+        await service.user.post("/profile")
+        assert exc.status_code == 400
+        assert exc.data == "<xml>helloworld</xml>"
+
+
+@pytest.mark.asyncio
+async def test_non_json_response_exception(service, mock_httpx):
+    mock_httpx.post(url__regex="/user/*", name="http_request").mock(
+        side_effect=httpx.Response(
+            status_code=200, text="<xml>helloworld</xml>", headers={"Content-Type": "application/xml"}
+        )
+    )
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                (Methods.POST, "/profile"),
+            ],
+        )
+    )
+
+    with pytest.raises(json.JSONDecodeError):
+        await service.user.post("/profile")
 
 
 @pytest.mark.asyncio

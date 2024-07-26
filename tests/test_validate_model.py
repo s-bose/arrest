@@ -1,9 +1,11 @@
-import pytest
-from typing import Optional, TypeAlias, List, Dict
 from datetime import datetime
+from typing import Dict, List, Optional, TypeAlias
+
+import pytest
 from pydantic import BaseModel
-from arrest.utils import validate_model
+
 from arrest._config import PYDANTIC_V2
+from arrest.utils import validate_model
 
 
 class MyModel(BaseModel):
