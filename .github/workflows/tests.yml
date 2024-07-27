@@ -49,6 +49,10 @@ jobs:
       run: poetry run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
     - name: Run tox
       run: poetry run tox
+    - name: Run Coverage xml
+      run: |
+          poetry run coverage report --show-missing
+          poetry run coverage xml
 
     - name: Codecov coverage
       uses: codecov/codecov-action@v3
