@@ -6,8 +6,6 @@ on:
       - "master"
 
   pull_request:
-    types:
-      - opened
     branches:
       - master
 
@@ -48,10 +46,9 @@ jobs:
     - name: Run bandit
       run: poetry run bandit .
     - name: Run saftey
-      run: poetry run safety check
-    - if: always()
-      name: Run tox
-      run: poetry run tox
+      run: poetry run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
+    - name: Run tox
+      run: bash scripts/coverage.sh
 
     - name: Codecov coverage
       uses: codecov/codecov-action@v3
