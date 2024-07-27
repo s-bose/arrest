@@ -48,7 +48,7 @@ jobs:
     - name: Run saftey
       run: poetry run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
     - name: Run tox
-      run: bash scripts/coverage.sh
+      run: poetry run tox
 
     - name: Codecov coverage
       uses: codecov/codecov-action@v3
