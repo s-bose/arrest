@@ -6,6 +6,7 @@ Note: only supports >=v3.0 specifications
 Dependencies:
     - datamodel-code-generator
 """
+
 import io
 import itertools
 import json
@@ -120,9 +121,9 @@ class OpenAPIGenerator:
             input_file_type=InputFileType.OpenAPI,
             openapi_scopes=[OpenAPIScope.Schemas],
             output=schema_path,
-            output_model_type=DataModelType.PydanticV2BaseModel
-            if self.use_pydantic_v2
-            else DataModelType.PydanticBaseModel,
+            output_model_type=(
+                DataModelType.PydanticV2BaseModel if self.use_pydantic_v2 else DataModelType.PydanticBaseModel
+            ),
         )
         logger.info(f"generated pydantic models from schema definitions in : {schema_path}")
 

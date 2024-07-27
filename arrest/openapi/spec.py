@@ -2,6 +2,7 @@
 Set of pydantic wrappers around openapi dict
 supports openapi >= v3.0
 """
+
 from typing import Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Extra, Field
