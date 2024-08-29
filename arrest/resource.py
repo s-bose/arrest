@@ -483,6 +483,10 @@ class Resource:
 
             return parsed_response
 
+        except json.JSONDecodeError:
+            # response content-type is not json
+            return response.read().decode("utf-8", errors="strict")
+
         except httpx.HTTPStatusError as exc:
             try:
                 err_response_body = exc.response.json()

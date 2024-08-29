@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "arrest"
-version = "0.1.9"
+version = "0.1.10"
 description = "Arrest is a wrapper of pydantic and httpx to make your REST api calls type-safe and structured"
 authors = ["shiladitya <shiladitya_basu@live.com>"]
 license = "MIT"
@@ -55,7 +55,7 @@ black = "^24.4.2"
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.5.3"
 mkdocs-material = "9.5.30"
-mkdocstrings = { extras = ["python"], version = "^0.24.0" }
+mkdocstrings = { version = "0.25.2", extras = ["python"] }
 
 
 [tool.poetry.group.openapi.dependencies]

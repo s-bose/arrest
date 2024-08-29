@@ -75,7 +75,7 @@
 
         await service.get("/path") # throws ResourceNotFound
         ```
-        
+
         Because `/path` constitutes a resource on its own, not a subpath for a root-resource `/`, hence the following would need to be written
 
         ```python
@@ -126,10 +126,10 @@
 
     2. Use the retry mechanism from arrest
 
-        Arrest provides an additional keyword-argument `retry` either at service-level, or at individual resource-level. 
+        Arrest provides an additional keyword-argument `retry` either at service-level, or at individual resource-level.
         It is defaulted to `None`, should you opt for no retries (the default behaviour). However, you can set it to any
         valid integer resembling the number of times it should retry.
-        
+
         Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retry process.
         It uses [random exponential backoff](https://tenacity.readthedocs.io/en/latest/api.html#tenacity.wait.wait_random_exponential)
         and in the event of any exception.
@@ -170,15 +170,21 @@
             When calling the arrest service, do remember that the original httpx exceptions are rethrown as `ArrestHTTPException`
             with the appropriate information. These include the following:
 
-            - `httpx.HTTPStatusError` - for capturing HTTP non-200 error codes, rethrown as `ArrestHTTPException` with the 
+            - `httpx.HTTPStatusError` - for capturing HTTP non-200 error codes, rethrown as `ArrestHTTPException` with the
                 same status code and message
-            -  `httpx.TimeoutException` - for capturing any request timeout, rethrown as `ArrestHTTPException` with the 
+            -  `httpx.TimeoutException` - for capturing any request timeout, rethrown as `ArrestHTTPException` with the
                 status code 408 (Request Timeout)
             - `httpx.RequestError` - any other error during making the request, rethrown as `ArrestHTTPException` with the
             status code 500 (Internal Server Error)
-            
+
             Any other exception will be thrown as-is.
 
 
 - Feat: Add support for passing any Python-type* to the request and response type definitions for handlers.
     * Needs more clarification as to which types are allowed
+
+
+- Feat: Add custom exception handlers
+
+    If you need to enable some custom functionality for any exception during the lifetime of the HTTP request, you can now add
+    custom exception handlers.

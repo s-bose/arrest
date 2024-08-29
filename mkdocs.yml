@@ -12,8 +12,7 @@ theme:
         primary: purple
         accent: light purple
         toggle:
-          # icon: material/lightbulb
-          icon: material/brightness-4
+          icon: material/lightbulb
           name: Switch to dark mode
 
       # Palette toggle for dark mode
@@ -22,12 +21,13 @@ theme:
         primary: deep purple
         accent: purple
         toggle:
-          # icon: material/lightbulb-outline
-          icon: material/brightness-7
+          icon: material/lightbulb-outline
           name: Switch to light mode
 
   features:
     - navigation.sections
+    - content.code.copy
+
 
 nav:
   - Introduction: index.md
@@ -38,6 +38,7 @@ nav:
   - OpenAPI Integration: openapi.md
   - Developer's Note: dev-note.md
   - API Documentation: api.md
+  - Release Notes: release-notes.md
   - What's new?: whats-new.md
 
 markdown_extensions:
@@ -60,3 +61,10 @@ plugins:
           options:
             heading_level: 4
             merge_init_into_class: true
+
+
+watch:
+  - mkdocs.yml
+  - .readthedocs.yaml
+  - arrest
+  - docs

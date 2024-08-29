@@ -92,7 +92,7 @@ class OpenAPIGenerator:
             fmt (Optional[Format], optional): specification format [json, yaml, yml]
 
         Raises:
-            ArrestError
+            ArrestError: if the output path does not exist
         """
         openapi_bytes = self.download_openapi_spec()
         fmt = fmt if fmt else self.url.split(".")[-1]
