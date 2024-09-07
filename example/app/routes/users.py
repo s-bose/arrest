@@ -1,14 +1,20 @@
-from uuid import UUID, uuid4
+import random
 from datetime import datetime
-from fastapi.routing import APIRoute
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException
+from uuid import UUID, uuid4
 
-from app.models import Users, UserCreate, UserUpdate
-from app.data import users
+from app.data import tasks, users
+from app.models import Task, UserCreate, Users, UserUpdate
+from fastapi.exceptions import HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 
 
 class __UserRoutes:
+    @staticmethod
+    async def get_random_user() -> Users:
+        rand_index = random.randint(0, len(users) - 1)
+        return Users(**users[rand_index])
+
     @staticmethod
     async def get_all() -> list[Users]:
         return [Users(**user) for user in users]
@@ -53,14 +59,23 @@ class __UserRoutes:
 
         return True
 
+    @staticmethod
+    async def get_tasks_for_user(user_id: UUID) -> list[Task]:
+        user = next((u for u in users if u["id"] == user_id), None)
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return [Task(**t) for t in tasks if t["user_id"] == user_id]
+
 
 user_routes = [
     APIRoute(
         path="/users",
-        endpoint=__UserRoutes.get_all,
+        endpoint=__UserRoutes.get_random_user,
         methods=["GET"],
         response_class=JSONResponse,
-        response_model=list[Users],
+        response_model=Users,
         status_code=200,
     ),
     APIRoute(
@@ -72,6 +87,14 @@ user_routes = [
         status_code=200,
     ),
     APIRoute(
+        path="/users/all",
+        endpoint=__UserRoutes.get_all,
+        methods=["GET"],
+        response_class=JSONResponse,
+        response_model=list[Users],
+        status_code=200,
+    ),
+    APIRoute(
         path="/users/",
         endpoint=__UserRoutes.create,
         methods=["POST"],
@@ -80,7 +103,7 @@ user_routes = [
         status_code=201,
     ),
     APIRoute(
-        path="/users/",
+        path="/users/{user_id:uuid}",
         endpoint=__UserRoutes.update,
         methods=["PUT"],
         response_class=JSONResponse,
@@ -93,6 +116,14 @@ user_routes = [
         methods=["GET"],
         response_class=JSONResponse,
         response_model=list[Users],
+        status_code=200,
+    ),
+    APIRoute(
+        path="/users/{user_id:uuid}/tasks",
+        endpoint=__UserRoutes.get_tasks_for_user,
+        methods=["GET"],
+        response_class=JSONResponse,
+        response_model=list[Task],
         status_code=200,
     ),
 ]
