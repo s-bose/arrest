@@ -647,10 +647,12 @@ class Resource:
         else:
             timeout = kwargs.get("timeout")
             if not timeout:
-                kwargs["timeout"] = httpx.Timeout(timeout=DEFAULT_TIMEOUT, connect=DEFAULT_TIMEOUT)
+                kwargs["timeout"] = httpx.Timeout(
+                    DEFAULT_TIMEOUT
+                )  # 120 sec default timeout for all operations
 
             if isinstance(timeout, int):
-                kwargs["timeout"] = httpx.Timeout(timeout=timeout, connect=timeout)
+                kwargs["timeout"] = httpx.Timeout(timeout)  # set custom timeout for all operations
 
             self._httpx_args = HttpxClientInputs(**kwargs)
 
