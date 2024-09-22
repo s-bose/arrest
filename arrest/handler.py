@@ -1,6 +1,6 @@
 import difflib
 import re
-from typing import Callable, NamedTuple, Pattern, Type, TypeVar
+from typing import Callable, NamedTuple, Pattern, TypeVar
 
 from pydantic import AnyUrl, BaseModel
 
@@ -37,8 +37,8 @@ class ResourceHandler(BaseModel):
 
     method: Methods
     route: str
-    request: Type[T] | None = None
-    response: Type[T] | None = None
+    request: T | None = None
+    response: T | None = None
     callback: Callable | None = None
     path_format: str | None = None
     path_regex: Pattern | None = None

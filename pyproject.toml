@@ -85,6 +85,9 @@ force-exclude = '''
 )/
 '''
 
+[tool.pytest.ini_options]
+addopts = "--ignore=example"
+
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]
 source = ["arrest"]

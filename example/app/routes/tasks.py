@@ -89,7 +89,7 @@ task_routes = [
         methods=["POST"],
         response_class=JSONResponse,
         response_model=Task,
-        status_code=201,
+        status_code=200,
     ),
     APIRoute(
         path="/tasks/{task_id:uuid}",

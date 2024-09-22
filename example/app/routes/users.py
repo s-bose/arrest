@@ -100,7 +100,7 @@ user_routes = [
         methods=["POST"],
         response_class=JSONResponse,
         response_model=Users,
-        status_code=201,
+        status_code=200,
     ),
     APIRoute(
         path="/users/{user_id:uuid}",
@@ -113,9 +113,7 @@ user_routes = [
     APIRoute(
         path="/users/{user_id:uuid}",
         endpoint=__UserRoutes.delete,
-        methods=["GET"],
-        response_class=JSONResponse,
-        response_model=list[Users],
+        methods=["DELETE"],
         status_code=200,
     ),
     APIRoute(
