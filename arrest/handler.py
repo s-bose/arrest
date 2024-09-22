@@ -26,9 +26,9 @@ class ResourceHandler(BaseModel):
             HTTP Method for the handler
         route (str):
             Unique path to the handler from its parent resource
-        request (Type[T], optional):
+        request (T, optional):
             Python type to validate the request with
-        response (Type[T], optional):
+        response (T, optional):
             Python type to deserialize the HTTP response
         callback (Callable, optional):
             A callable (sync or async) to execute with the HTTP

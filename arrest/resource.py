@@ -2,7 +2,7 @@
 import functools
 import inspect
 import json
-from typing import Any, List, Mapping, Optional, Tuple, Type, Union, cast
+from typing import Any, List, Mapping, Optional, Tuple, Type, TypeVar, Union, cast
 
 import httpx
 from httpx import Headers, QueryParams
@@ -27,6 +27,8 @@ from arrest.utils import (
     retry,
     validate_model,
 )
+
+T = TypeVar("T")
 
 
 class Resource:
@@ -374,8 +376,8 @@ class Resource:
 
     def extract_request_params(
         self,
-        request_type: Type[BaseModel] | None,
-        request_data: BaseModel | Mapping[str, Any] | None,
+        request_type: Any,
+        request_data: Any,
         headers: Mapping[str, str] | None = None,
         query: Mapping[str, Any] | None = None,
     ) -> Params:
@@ -384,11 +386,13 @@ class Resource:
 
         Parameters:
             request_type:
-                a pydantic class for holding the request data
+                a python type for the request data
             request_data:
-                instance of the above containing the data
-            kwargs:
-                optional keyword-arguments containing query parameters
+                instance of the above type containing the request data
+            headers:
+                optional dictionary containing additional header key-value pairs
+            query:
+                optional dictionary containing additional query key-value pairs
         Returns:
             a `Params` object containing `header`, `body`, `query` fields
         """
@@ -431,7 +435,7 @@ class Resource:
         url: str,
         method: Methods,
         params: Params,
-        response_type: Optional[Type[BaseModel]],
+        response_type: Any,
     ) -> Any:
         """
         (private) prepares and makes a http request,
@@ -446,8 +450,8 @@ class Resource:
             one of the available http methods
         params : dict
             dict containing `header`, `query` and `body` params
-        response_type : Optional[Type[BaseModel]]
-            optional response_type to deserialize the json response to
+        response_type : Any
+            a python type to deserialize the json response to
 
         Returns
         -------
@@ -470,16 +474,9 @@ class Resource:
             response.raise_for_status()
             response_body = response.json()
 
-            # parse response to pydantic model
             parsed_response = response_body
             if response_type:
-                response_type
-                if isinstance(response_body, list):
-                    parsed_response = [response_type(**item) for item in response_body]
-                elif isinstance(response_body, dict):
-                    parsed_response = response_type(**response_body)
-                else:
-                    raise ValueError(f"could not parse response to pydantic model {response_type.__name__}")
+                parsed_response = validate_model(response_type, response_body)
 
             return parsed_response
 
@@ -629,7 +626,7 @@ class Resource:
                             callback=len(rest) >= 3 and rest[2] or None,
                         ),
                     )
-                elif isinstance(_handler, BaseModel):
+                elif isinstance(_handler, ResourceHandler):
                     self._bind_handler(base_url=base_url, handler=_handler)
                 else:
                     raise ValueError("invalid handler type specified")

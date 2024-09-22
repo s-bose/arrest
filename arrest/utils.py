@@ -7,7 +7,7 @@ import re
 from collections import deque
 from functools import wraps
 from types import GeneratorType
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 import orjson
 import tenacity
@@ -74,12 +74,12 @@ def jsonify(obj: Any) -> Any:
     return orjson.loads(orjson.dumps(obj))
 
 
-def validate_model(type_: Type[T], obj: Any) -> T:  # pragma: no cover
+def validate_model(type_: T, obj: Any) -> T:  # pragma: no cover
     """generic type validator / parser for validating / parsing any python object
     to a given python type.
 
     Args:
-        type_ (Type[T]): A valid python type
+        type_ (Any): A valid python type
         obj (Any): A valid python object
 
     Returns:
