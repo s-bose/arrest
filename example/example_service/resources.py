@@ -9,10 +9,10 @@ users = Resource(
     route="/users",
     handlers=[
         ("GET", "", None, Users),
+        ("GET", "/all", None, List[Users]),
         ("GET", "/{user_id}", None, Users),
         ("PUT", "/{user_id}", UserUpdate, Users),
         ("DELETE", "/{user_id}", None, None),
-        ("GET", "/all", None, List[Users]),
         ("POST", "/", UserCreate, Users),
         ("GET", "/{user_id}/tasks", None, List[Task]),
     ],
@@ -23,7 +23,7 @@ tasks = Resource(
     route="/tasks",
     handlers=[
         ("GET", "", None, Task),
-        ("GET", "/all", None, None),
+        ("GET", "/all", None, List[Task]),
         ("GET", "/{task_id}", None, Task),
         ("PATCH", "/{task_id}", TaskUpdate, Task),
         ("DELETE", "/{task_id}", None, None),

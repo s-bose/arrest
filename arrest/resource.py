@@ -170,13 +170,13 @@ class Resource:
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
+        print(f"{handler=}, {url=}")
 
         params = self.extract_request_params(
             request_type=handler.request,
             request_data=request,
             headers=headers,
             query=query,
-            **kwargs,
         )
 
         response_type = handler.response or self.response_model or None
