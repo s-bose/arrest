@@ -441,23 +441,19 @@ class Resource:
         (private) prepares and makes a http request,
         parses the response and raises appropriate exceptions
 
-        Parameters
-        ----------
+        Parameters:
+            url:
+                the complete url of the endpoint
+            method:
+                one of the available http methods
+            params:
+                dict containing `header`, `query` and `body` params
+            response_type:
+                a python type to deserialize the json response to
 
-        url : str
-            the complete url of the endpoint
-        method : Methods
-            one of the available http methods
-        params : dict
-            dict containing `header`, `query` and `body` params
-        response_type : Any
-            a python type to deserialize the json response to
-
-        Returns
-        -------
-
-        Any
-            a json object or a parsed pydantic object
+        Returns:
+            Any:
+                the returned json object or a parsed instance of `response_type`
         """
 
         try:

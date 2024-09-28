@@ -8,7 +8,7 @@ PYDANTIC_V2 = PYDANTIC_VERSION.startswith("2")
 
 class HttpxClientInputs(TypedDict, total=False):
     """
-    a typeddict to check for all the necessary fields
+    a typed dict to check for all the necessary fields
     for building an `httpx.AsyncClient` instance
     """
 
