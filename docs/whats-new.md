@@ -189,3 +189,13 @@ This is to reduce as much side-effect as possible from the HTTP calls in favour 
 
 If you need to enable some custom functionality for any exception during the lifetime of the HTTP request, you can now add
 custom exception handlers.
+
+### Add support for writing query parameters into the url string
+
+So far the query parameters had to be provided as an additional keyword-argument to the method caller as `service.get("/users", query={"limit": 10})`.
+This was due to the fact that the url pattern matching for the correct handler was based on the complete url parameter, including the query params (the first argument of the method caller).
+However, now that condition is removed, you can write the query parameters in the url string as `?limit=10`.
+
+```python
+await service.users.get("/all?limit=10&role=admin")
+```

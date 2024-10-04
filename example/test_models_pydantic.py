@@ -3,8 +3,10 @@ from typing import List
 
 import pytest
 from httpx import ASGITransport
+from pydantic import BaseModel
 
 from arrest import Resource, Service
+from arrest.params import Query
 from example.app.main import app
 from example.example_service.models import (
     Priority,
@@ -144,6 +146,26 @@ async def test_get_all_tasks():
     assert isinstance(response, list)
 
     assert isinstance(response[0], Task)
+
+
+@pytest.mark.asyncio
+async def test_get_all_tasks_limit():
+    response = await svc.tasks.get("/all?limit=1")
+
+    assert response
+    assert isinstance(response, list)
+
+    assert len(response) == 1
+
+    response = await svc.tasks.get("/all", query={"limit": 2})
+    assert len(response) == 2
+
+    class UserQueryRequest(BaseModel):
+        limit: int = Query(1)
+
+    response = await svc.tasks.get("/all", request=UserQueryRequest(limit=3))
+
+    assert len(response) == 3
 
 
 @pytest.mark.asyncio

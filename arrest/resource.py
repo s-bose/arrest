@@ -3,6 +3,7 @@ import functools
 import inspect
 import json
 from typing import Any, List, Mapping, Optional, Tuple, Type, TypeVar, Union, cast
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from httpx import Headers, QueryParams
@@ -165,18 +166,19 @@ class Resource:
 
         params: dict = {}
 
+        path_query_params, path = self._extract_query_params(path)
+
         if not (match := self.get_matching_handler(method=method, path=path, **kwargs)):
             logger.warning("no matching handler found for request")
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
-        print(f"{handler=}, {url=}")
 
         params = self.extract_request_params(
             request_type=handler.request,
             request_data=request,
             headers=headers,
-            query=query,
+            query={**(query or {}), **path_query_params},
         )
 
         response_type = handler.response or self.response_model or None
@@ -476,9 +478,10 @@ class Resource:
 
             return parsed_response
 
-        except json.JSONDecodeError:
-            # response content-type is not json
-            return response.read().decode("utf-8", errors="strict")
+        # TODO - Future - add support for non-json responses
+        # except json.JSONDecodeError:
+        #     # response content-type is not json
+        #     return response.read().decode("utf-8", errors="strict")
 
         except httpx.HTTPStatusError as exc:
             try:
@@ -579,6 +582,12 @@ class Resource:
         handler.path_regex, handler.path_format, handler.param_types = compile_path(handler.route)
 
         self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
+
+    def _extract_query_params(self, url: str) -> tuple[QueryParams, str]:
+        url_parsed = urlparse(url)
+        url_without_query = urljoin(url, urlparse(url).path)
+
+        return QueryParams(url_parsed.query), url_without_query
 
     def initialize_handlers(
         self,

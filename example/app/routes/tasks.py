@@ -2,6 +2,7 @@ import random
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from fastapi import Query
 from fastapi.exceptions import HTTPException
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -19,9 +20,11 @@ class __TaskRoutes:
         return Task(**tasks[rand_index])
 
     @staticmethod
-    async def get_all_tasks(request: Request) -> list[Task]:
+    async def get_all_tasks(request: Request, limit: int = Query(default=None)) -> list[Task]:
         tasks: list[Task] = request.state.store.get("tasks")
 
+        if limit:
+            return tasks[:limit]
         return tasks
 
     @staticmethod
