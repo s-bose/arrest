@@ -2,30 +2,39 @@ import random
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from app.data import tasks
-from app.models import Task, TaskCreate, TaskUpdate
 from fastapi.exceptions import HTTPException
+from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+
+from example.app.models import Task, TaskCreate, TaskUpdate
 
 
 class __TaskRoutes:
     @staticmethod
-    async def get_random_task() -> Task:
+    async def get_random_task(request: Request) -> Task:
+        tasks: list[Task] = request.state.store.get("tasks")
+
         rand_index = random.randint(0, len(tasks) - 1)
         return Task(**tasks[rand_index])
 
     @staticmethod
-    async def get_all_tasks() -> list[Task]:
+    async def get_all_tasks(request: Request) -> list[Task]:
+        tasks: list[Task] = request.state.store.get("tasks")
+
         return tasks
 
     @staticmethod
-    async def get_task_by_id(task_id: UUID) -> Task:
+    async def get_task_by_id(task_id: UUID, request: Request) -> Task:
+        tasks: list[Task] = request.state.store.get("tasks")
+
         task = next((t for t in tasks if t["id"] == task_id), None)
         return Task(**task)
 
     @staticmethod
-    async def create_task(new_task: TaskCreate) -> Task:
+    async def create_task(new_task: TaskCreate, request: Request) -> Task:
+        tasks: list[Task] = request.state.store.get("tasks")
+
         t = Task(
             id=uuid4(),
             user_id=new_task.user_id,
@@ -38,7 +47,9 @@ class __TaskRoutes:
         return t
 
     @staticmethod
-    async def update_task(task_id: UUID, task: TaskUpdate) -> Task:
+    async def update_task(task_id: UUID, task: TaskUpdate, request: Request) -> Task:
+        tasks: list[Task] = request.state.store.get("tasks")
+
         for i, task in enumerate(tasks):
             if task["id"] == task_id:
                 task_updated = Task(**{**task["id"], **task.model_dump(), "created_at": datetime.now()})
@@ -48,8 +59,8 @@ class __TaskRoutes:
         raise HTTPException(status_code=404, detail="Task not found")
 
     @staticmethod
-    async def delete_task(task_id: UUID) -> bool:
-        global tasks
+    async def delete_task(task_id: UUID, request: Request) -> bool:
+        tasks: list[Task] = request.state.store.get("tasks")
 
         if task_id not in [t["id"] for t in tasks]:
             raise HTTPException(status_code=404, detail="Task not found")

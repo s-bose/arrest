@@ -1,8 +1,10 @@
 import uuid
 
 import pytest
+from httpx import ASGITransport
 
 from arrest import Resource, Service
+from example.app.main import app
 
 users = Resource(
     name="users",
@@ -35,8 +37,12 @@ tasks = Resource(
 
 root = Resource(name="root", route="", handlers=[("GET", "/")])
 
-
-svc = Service(name="svc without types", url="http://localhost:8080", resources=[root, tasks, users])
+svc = Service(
+    name="svc without types",
+    url="http://web",
+    resources=[root, tasks, users],
+    transport=ASGITransport(app=app),
+)
 
 
 @pytest.mark.asyncio

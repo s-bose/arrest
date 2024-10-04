@@ -2,25 +2,32 @@ import random
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from app.data import tasks, users
-from app.models import Task, UserCreate, Users, UserUpdate
 from fastapi.exceptions import HTTPException
+from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+
+from example.app.models import Task, UserCreate, Users, UserUpdate
 
 
 class __UserRoutes:
     @staticmethod
-    async def get_random_user() -> Users:
+    async def get_random_user(request: Request) -> Users:
+        users: list[Users] = request.state.store.get("users")
+
         rand_index = random.randint(0, len(users) - 1)
         return Users(**users[rand_index])
 
     @staticmethod
-    async def get_all() -> list[Users]:
+    async def get_all(request: Request) -> list[Users]:
+        users: list[Users] = request.state.store.get("users")
+
         return [Users(**user) for user in users]
 
     @staticmethod
-    async def get_by_id(user_id: UUID) -> Users:
+    async def get_by_id(user_id: UUID, request: Request) -> Users:
+        users: list[Users] = request.state.store.get("users")
+
         user = next((user for user in users if user["id"] == user_id), None)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -28,7 +35,9 @@ class __UserRoutes:
         return user
 
     @staticmethod
-    async def create(user: UserCreate) -> Users:
+    async def create(user: UserCreate, request: Request) -> Users:
+        users: list[Users] = request.state.store.get("users")
+
         new_user = Users(
             **user.model_dump(),
             id=uuid4(),
@@ -39,7 +48,9 @@ class __UserRoutes:
         return new_user
 
     @staticmethod
-    async def update(user_id: UUID, user: UserUpdate) -> Users:
+    async def update(user_id: UUID, user: UserUpdate, request: Request) -> Users:
+        users: list[Users] = request.state.store.get("users")
+
         for i, u in enumerate(users):
             if u["id"] == user_id:
                 user_updated = Users(**{**users[i], **user.model_dump(), "created_at": datetime.now()})
@@ -49,8 +60,8 @@ class __UserRoutes:
         raise HTTPException(status_code=404, detail="User not found")
 
     @staticmethod
-    async def delete(user_id: UUID) -> bool:
-        global users
+    async def delete(user_id: UUID, request: Request) -> bool:
+        users: list[Users] = request.state.store.get("users")
 
         if user_id not in [u["id"] for u in users]:
             raise HTTPException(status_code=404, detail="User not found")
@@ -60,7 +71,10 @@ class __UserRoutes:
         return True
 
     @staticmethod
-    async def get_tasks_for_user(user_id: UUID) -> list[Task]:
+    async def get_tasks_for_user(user_id: UUID, request: Request) -> list[Task]:
+        users: list[Users] = request.state.store.get("users")
+        tasks: list[Task] = request.state.store.get("tasks")
+
         user = next((u for u in users if u["id"] == user_id), None)
 
         if not user:

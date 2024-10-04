@@ -29,3 +29,4 @@ class HttpxClientInputs(TypedDict, total=False):
     transport: Optional[AsyncBaseTransport]
     trust_env: Optional[bool]
     default_encoding: Union[str, Callable[[bytes], str]]
+    app: Callable[..., Any]
