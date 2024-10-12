@@ -1,12 +1,13 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
 import pytest
 from httpx import ASGITransport
 from pydantic import BaseModel
 
 from arrest import Resource, Service
-from arrest.params import Query
+from arrest.exceptions import ArrestHTTPException
+from arrest.params import Body, Header, Query
 from example.app.main import app
 from example.example_service.models import (
     Priority,
@@ -17,6 +18,16 @@ from example.example_service.models import (
     Users,
     UserUpdate,
 )
+
+
+class CustomRequest(BaseModel):
+    foo: str = Body(...)
+    bar: str = Body(...)
+    x_api_key: str = Header(..., serialization_alias="x-api-key")
+    x_secret: str = Header(..., serialization_alias="x-secret")
+    limit: Optional[int] = Query(10)
+    user_id: Optional[str] = Query(None)
+
 
 users = Resource(
     name="users",
@@ -53,10 +64,12 @@ root = Resource(
     ],
 )
 
+custom = Resource(name="custom", route="/custom", handlers=[("POST", "", CustomRequest, dict)])
+
 svc = Service(
     name="svc without types",
     url="http://localhost:8080",
-    resources=[root, tasks, users],
+    resources=[root, tasks, users, custom],
     transport=ASGITransport(app=app),
 )
 
@@ -218,3 +231,53 @@ async def test_delete_task_by_id(path_param_style: str):
         response = await svc.tasks.delete("/", task_id=task_id)
 
     assert response is True
+
+
+@pytest.mark.parametrize(
+    "req, error",
+    [
+        (
+            CustomRequest(
+                foo="Body -> Foo",
+                bar="Body -> Bar",
+                x_api_key="Header -> X-Api-Key",
+                x_secret="Header -> X-Secret",
+                limit=10,
+                user_id="ca21e0ee-0747-440d-a98f-d306058438ac",
+            ),
+            ArrestHTTPException,
+        ),
+        (
+            CustomRequest(
+                foo="Body -> Foo",
+                bar="Body -> Bar",
+                x_api_key="Header -> X-Api-Key",
+                x_secret="Header -> X-Secret",
+                limit=10,
+                user_id=str(uuid.UUID(int=2)),
+            ),
+            None,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_custom_request_with_header_query_body(req: CustomRequest, error: Exception | None):
+    if not error:
+        response = await svc.custom.post("", request=req)
+        assert isinstance(response, dict)
+
+        assert response == {
+            "body": {
+                "foo": "Body -> Foo",
+                "bar": "Body -> Bar",
+            },
+            "query": {"limit": 10},
+            "headers": {
+                "x-api-key": "Header -> X-Api-Key",
+                "x-secret": "Header -> X-Secret",
+            },
+        }
+    else:
+        with pytest.raises(error):
+            await svc.custom.post("", request=req)
+            assert error.status_code == 404
