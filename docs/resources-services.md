@@ -125,3 +125,74 @@ You can directly pass most of the httpx client arguments as kwargs for the Servi
 This will override these fields if also set from any resource under this service.
 
 For the full list of available arguments, please check [here](api.md/#httpx-client-arguments)
+
+
+## Root resources
+
+Root resources are special resource definitions that have an empty (root) route (`""`) or (`"/"`).
+These are usually top-level endpoints usually used for ping or healthcheck.
+We use the reserved name `root` to identify these root resources.
+If you want to integrate a root resource in your service, simply add it to the list of resources.
+
+```python
+from arrest import Service, Resource
+
+service = Service(
+    name="myservice",
+    url="http://example.com",
+    resources=[
+        Resource(
+            route="",
+            handlers=[
+                ("GET", ""),
+                ("GET", "/health")
+            ]
+        )
+    ]
+)
+```
+
+!!! Note
+    You can only have one root resource. A resource that has its base route `""`, and another having base route of `"/"` are both root resources and one will override the other.
+    If you want to have both `""` and `"/"` routes accessible, specify them as separate handlers in your root resource
+
+    ```python
+    Resource(
+        route="",
+        handlers=[
+            ("GET", ""),
+            ("GET", "/"),
+            ("GET", "/health")
+        ]
+    )
+    ```
+
+To call the endpoints of root resource, you call the HTTP method on the service directly, only specifying the path.
+Alternatively, you can use `.root` to explicitly specify the root resource and call its handlers by path and method.
+
+!!! Example
+
+    ```python
+    from arrest import Resource, Service
+
+    root_resource = Resource(
+        route="",
+        handlers=[
+            ("GET", ""),       # 1
+            ("GET", "/"),      # 2
+            ("GET", "/health") # 3
+        ]
+    )
+
+    myservice = Service(
+        name="myservice",
+        url="http://example.com",
+        resources=[root_resource]
+    )
+
+    await myservice.get("")        # calls #1
+    await myservice.get("/")       # calls #2
+    await myservice.get("/health") # calls #3
+
+    await myservice.root.get("/")  # also works
+    ```

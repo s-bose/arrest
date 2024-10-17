@@ -10,8 +10,18 @@
 
 Enable data validation for REST APIs.
 
-Built on top of Pydantic and httpx.
-Arrest is like a postman client for your microservice apis. It provides a simple layer of Pydantic encapsulation over Httpx HTTP calls to ensure structural integrity of your api definitions in a single file, as well as provide Pydantic's strength of data validation.
+Arrest provides an easy and declarative way of defining, managing, and calling RESTful HTTP APIs with type validation, retries, exception handling, and other batteries included.
+
+Arrest lets you define your RESTful API services in a simple encapsulation that takes care of the following:
+1. Type validation for request and response data
+2. HTTP request retries
+3. Manage your services definitions in one place
+4. Exception handling
+5. Hooks for custom exceptions
+6. Callbacks
+7. Automatic code generation from OpenAPI Schema
+
+Making it a breeze to interface with another HTTP service from your Python code.
 
 ## Installation
 
@@ -22,7 +32,7 @@ pip install arrest
 ## Getting Started
 
 ```python
-
+import logging
 from arrest import Resource, Service
 from arrest.exceptions import ArrestHTTPException
 

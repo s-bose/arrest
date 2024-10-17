@@ -3,7 +3,8 @@ from typing import Any
 import pytest
 
 from arrest.openapi.spec import Reference
-from arrest.openapi.utils import get_ref_schema, sanitize_name
+from arrest.openapi.utils import get_ref_schema
+from arrest.utils import sanitize_name
 
 
 @pytest.mark.parametrize(
