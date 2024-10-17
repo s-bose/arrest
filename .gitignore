@@ -8,5 +8,5 @@ dist/*
 site/*
 .tox
 *.ipynb
-
+NOTES.md
 TODO.md

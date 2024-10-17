@@ -2,7 +2,7 @@
 import functools
 import inspect
 import json
-from typing import Any, List, Mapping, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, List, Mapping, Optional, Tuple, TypeVar, Union, cast
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -22,12 +22,13 @@ from arrest.params import Param, Params, ParamTypes
 from arrest.types import ExceptionHandlers
 from arrest.utils import (
     extract_model_field,
+    extract_resource_and_suffix,
     join_url,
     jsonable_encoder,
     lookup_exception_handler,
-    retry,
-    validate_model,
 )
+from arrest.utils import retry as arrest_retry
+from arrest.utils import validate_model
 
 T = TypeVar("T")
 
@@ -57,7 +58,7 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        response_model: Optional[Type[BaseModel]] = None,
+        response_model: Optional[T] = None,
         handlers: Union[
             List[ResourceHandler],
             List[Mapping[str, Any]],
@@ -97,6 +98,18 @@ class Resource:
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
         self._exception_handlers: ExceptionHandlers = None
+
+        # initialize default GET handler
+        self._bind_handler(
+            base_url=self.base_url,
+            handler=ResourceHandler(
+                method=Methods.GET,
+                route=extract_resource_and_suffix(self.route)[1],
+                request=None,
+                response=self.response_model,
+                callback=None,
+            ),
+        )
 
         self.initialize_handlers(handlers=handlers)
         self.initialize_httpx(client=client, **kwargs)
@@ -170,6 +183,7 @@ class Resource:
 
         if not (match := self.get_matching_handler(method=method, path=path, **kwargs)):
             logger.warning("no matching handler found for request")
+            print(f"{self.routes=}")
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
@@ -184,7 +198,7 @@ class Resource:
         response_type = handler.response or self.response_model or None
 
         fn_make_request = (
-            retry(n_retries=self.retry, exceptions=(ArrestHTTPException, Exception))(self.make_request)
+            arrest_retry(n_retries=self.retry, exceptions=(ArrestHTTPException, Exception))(self.make_request)
             if self.retry
             else self.make_request
         )
@@ -600,7 +614,7 @@ class Resource:
         Should not be used separately (unless you want to break things)
         """
         if self.routes:
-            handlers = list(self.routes.values())
+            handlers = list(self.routes.values()) + (handlers or [])
 
         if not handlers:
             return

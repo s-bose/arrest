@@ -199,3 +199,38 @@ However, now that condition is removed, you can write the query parameters in th
 ```python
 await service.users.get("/all?limit=10&role=admin")
 ```
+
+### [WIP] Add support for default GET handlers for resources
+
+Arrest now automatically adds a default GET handler to the resource route at `("GET", "")`
+Which means, if your resource looks like this:
+
+```python
+user = Resource(
+    name="user",
+    route="/user"
+)
+```
+
+You wouldn't need to add any handler for the resource root, you can directly call `service.user.get("")`
+Additionally, if you specify `response_model` keyword-argument in the Resource initializer, the GET response will be automatically parsed as the `response_model`
+
+```python
+user = Resource(
+    name="user",
+    route="/user",
+    response_model=UserSchema
+)
+
+response = await service.user.get("")
+assert isinstance(response, UserSchema) # True
+```
+
+!!! Note
+    This works by splitting the resource route into the resource's base route, and the suffix, which becomes the default GET handler route.
+    For example, if your resource route is `"/users"`, the default handler will be `("GET", "")`, and you can call `service.users.get("")`
+    But if your resource route is `"/users/"`, the default handler will be `("GET", "/")`, and you can call `service.users.get("/")`.
+
+    This also works similarly for root-level resources for the service.
+    If your root-level resource is at `"/"`, you can call `service.get("/")` or `service.root.get("/")`,
+    but if the root-level resource is at `""`, you have to call `service.get("")` or `service.root.get("")`.

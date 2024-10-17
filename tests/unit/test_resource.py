@@ -54,6 +54,7 @@ def test_resource_handlers_dict():
 
     assert set(payment_resource.routes.keys()) == set(
         [
+            (Methods.GET, ""),
             (Methods.GET, "/"),
             (Methods.GET, "/{payment_id}"),
             (Methods.POST, "/"),
@@ -105,7 +106,12 @@ def test_resource_handler_tuple(handler_tuple, exception):
             handlers=[handler_tuple],
         )
 
-        _handler = list(res.routes.values())[0]
+        _handlers = list(res.routes.values())
+        root_handler, _handler = _handlers[0], _handlers[1]
+
+        assert root_handler.method == Methods.GET
+        assert root_handler.route == ""
+
         if len(handler_tuple) == 2:
             assert _handler.method == handler_tuple[0]
             assert _handler.route == handler_tuple[1]
@@ -128,7 +134,11 @@ def test_resource_handler_tuple(handler_tuple, exception):
 def test_resource_handler_pydantic(handler, exception):
     with exception:
         res = Resource(route="/payments", handlers=[handler])
-        _handler = list(res.routes.values())[0]
+        handlers = list(res.routes.values())
+        root_handler, _handler = handlers[0], handlers[1]
+        assert root_handler.method == Methods.GET
+        assert root_handler.route == ""
+
         assert _handler == handler
 
 
@@ -137,12 +147,20 @@ def test_resource_handler_pydantic_validation_error():
         Resource(route="/payments", handlers=[{"method": Methods.GET, "route": XYZ()}])
 
 
-def test_resource_handler_empty():
-    res = Resource(route="/payments", handlers=None)
-    assert not res.routes
+@pytest.mark.parametrize(
+    "resource",
+    [
+        Resource(route="/payments"),
+        Resource(route="/payments", handlers=None),
+        Resource(route="/payments", handlers=[]),
+    ],
+)
+def test_resource_handler_empty(resource: Resource):
+    assert len(resource.routes) == 1
+    root_handler = list(resource.routes.values())[0]
 
-    res = Resource(route="/payments", handlers=[])
-    assert not res.routes
+    assert root_handler.method == Methods.GET
+    assert root_handler.route == ""
 
 
 def test_resource_multiple_handler_same_signature():
@@ -151,7 +169,11 @@ def test_resource_multiple_handler_same_signature():
         handlers=[("GET", "/audit/{audit_id}"), ("GET", "/audit/{audit_id:uuid}")],
     )
 
-    assert len(res.routes) == 1
+    assert len(res.routes) == 2
+    root_handler = list(res.routes.values())[0]
+    assert root_handler.method == Methods.GET
+    assert root_handler.route == ""
+
     key, handler = list(res.routes.items())[-1]
 
     assert key.method, key.route == ("GET", "/audit/{audit_id}")
@@ -186,3 +208,9 @@ def test_root_resource(route: str):
     res = Resource(route=route)
     assert res.route == route
     assert res.name == ROOT_RESOURCE
+
+    assert len(res.routes) == 1
+    root_handler = list(res.routes.values())[0]
+
+    assert root_handler.method == Methods.GET
+    assert root_handler.route == route
