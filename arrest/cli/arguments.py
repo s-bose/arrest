@@ -1,9 +1,19 @@
 from argparse import ArgumentParser
 
+from arrest import __version__
+
 arg_parser = ArgumentParser(
     usage="\n arrest [options]",
     description="generate arrest services and resources from various definitions",
     add_help=True,
+)
+
+arg_parser.add_argument(
+    "-v",
+    "--version",
+    action="version",
+    version="%(prog)s {version}".format(version=__version__),
+    help="display the current package version",
 )
 
 arg_parser.add_argument(

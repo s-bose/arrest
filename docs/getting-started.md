@@ -57,13 +57,37 @@ Or you can directly make use of `.request()` and supply the method in it.
 
 ---
 ## Retries
-Retries are built-in in any http requests being made. Arrest uses [`backoff`](https://github.com/litl/backoff) to configure function retries.
-It retries on any `httpx.HTTPError` or `TimeoutException` or `ArrestHTTPException`.
-By default the no. of retries is 3, although it can be configured by setting the environment variable `ARREST_MAX_RETRIES`
+There are no retries built-in in Arrest. However they can be configured in many different ways.
+You can use the retry mechanism from httpx transport (e.g. `httpx.AsyncHTTPTransport(retries=3)`), or use the `retry` field in `Service` or `Resource` specific setting and provide the number of retries. Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retries.
+
+If you want to learn more, please refer to [this](whats-new.md#standardized-retry-mechanism-with-more-flexibility)
+
+
 
 ---
 ## Timeouts
-Arrest also provides a default timeout of 60 seconds in all its http requests. It can again be configured by setting the environment variable `ARREST_DEFAULT_TIMEOUT`
+Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
+If you want to provide a custom timeout, you can put it at a service-level or at a resource-level in the `timeout` argument.
+
+```python
+from arrest import Service, Resource
+
+
+example_svc = Service(
+    name="example",
+    url="http://example.com/api/v1",
+    resources=[
+        Resource(
+            name="user",
+            route="/user",
+            handlers=[
+                ("GET", "/")
+            ]
+        )
+    ],
+    timeout=
+)
+```
 
 ---
 ## Using a Pydantic model for request
