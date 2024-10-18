@@ -21,12 +21,34 @@ Arrest lets you define your RESTful API services in a simple encapsulation that 
 6. Callbacks
 7. Automatic code generation from OpenAPI Schema
 
-Making it a breeze to interface with another HTTP service from your Python code.
+Here is an example of a typical client-side functions for interacting with an HTTP Service.
+![](./docs/assets/screenshot_httpx.png)
+
+And here is the same functionality achieved using Arrest.
+![](./docs/assets/screenshot_arrest.png)
+
+
+## Contents
+
+[Installation](#installation)
+[Getting Started](#getting-started)
+[Contributing](#contributing)
 
 ## Installation
 
+### Using pip
 ```bash
 pip install arrest
+```
+
+### Using poetry
+```bash
+poetry add arrest
+```
+
+### Using uv
+```bash
+uv add arrest
 ```
 
 ## Getting Started
@@ -57,3 +79,8 @@ try:
 except ArrestHTTPException as exc:
     logging.warning(f"{exc.status_code} {exc.data}")
 ```
+
+
+## Contributing
+
+Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
