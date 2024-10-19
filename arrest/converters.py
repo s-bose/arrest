@@ -76,13 +76,17 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
     """
     Given a path string, like: "/{username:str}",
 
+    Parameters:
+        path:
+            a backslash-escaped string to an http path
 
-    Returns
-    -------
-
-    regex : "/(?P<username>[^/]+)"
-    format : "/{username}"
-    param_types : dict[username: Converter[str]()]
+    Returns:
+        regex:
+            "/(?P<username>[^/]+)"
+        format:
+            "/{username}"
+        param_types:
+            dict[username: Converter[str]()]
     """
     path_regex = "^"
     path_format = ""

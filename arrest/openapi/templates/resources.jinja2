@@ -3,7 +3,9 @@
 {%- endmacro -%}
 
 from arrest import Resource
+{% if schema_imports|length > 0 -%}
 from .{{ schema_module }} import {{ schema_imports|sort|join(', ') }}
+{%- endif %}
 {% for resource in resources %}
 {{ resource.name }} = Resource(
     name="{{ resource.name }}",
