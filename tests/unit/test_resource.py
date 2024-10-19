@@ -15,6 +15,12 @@ class XYZ:
     pass
 
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
 class PaymentRequest(BaseModel):
     user_id: int
     name: str
@@ -214,3 +220,59 @@ def test_root_resource(route: str):
 
     assert root_handler.method == Methods.GET
     assert root_handler.route == route
+
+
+@pytest.mark.parametrize(
+    "resource, default_handler",
+    [
+        (
+            Resource(
+                route="/users",
+                handlers=[
+                    {"method": Methods.GET, "route": "/{user_id}"},
+                    {"method": Methods.POST, "route": ""},
+                ],
+            ),
+            ResourceHandler(
+                method=Methods.GET,
+                route="",
+            ),
+        ),
+        (
+            Resource(
+                route="/users/",
+                handlers=[
+                    {"method": Methods.GET, "route": "/{user_id}"},
+                    {"method": Methods.POST, "route": ""},
+                ],
+            ),
+            ResourceHandler(
+                method=Methods.GET,
+                route="/",
+            ),
+        ),
+        (
+            Resource(
+                route="/users",
+                handlers=[
+                    {"method": Methods.GET, "route": "", "request": UserCreate},
+                    {"method": Methods.GET, "route": "/{user_id}"},
+                    {"method": Methods.POST, "route": ""},
+                ],
+            ),
+            ResourceHandler(
+                method=Methods.GET,
+                route="",
+                request=UserCreate,
+            ),
+        ),
+    ],
+)
+def test_resource_default_handler(resource: Resource, default_handler: ResourceHandler):
+    routes = list(resource.routes.values())
+
+    _default_handler = routes[0]
+
+    assert _default_handler.method == default_handler.method
+    assert _default_handler.route == default_handler.route
+    assert _default_handler.request == default_handler.request
