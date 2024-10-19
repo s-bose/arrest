@@ -23,6 +23,7 @@ class Service:
         resources: Optional[list[Resource]] = [],
         client: Optional[httpx.AsyncClient] = None,
         exception_handlers: ExceptionHandlers = None,
+        retry: Optional[int] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -39,6 +40,8 @@ class Service:
                 A list of resources provided by the service
             client:
                 An httpx.AsyncClient instance
+            retry:
+                Optional argument to specify the number of retries across all resources
             kwargs:
                 Additional httpx.AsyncClient parameters. [see more](api.md/#httpx-client-arguments)
         """
@@ -50,7 +53,7 @@ class Service:
         self._exception_handlers: ExceptionHandlers = {} if exception_handlers is None else exception_handlers
 
         for resource in resources:
-            self.add_resource(resource, client=client, **kwargs)
+            self.add_resource(resource, client=client, retry=retry, **kwargs)
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
@@ -64,6 +67,7 @@ class Service:
         self,
         resource: Resource,
         client: Optional[httpx.AsyncClient] = None,
+        retry: Optional[int] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -77,6 +81,7 @@ class Service:
         resource.initialize_handlers(base_url=self.url)
         resource.initialize_httpx(client=client, **kwargs)
         resource.exception_handlers = self._exception_handlers
+        resource.retry = retry
 
         self.resources[resource.name] = resource
         setattr(self, resource.name, resource)

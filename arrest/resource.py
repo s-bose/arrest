@@ -326,14 +326,7 @@ class Resource:
         **kwargs,
     ):
         """
-        Makes a `HTTP DELETE` reque        # exception handling
-        except Exception as exc:
-            exc
-            exc_handler = lookup_exception_handler(self.exception_handlers, exc)
-            if not exc_handler:
-                raise exc
-
-            response = exc_handler(exc)st
+        Makes a `HTTP DELETE` request
 
         see [request][arrest.resource.Resource.request]
         """
