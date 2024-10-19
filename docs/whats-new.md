@@ -234,3 +234,16 @@ assert isinstance(response, UserSchema) # True
     This also works similarly for root-level resources for the service.
     If your root-level resource is at `"/"`, you can call `service.get("/")` or `service.root.get("/")`,
     but if the root-level resource is at `""`, you have to call `service.get("")` or `service.root.get("")`.
+
+You can overwrite the default handler by rewriting it in the handlers list.
+
+```python
+user = Resource(
+    name="user",
+    route="/user",
+    handlers=[
+        ("GET", "", UserSchema), # overwrites default ("GET", "")
+        ("GET", "/{usder_id:str}", UserSchema)
+    ]
+)
+```
