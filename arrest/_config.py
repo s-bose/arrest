@@ -30,3 +30,13 @@ class HttpxClientInputs(TypedDict, total=False):
     trust_env: Optional[bool]
     default_encoding: Union[str, Callable[[bytes], str]]
     app: Callable[..., Any]
+
+
+class ArrestConfig(TypedDict, total=False):
+    """
+    a typed dict storing the global configs for the service and resources
+    """
+
+    convert_headers_to_kebab_case: Optional[bool] = False
+    use_default_resource_handler: Optional[bool] = True
+    parse_non_json_responses: Optional[bool] = False

@@ -5,7 +5,7 @@ from typing import Any, Optional
 import httpx
 from typing_extensions import Unpack
 
-from arrest._config import HttpxClientInputs
+from arrest._config import ArrestConfig, HttpxClientInputs
 from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
@@ -24,6 +24,7 @@ class Service:
         client: Optional[httpx.AsyncClient] = None,
         exception_handlers: ExceptionHandlers = None,
         retry: Optional[int] = None,
+        config: Optional[ArrestConfig] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
