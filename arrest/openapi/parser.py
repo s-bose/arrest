@@ -34,7 +34,7 @@ from arrest.openapi.init_template import InitTemplate
 from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, ResourceTemplate
 from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
-from arrest.openapi.utils import get_ref_schema
+from arrest.openapi.utils import convert_to_pascal, get_ref_schema
 from arrest.utils import sanitize_name
 
 
@@ -221,8 +221,12 @@ class OpenAPIGenerator:
                 request_class = self.get_request_schema(operation)
                 response_class = self.get_response_schema(operation)
 
+                request_to_pascal = convert_to_pascal(request_class)
+                response_to_pascal = convert_to_pascal(response_class)
                 handlers.append(
-                    HandlerSchema(route=route, method=method, request=request_class, response=response_class)
+                    HandlerSchema(
+                        route=route, method=method, request=request_to_pascal, response=response_to_pascal
+                    )
                 )
 
         return handlers
