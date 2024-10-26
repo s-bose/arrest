@@ -36,6 +36,7 @@ def validate_file_contents(src_dir: str, dst_dir: str, filename: FileNames) -> b
     "fixture_dir, fixture_file",
     [
         ("v3", "openapi_petstore.json"),
+        ("v3_schema_long_name", "openapi_petstore_schema_long_name.json"),
         ("v3.1", "openapi_petstore_3.1.json"),
         ("v3", "openapi_petstore.yaml"),
         ("v3.1", "openapi_petstore_3.1.yaml"),
