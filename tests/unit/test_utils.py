@@ -28,6 +28,12 @@ class MyModel(BaseModel):
     c: int
 
 
+ListType1: typing.TypeAlias = list[MyModel]
+ListType2: typing.TypeAlias = typing.List[MyModel]
+DictType1: typing.TypeAlias = dict[str, MyModel]
+DictType2: typing.TypeAlias = typing.Dict[str, MyModel]
+
+
 @dataclass
 class MyModelDC:
     a: str
@@ -100,7 +106,7 @@ def test_extract_resource_and_suffix(path: str, resource: str, suffix: str):
 @pytest.mark.parametrize(
     argnames="type_, obj, new_type, member_type",
     argvalues=[
-        (str, "abc", str, None),
+        pytest.param(str, "abc", str, None),
         (int, 123, int, None),
         (float, 123.4, float, None),
         (MyEnum, "field", MyEnum, None),
@@ -136,12 +142,14 @@ def test_extract_resource_and_suffix(path: str, resource: str, suffix: str):
         (MyModelRoot, [{"a": "a", "b": "b", "c": 123}], MyModelRoot, None),
         (datetime, datetime.now(), datetime, None),
         (datetime, "2024-04-24 02:25:14.954853", datetime, None),
+        (typing.Optional[MyModel], MyModel(a="a", b="b", c=123), MyModel, None),
+        (typing.Optional[MyModel], {"a": "a", "b": "b", "c": 123}, MyModel, None),
+        (typing.Optional[MyModel], None, type(None), None),
     ],
 )
 def test_validate_model(type_, obj, new_type, member_type):
     obj_new = validate_model(type_, obj)
 
-    assert obj_new is not None
     assert isinstance(obj_new, new_type)
 
     member = None
