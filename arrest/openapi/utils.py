@@ -1,8 +1,6 @@
 import re
 from typing import Any
 
-from pydantic.alias_generators import to_pascal
-
 from arrest.openapi.spec import Reference
 
 
@@ -23,3 +21,8 @@ def convert_to_pascal(name: str | None):
         return name
 
     return to_pascal(name)
+
+
+def to_pascal(name: str) -> str:
+    """Convert a snake_case string to PascalCase."""
+    return re.sub("([0-9A-Za-z])_(?=[0-9A-Z])", lambda m: m.group(1), name.title())

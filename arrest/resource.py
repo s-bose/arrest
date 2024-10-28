@@ -23,6 +23,7 @@ from arrest.types import ExceptionHandlers
 from arrest.utils import (
     extract_model_field,
     extract_resource_and_suffix,
+    is_rootmodel,
     join_url,
     jsonable_encoder,
     lookup_exception_handler,
@@ -152,7 +153,8 @@ class Resource:
             ```
 
         Parameters:
-            method:
+            method:        print(f"{request_data=} {jsonable_encoder(body_params)=}")
+
                 The HTTP method for the request
             path:
                 Path to a handler specified in the resource
@@ -390,6 +392,7 @@ class Resource:
         headers: Mapping[str, str] | None = None,
         query: Mapping[str, Any] | None = None,
     ) -> Params:
+        print(f"{request_data=}")
         """
         extracts `header`, `body` and `query` params from the pydantic request model
 
@@ -413,6 +416,17 @@ class Resource:
         if request_type:
             # perform type validation on `request_data`
             request_data = validate_model(type_=request_type, obj=request_data)
+
+        if is_rootmodel(request_data):
+            # TODO: FUTURE - currently treats RootModels as `Body`
+            # If you want to use `Header` and `Query` field annotations`
+            # Use a normal BaseModel
+
+            return Params(
+                header=Headers(header_params),
+                query=QueryParams(query_params),
+                body=jsonable_encoder(request_data),
+            )
 
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
@@ -610,7 +624,7 @@ class Resource:
             handlers = list(self.routes.values()) + (handlers or [])
 
         if not handlers:
-            return
+            return  # pragma: no cover
 
         for _handler in handlers:
             try:

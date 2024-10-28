@@ -92,6 +92,11 @@ def validate_model(type_: T, obj: Any) -> T:  # pragma: no cover
     return parse_obj_as(type_, obj)
 
 
+def is_rootmodel(obj: Any):
+    """checks whether a pydantic object is a rootmodel instance (v1 & v2)"""
+    return hasattr(obj, "__root__") or hasattr(obj, "root")  # pydantic v2
+
+
 def jsonable_encoder(obj: Any) -> Any:
     """a json-compatible encoder that works similar to fastapi's `jsonable_encoder`
     for the most part.

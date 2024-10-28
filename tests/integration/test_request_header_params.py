@@ -43,9 +43,7 @@ from arrest.resource import Resource
     ],
 )
 @pytest.mark.asyncio
-async def test_request_header_params(
-    service, mock_httpx, mocker, resource_header, kwarg_header, expected_result
-):
+async def test_request_header_params(service, mock_httpx, resource_header, kwarg_header, expected_result):
     patterns = [
         M(url__regex="/user/*", method__in=["POST"]),
     ]
