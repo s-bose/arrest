@@ -1,9 +1,11 @@
 .venv
 venv
 __pycache__
+.pytest_cache
 .idea
 
 .coverage
+coverage.xml
 dist/*
 site/*
 .tox
