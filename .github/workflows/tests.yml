@@ -36,7 +36,7 @@ jobs:
       run: poetry run pip install --upgrade pip
 
     - name: Run Tests
-      run: poetry run pytest --cov=arrest --cov-report=term-missing --cov-report=html --cov-report=xml
+      run: bash ./scripts/coverage.sh
     - name: Run black
       run: poetry run black . --check
     - name: Run isort

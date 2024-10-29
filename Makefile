@@ -14,7 +14,6 @@ test:
 	bash ./scripts/test.sh
 
 coverage:
-	# poetry run pytest tests --cov=arrest --cov-report=term-missing --cov-report=html
 	bash ./scripts/coverage.sh
 
 serve:

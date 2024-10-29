@@ -7,4 +7,4 @@ rm -rf .tox
 tox
 coverage report --show-missing
 coverage html
-
+coverage xml
