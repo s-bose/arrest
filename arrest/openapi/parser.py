@@ -64,6 +64,8 @@ class OpenAPIGenerator:
                 path where the generated files will be saved
             dir_name:
                 (optional) specify the folder name containing the files
+            use_pydantic_v2:
+                (optional) use pydantic v2 (default: False)
 
         """
         self.url: str = url

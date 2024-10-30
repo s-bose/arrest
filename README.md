@@ -30,9 +30,9 @@ And here is the same functionality achieved using Arrest.
 
 ## Contents
 
-[Installation](#installation)
-[Getting Started](#getting-started)
-[Contributing](#contributing)
+1. [Installation](#installation)
+2. [Getting Started](#getting-started)
+3. [Contributing](#contributing)
 
 ## Installation
 
@@ -61,7 +61,7 @@ from arrest.exceptions import ArrestHTTPException
 
 xyz_service = Service(
     name="xyz",
-    url="http://www.xyz-service.default.local.cluster:80",
+    url="https://www.xyz-service.default.local.cluster/api/v1",
     resources=[
         Resource(
             route="/users",
@@ -79,6 +79,8 @@ try:
 except ArrestHTTPException as exc:
     logging.warning(f"{exc.status_code} {exc.data}")
 ```
+
+##
 
 
 ## Contributing
