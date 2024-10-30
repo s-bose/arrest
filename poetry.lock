@@ -1103,14 +1103,14 @@ pyyaml = ">=5.1"
 
 [[package]]
 name = "mkdocs-material"
-version = "9.5.30"
+version = "9.5.42"
 description = "Documentation that simply works"
 category = "dev"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mkdocs_material-9.5.30-py3-none-any.whl", hash = "sha256:fc070689c5250a180e9b9d79d8491ef9a3a7acb240db0728728d6c31eeb131d4"},
-    {file = "mkdocs_material-9.5.30.tar.gz", hash = "sha256:3fd417dd42d679e3ba08b9e2d72cd8b8af142cc4a3969676ad6b00993dd182ec"},
+    {file = "mkdocs_material-9.5.42-py3-none-any.whl", hash = "sha256:452a7c5d21284b373f36b981a2cbebfff59263feebeede1bc28652e9c5bbe316"},
+    {file = "mkdocs_material-9.5.42.tar.gz", hash = "sha256:92779b5e9b5934540c574c11647131d217dc540dce72b05feeda088c8eb1b8f2"},
 ]
 
 [package.dependencies]
@@ -2290,4 +2290,4 @@ openapi = ["datamodel-code-generator", "jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3ddad93006ad00ff66f6af42b0ed9db0f38bebf6ebf1c3a5c5ebffcb38964ae8"
+content-hash = "3d7d458ce4874dcd87ae0ec413ff8c5e126139f9adfc35065155e0b9b4082b16"
