@@ -13,7 +13,7 @@ from typing_extensions import Unpack
 
 from arrest._config import PYDANTIC_V2, HttpxClientInputs
 from arrest.converters import compile_path
-from arrest.defaults import DEFAULT_TIMEOUT, ROOT_RESOURCE
+from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
@@ -153,8 +153,7 @@ class Resource:
             ```
 
         Parameters:
-            method:        print(f"{request_data=} {jsonable_encoder(body_params)=}")
-
+            method:
                 The HTTP method for the request
             path:
                 Path to a handler specified in the resource
@@ -185,7 +184,6 @@ class Resource:
 
         if not (match := self.get_matching_handler(method=method, path=path, **kwargs)):
             logger.warning("no matching handler found for request")
-            print(f"{self.routes=}")
             raise HandlerNotFound(message="no matching handler found for request")
 
         handler, url = match
@@ -392,7 +390,6 @@ class Resource:
         headers: Mapping[str, str] | None = None,
         query: Mapping[str, Any] | None = None,
     ) -> Params:
-        print(f"{request_data=}")
         """
         extracts `header`, `body` and `query` params from the pydantic request model
 
@@ -668,15 +665,6 @@ class Resource:
             # already initialized
             self._httpx_args |= kwargs
         else:
-            timeout = kwargs.get("timeout")
-            if not timeout:
-                kwargs["timeout"] = httpx.Timeout(
-                    DEFAULT_TIMEOUT
-                )  # 120 sec default timeout for all operations
-
-            if isinstance(timeout, int):
-                kwargs["timeout"] = httpx.Timeout(timeout)  # set custom timeout for all operations
-
             self._httpx_args = HttpxClientInputs(**kwargs)
 
     @property
