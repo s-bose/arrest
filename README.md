@@ -7,7 +7,7 @@
 [![PyPi](https://img.shields.io/pypi/v/arrest.svg)](https://pypi.python.org/pypi/arrest)
 
 - Documentation: https://s-bose.github.io/arrest/
-0.30.6
+
 Enable data validation for REST APIs.
 
 Arrest provides an easy and declarative way of defining, managing, and calling RESTful HTTP APIs with type validation, retries, exception handling, and other batteries included.
