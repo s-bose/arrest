@@ -113,9 +113,6 @@ This gets automatically validated and parsed as `UserRequest` before sending the
 Similar to request, you can pass an additional fourth argument in the handler tuple for specifying a pydantic model for the handler.
 If provided it will automatically deserialize the returned success json response into either a model instance or a list of model instances.
 
-
-## Examples
-
 ```python
 class UserResponse(BaseModel):
     name: str
@@ -139,6 +136,21 @@ response = await svc.user.get(f"/{user_id}") # type: UserResponse
 Here, the JSON response from `https://www.xyz-service.default.local.cluster/api/v1/users/123` will be deserialized into `UserResponse` model instance.
 
 For more info, please check the [docs](https://s-bose.github.io/arrest/getting-started)
+
+## Examples
+
+You can check out the `example` folder under the project repository to get a feel of how to use Arrest.
+
+The `example_service` contains a minimal FastAPI application for task management with CRUD endpoints for `users` and `tasks`.
+
+To generate the Arrest boilerplate from the OpenAPI specs, simply run the FastAPI application using `uvicorn` at [http://127.0.0.1:8080/docs](), and run the arrest CLI as followed:
+
+```bash
+$ arrest -u http://localhost:8080/openapi.json -d example_service
+```
+This will generate `models.py`, containing the Pydantic schemas corresponding to the OpenAPI components, a `resources.py` containing the RESTful resource definitions and a `services.py` containing the service definition that includes the resources.
+
+To use the service, simply call `example_service.users.get("")`.
 
 
 ## Contributing
