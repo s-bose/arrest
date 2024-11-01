@@ -72,6 +72,8 @@ Alternatively, if you want to disable timeouts, you can do so by setting `timeou
 
 The `timeout` can take either an integer value for the number of seconds, or an instance of `httpx.Timeout`.
 
+If you set `timeout=None`, this is equivalent to `timeout=httpx.Timeout(None)`, which will disable timeouts for the client.
+
 
 ```python
 from arrest import Service, Resource

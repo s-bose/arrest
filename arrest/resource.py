@@ -123,6 +123,16 @@ class Resource:
         self,
         path: str,
     ) -> Any:
+        """
+        Decorator to bind a custom handler to the resource
+
+        Args:
+            path (str): path relative to the current resource
+
+        Returns:
+            Any
+        """
+
         def wrapper(func):
             @functools.wraps(func)
             async def wrapped(*args, **kwargs):

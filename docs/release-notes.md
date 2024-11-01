@@ -2,19 +2,27 @@
 
 ### Added
 
-- Added support for decorating custom handlers for your resource using `@my_resource.handler(/path/to/something)`
+- Added support for decorating custom handlers for your resource using `@my_resource.handler(/path/to/something)`.
 
-- Added support for root-level resources. Now you can add a resource with a route of `""` or `"/"`. However, a service can only have only one root-level resource
+- Added support for root-level resources. Now you can add a resource with a route of `""` or `"/"`. However, a service can only have only one root-level resource.
 
-- Added a more flexible retry mechanism with better user control. You can now choose between the built-in retry mechanism, the retry from `HTTPTransport` class by `httpx`, or configure your own custom retry wrapper. Or you can opt to choose the default behaviour of no retries
+- Added a more flexible retry mechanism with better user control. You can now choose between the built-in retry mechanism, the retry from `HTTPTransport` class by `httpx`, or configure your own custom retry wrapper. Or you can opt to choose the default behaviour of no retries.
 
-- Added support for any serializable python types as request and response types. This includes Pydantic basemodel and rootmodels, dataclasses, and python types which are json serializable
+- Added support for any serializable python types as request and response types. This includes Pydantic basemodel and rootmodels, dataclasses, and python types which are json serializable.
 
-- Added custom exception handlers. You can write your custom hooks on specific exceptions made by the HTTP calls and attach them to your service
+- Added custom exception handlers. You can write your custom hooks on specific exceptions made by the HTTP calls and attach them to your service.
+
+- Add support for writing query parameters into the url string. You can now write the query parameters as part of the url string, i.e. `service.user.get("/all?limit=10&role=admin")`.
+
+- Add support for default GET handlers for resources. When defining arrest Resources, a default GET handler to the resource root is always added by default.
+
+- Add named constants for HTTP Methods. You can simply use `from arrest import GET`, and create handlers using the named constant for method, `(GET, "/", UserRequest, UserResponse)`.
 
 ### Fixed
 
 - Fixed the generated names of resource and services having whitespaces and special characters after parsing the OpenAPI Specification by standardizing the naming with using lower case and snake_case
+
+- Fixed improper imports of pydantic schemas from the OpenAPI generation. Certain schema names in the generated OpenAPI spec caused some import issues, which was fixed.
 
 
 For more information, check out [What's New](whats-new.md)

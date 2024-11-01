@@ -18,6 +18,7 @@ poetry add 'arrest[openapi]'
 ```
 
 This installs two additional dependencies.
+
 1. [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator)
 2. [jinja2](https://github.com/pallets/jinja/)
 
@@ -174,4 +175,4 @@ from arrest.openapi import OpenAPIGenerator
 ...
 ```
 
-For more info, check the [api documentation](api.md/#openapigenerator)
+For more info, check the [API Documentation](api.md/#openapigenerator)
