@@ -1,0 +1,1113 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Shiladitya Bose">
+      
+      
+      
+        <link rel="prev" href="../release-notes/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.42">
+    
+    
+      
+        <title>What's New? - Arrest</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.0253249f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="purple" data-md-color-accent="light-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#added-support-for-decorating-custom-handlers-for-your-resource" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Arrest" class="md-header__button md-logo" aria-label="Arrest" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Arrest
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              What's New?
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="purple" data-md-color-accent="light-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../openapi/" class="md-tabs__link">
+        
+  
+    
+  
+  OpenAPI Integration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../dev-note/" class="md-tabs__link">
+        
+  
+    
+  
+  Developer's Note
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+    
+  
+  API Documentation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release-notes/" class="md-tabs__link">
+        
+  
+    
+  
+  Release Notes
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  What's New?
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Arrest" class="md-nav__button md-logo" aria-label="Arrest" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Arrest
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuring-request/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring your request
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources-services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resources and Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenAPI Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-note/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer's Note
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    What's New?
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    What's New?
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#added-support-for-decorating-custom-handlers-for-your-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added support for decorating custom handlers for your resource.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standardized-the-names-of-resource-and-services-from-parsing-the-openapi-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Standardized the names of resource and services from parsing the OpenAPI Specification.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-support-for-root-level-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add support for root-level resources.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standardized-retry-mechanism-with-more-flexibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Standardized retry mechanism with more flexibility
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Standardized retry mechanism with more flexibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use-the-standard-retry-mechanism-from-httpx-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use the standard retry mechanism from httpx transport
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-the-retry-mechanism-from-arrest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use the retry mechanism from arrest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-your-own-retry-mechanism" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use your own retry mechanism
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-support-for-passing-any-python-type-to-the-request-and-response-type-definitions-for-handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add support for passing any Python-type* to the request and response type definitions for handlers.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-custom-exception-handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add custom exception handlers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-support-for-writing-query-parameters-into-the-url-string" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add support for writing query parameters into the url string
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add-support-for-default-get-handlers-for-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Add support for default GET handlers for resources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-improper-imports-of-pydantic-schemas-from-the-openapi-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed improper imports of pydantic schemas from the OpenAPI generation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-constants-for-http-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Named constants for HTTP Methods
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>What's New?</h1>
+
+<h2 id="added-support-for-decorating-custom-handlers-for-your-resource">Added support for decorating custom handlers for your resource.<a class="headerlink" href="#added-support-for-decorating-custom-handlers-for-your-resource" title="Permanent link">&para;</a></h2>
+<p>Earlier in v0.1.9 the decorator could only be used with a resource under its parent service's scope:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@myservice</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">handler</span><span class="p">(</span><span class="s2">&quot;/path&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">path_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="o">...</span>
+</code></pre></div>
+<p>This was not a clear separation of concern. Ideally in Arrest, we want you to be able to define everything relating to a resource within the resource, and everything relating to a service within the service, and simply interface the resources with your service, or multiple services. In v0.1.10, you can use the handler with your resource, without having to connect it to a service first and use the service's scope:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># resource.py</span>
+<span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Resource</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="nd">@user</span><span class="o">.</span><span class="n">handler</span><span class="p">(</span><span class="s2">&quot;/upload-pic&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">upload_user_profile_pic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">*</span><span class="n">kwarg</span><span class="p">):</span>
+    <span class="o">...</span>
+<span class="o">...</span>
+
+<span class="c1"># service.py</span>
+<span class="kn">from</span> <span class="nn">.resource</span> <span class="kn">import</span> <span class="n">user</span>
+
+<span class="n">myservice</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;myservice&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">user</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="o">...</span>
+
+<span class="c1"># somewhere_else.py</span>
+<span class="kn">from</span> <span class="nn">.service</span> <span class="kn">import</span> <span class="n">myservice</span>
+
+<span class="k">await</span> <span class="n">myservice</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">upload_user_profile_pic</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Connecting your resource to a service is still mandatory if you want to use the complete url. If you just call the method from your resource instance directly, since its still not bound to a service (thus a <code>base_url</code>), it would try to make an api call to <code>/user/upload-pic</code>, instead of <code>http://example.com/user/upload-pic</code></p>
+</div>
+<h2 id="standardized-the-names-of-resource-and-services-from-parsing-the-openapi-specification">Standardized the names of resource and services from parsing the OpenAPI Specification.<a class="headerlink" href="#standardized-the-names-of-resource-and-services-from-parsing-the-openapi-specification" title="Permanent link">&para;</a></h2>
+<p>Certain names for resources and services had whitespaces and special characters, which resulted in the generated code having illegal variable names (such as <code>OpenAPI service: 2.1 = Service(...)</code>)</p>
+<p>v0.1.10 standardizes all variable names of the generated service and resource to lower and snake_cased.</p>
+<h2 id="add-support-for-root-level-resources">Add support for root-level resources.<a class="headerlink" href="#add-support-for-root-level-resources" title="Permanent link">&para;</a></h2>
+<p>You can now define root-level resources (i.e., having base routes of either <code>""</code> or <code>"/"</code>) There can be only one root-level resource, for obvious reasons. You can set them up as normal <code>Resource</code> instances with <code>route=""</code> or <code>route="/</code>" and a corresponding handler <code>(&lt;Method&gt;, "")</code> (e.g. <code>www.example.com</code>) or <code>(&lt;Method&gt;, "/")</code> (e.g. <code>www.example.com/</code>)</p>
+<p>In order to make the call to the root-resource, you simply invoke the http methods on the service directly, without specifying a resource.</p>
+<div class="highlight"><pre><span></span><code><span class="k">await</span> <span class="n">my_service</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="c1"># or my_service.get(&quot;/&quot;)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is only applicable if you have a path with no suffix at the root level. i.e. <code>www.example.com/</code>. If you want to access <code>www.example.com/path</code>, then the following won't work.</p>
+</div>
+<div class="highlight"><pre><span></span><code><span class="n">Resource</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/path&quot;</span><span class="p">)])</span>
+
+<span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/path&quot;</span><span class="p">)</span> <span class="c1"># throws ResourceNotFound</span>
+</code></pre></div>
+<p>Because <code>/path</code> constitutes a resource on its own, not a subpath for a root-resource <code>/</code>, hence the following would need to be written</p>
+<div class="highlight"><pre><span></span><code><span class="n">Resource</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s2">&quot;/path&quot;</span><span class="p">,</span> <span class="n">handlers</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)])</span>
+
+<span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="c1"># works!</span>
+</code></pre></div>
+<p>General rule-of-thumb is, a RESTful resource always has a path prefix, and arrest resources should preferrably be designed around that
+notion. If you have an endpoint with only the root-level being the accessible API, you might want to create a root-resource with
+a single handler.</p>
+<h2 id="standardized-retry-mechanism-with-more-flexibility">Standardized retry mechanism with more flexibility<a class="headerlink" href="#standardized-retry-mechanism-with-more-flexibility" title="Permanent link">&para;</a></h2>
+<p>The previous built-in retry mechanism was too restrictive and lacked configurability. In the new version, there will not be any retry by default. This is to reduce as much side-effect as possible from the HTTP calls in favour of developer expectations. If you want to enable retries there are a few different ways.</p>
+<h3 id="use-the-standard-retry-mechanism-from-httpx-transport"><em>Use the standard retry mechanism from httpx transport</em><a class="headerlink" href="#use-the-standard-retry-mechanism-from-httpx-transport" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">httpx</span> <span class="kn">import</span> <span class="n">AsyncHTTPTransport</span>
+<span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Resource</span><span class="p">,</span> <span class="n">Service</span>
+
+<span class="n">transport</span> <span class="o">=</span> <span class="n">AsyncHTTPTransport</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">my_service</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;myservice&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">user</span><span class="p">],</span>
+    <span class="n">transport</span><span class="o">=</span><span class="n">transport</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>or, if you are running your own httpx client instance, you can also configure it there.</p>
+<div class="highlight"><pre><span></span><code><span class="n">my_service</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;myservice&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">user</span><span class="p">],</span>
+    <span class="n">client</span><span class="o">=</span><span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">(</span><span class="n">transport</span><span class="o">=</span><span class="n">transport</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>This will retry the request in case of <code>httpx.ConnectError</code> or <code>httpx.ConnectTimeout</code>. <a href="https://www.python-httpx.org/advanced/transports/">Read more</a></p>
+<h3 id="use-the-retry-mechanism-from-arrest"><em>Use the retry mechanism from arrest</em><a class="headerlink" href="#use-the-retry-mechanism-from-arrest" title="Permanent link">&para;</a></h3>
+<p>Arrest provides an additional keyword-argument <code>retry</code> either at service-level, or at individual resource-level. It is defaulted to <code>None</code>, should you opt for no retries (the default behaviour). However, you can set it to any valid integer resembling the number of times it should retry.</p>
+<p>Arrest uses <a href="https://github.com/jd/tenacity">tenacity</a> under-the-hood for its internal retry process. It uses <a href="https://tenacity.readthedocs.io/en/latest/api.html#tenacity.wait.wait_random_exponential">random exponential backoff</a> and in the event of any exception.</p>
+<div class="highlight"><pre><span></span><code><span class="n">my_service</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;myservice&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">user</span><span class="p">],</span>
+    <span class="n">retry</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="use-your-own-retry-mechanism"><em>Use your own retry mechanism</em><a class="headerlink" href="#use-your-own-retry-mechanism" title="Permanent link">&para;</a></h3>
+<p>If you want more fine-grained control over your retries, you can disable the in-built retry (<code>retry=None</code>), or keep it unset (default None) and write your own decorator that wraps around your anciliary function that calls the arrest service under the decorator. Here is an example using another popular library <a href="https://github.com/litl/backoff">backoff</a></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">backoff</span>
+<span class="kn">from</span> <span class="nn">arrest.exceptions</span> <span class="kn">import</span> <span class="n">ArrestHTTPException</span>
+
+<span class="nd">@backoff</span><span class="o">.</span><span class="n">on_exception</span><span class="p">(</span>
+    <span class="n">backoff</span><span class="o">.</span><span class="n">expo</span><span class="p">,</span>
+    <span class="p">(</span>
+        <span class="n">ArrestHTTPException</span><span class="p">,</span>
+        <span class="ne">Exception</span>
+    <span class="p">),</span>
+    <span class="n">max_retries</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">jitter</span><span class="o">=</span><span class="n">backoff</span><span class="o">.</span><span class="n">full_jitter</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">fn_caller</span><span class="p">():</span>
+    <span class="k">return</span> <span class="k">await</span> <span class="n">my_service</span><span class="o">.</span><span class="n">foo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/bar&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When calling the arrest service, do remember that the original httpx exceptions are rethrown as <code>ArrestHTTPException</code> with the appropriate information. These include the following:</p>
+<ul>
+<li><code>httpx.HTTPStatusError</code> - for capturing HTTP non-200 error codes, rethrown as <code>ArrestHTTPException</code> with the same status code and message</li>
+<li><code>httpx.TimeoutException</code> - for capturing any request timeout, rethrown as <code>ArrestHTTPException</code> with the status code 408 (Request Timeout)</li>
+<li><code>httpx.RequestError</code> - any other error during making the request, rethrown as <code>ArrestHTTPException</code> with the status code 500 (Internal Server Error)</li>
+</ul>
+</div>
+<h2 id="add-support-for-passing-any-python-type-to-the-request-and-response-type-definitions-for-handlers">Add support for passing any Python-type* to the request and response type definitions for handlers.<a class="headerlink" href="#add-support-for-passing-any-python-type-to-the-request-and-response-type-definitions-for-handlers" title="Permanent link">&para;</a></h2>
+<p>With v0.1.10, you can use any python type (that is json-serializable, ofcourse) for request and response in the handler definitions.
+The following types are tested for full support:
+1. <code>primitive types</code>
+2. <code>pydantic.BaseModel</code>
+3. <code>dataclasses.dataclass</code>
+4. <code>pydantic.RootModel</code> (v2 only)
+5. <code>dict</code> and <code>typing.Dict</code>
+6. <code>list</code> and <code>typing.List</code>
+7. <code>typing.Optional</code> and <code>typing.Union</code></p>
+<p>You can use any combination of them to define your request and response types, and the requests / responses will be parsed according to the type definitions.</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Resource</span><span class="p">,</span> <span class="n">Service</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;users&quot;</span><span class="p">,</span>
+            <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span>
+            <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">UserSchema</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">UserCreate</span><span class="p">,</span> <span class="n">UserSchema</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">UserSchema</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/all&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">UserSchema</span><span class="p">])</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+<span class="n">my_service</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;myservice&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">user</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">my_service</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/all?limit=10&quot;</span><span class="p">)</span> <span class="c1"># list[UserSchema]</span>
+</code></pre></div>
+</div>
+<h2 id="add-custom-exception-handlers">Add custom exception handlers<a class="headerlink" href="#add-custom-exception-handlers" title="Permanent link">&para;</a></h2>
+<p>If you need to enable some custom functionality for any exception during the lifetime of the HTTP request, you can now add custom exception handlers.
+Oftentimes, you would like to reraise the exception as a <code>fastapi.HTTPException</code> if you are proxying the requests to the service. A typical example use-case would look something like this:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest.exceptions</span> <span class="kn">import</span> <span class="n">ArrestHTTPException</span><span class="p">,</span> <span class="n">ArrestError</span>
+
+<span class="k">def</span> <span class="nf">http_exc_handler</span><span class="p">(</span><span class="n">exc</span><span class="p">:</span> <span class="n">ArrestHTTPException</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="n">exc</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="n">exc</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">err_handler</span><span class="p">(</span><span class="n">_exc</span><span class="p">:</span> <span class="n">ArrestError</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Something went wrong&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">generic_err_handler</span><span class="p">(</span><span class="n">_exc</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Something went wrong&quot;</span><span class="p">)</span>
+
+
+<span class="n">my_service</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;myservice&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">user</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">service</span><span class="o">.</span><span class="n">add_exception_handlers</span><span class="p">(</span>
+    <span class="n">exc_handlers</span><span class="o">=</span><span class="p">{</span>
+        <span class="ne">Exception</span><span class="p">:</span> <span class="n">generic_err_handler</span><span class="p">,</span>
+        <span class="n">ArrestHTTPException</span><span class="p">:</span> <span class="n">http_exc_handler</span><span class="p">,</span>
+        <span class="n">ArrestError</span><span class="p">:</span> <span class="n">err_handler</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>This makes the service automatically call the appropriate exception handler function upon receiving the specific exception after making the request.</p>
+<p><strong>Note</strong> - Arrest rethrows the <code>httpx</code> exceptions as <code>ArrestHTTPException</code>, hence you won't be able to, for example, use exception handlers for <code>httpx.HTTPStatusError</code>.</p>
+<h2 id="add-support-for-writing-query-parameters-into-the-url-string">Add support for writing query parameters into the url string<a class="headerlink" href="#add-support-for-writing-query-parameters-into-the-url-string" title="Permanent link">&para;</a></h2>
+<p>So far the query parameters had to be provided as an additional keyword-argument to the method caller as <code>service.get("/users", query={"limit": 10})</code>. This was due to the fact that the url pattern matching for the correct handler was based on the complete url parameter, including the query params (the first argument of the method caller). However, now that condition is removed, you can also write the query parameters in the url string as <code>?limit=10</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/all?limit=10&amp;role=admin&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="add-support-for-default-get-handlers-for-resources">Add support for default GET handlers for resources<a class="headerlink" href="#add-support-for-default-get-handlers-for-resources" title="Permanent link">&para;</a></h2>
+<p>Arrest now automatically adds a default GET handler to the resource route, which means, if your resource looks like this:</p>
+<div class="highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>You wouldn't need to add any handler for the resource root, you can directly call <code>service.user.get("")</code> Additionally, if you specify <code>response_model</code> keyword-argument in the Resource initializer, the GET response will be automatically parsed as the <code>response_model</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">response_model</span><span class="o">=</span><span class="n">UserSchema</span>
+<span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">UserSchema</span><span class="p">)</span> <span class="c1"># True</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This works by splitting the resource route into the resource's base route, and the suffix, which becomes the default GET handler route. For example, if your resource route is <code>"/users"</code>, the default handler will be <code>("GET", "")</code>, and you can call <code>service.users.get("")</code> But if your resource route is <code>"/users/"</code>, the default handler will be <code>("GET", "/")</code>, and you can call <code>service.users.get("/")</code>.</p>
+</div>
+<p>This also works similarly for root-level resources for the service.
+If your root-level resource is at <code>"/"</code>, you can call <code>service.get("/")</code> or <code>service.root.get("/")</code>,
+but if the root-level resource is at <code>""</code>, you have to call <code>service.get("")</code> or <code>service.root.get("")</code>.</p>
+<p>You can overwrite the default handler by rewriting it in the handlers list.</p>
+<div class="highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">UserSchema</span><span class="p">),</span> <span class="c1"># overwrites default (&quot;GET&quot;, &quot;&quot;)</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/{usder_id:str}&quot;</span><span class="p">,</span> <span class="n">UserSchema</span><span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<h2 id="fixed-improper-imports-of-pydantic-schemas-from-the-openapi-generation">Fixed improper imports of pydantic schemas from the OpenAPI generation<a class="headerlink" href="#fixed-improper-imports-of-pydantic-schemas-from-the-openapi-generation" title="Permanent link">&para;</a></h2>
+<p>The OpenAPI schema that is generated by FastAPI can have weird names for the schema components. If your FastAPI endpoint does not have a predefined Pydantic model for it's request but instead you are using them as the endpoint function parameters, the generated schema name will be</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/foo&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">post_custom_request_with_query_header_body</span><span class="p">(</span>
+    <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">x_api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Header</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">x_secret</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Header</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
+    <span class="n">user_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+<span class="p">):</span>
+    <span class="o">...</span>
+</code></pre></div>
+<p>The above endpoint generates the following openapi schema:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">&quot;Body_post_custom_request_with_query_header_body_custom_post&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;foo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;bar&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bar&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;foo&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bar&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Body_post_custom_request_with_query_header_body_custom_post&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+<p>When parsing this OpenAPI schema, the generated pydantic schema uses correct pascal-casing (<code>class BodyPostCustomRequestWithQueryHeaderBodyCustomPost</code>), but when importing them in the generated <code>resources.py</code> they were incorrectly using the snake_case name from the OpenAPI specification. This has been fixed now, and both <code>models.py</code> and <code>resources.py</code> will have the correct PascalCase named imports of the schema models.</p>
+<h2 id="named-constants-for-http-methods">Named constants for HTTP Methods<a class="headerlink" href="#named-constants-for-http-methods" title="Permanent link">&para;</a></h2>
+<p>Instead of writing HTTP methods as string literals, or using <code>arrest.http.Methods</code> enum, you can also import them as constants.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">GET</span><span class="p">,</span> <span class="n">POST</span><span class="p">,</span> <span class="n">Resource</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">GET</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">POST</span><span class="p">,</span> <span class="s2">&quot;/login&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.tabs", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>

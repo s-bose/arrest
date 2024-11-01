@@ -1,0 +1,1021 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Shiladitya Bose">
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../examples/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.42">
+    
+    
+      
+        <title>Getting started - Arrest</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.0253249f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="purple" data-md-color-accent="light-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#using-methods" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Arrest" class="md-header__button md-logo" aria-label="Arrest" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Arrest
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="purple" data-md-color-accent="light-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../openapi/" class="md-tabs__link">
+        
+  
+    
+  
+  OpenAPI Integration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../dev-note/" class="md-tabs__link">
+        
+  
+    
+  
+  Developer's Note
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+    
+  
+  API Documentation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release-notes/" class="md-tabs__link">
+        
+  
+    
+  
+  Release Notes
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../whats-new/" class="md-tabs__link">
+        
+  
+    
+  
+  What's New?
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Arrest" class="md-nav__button md-logo" aria-label="Arrest" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Arrest
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Getting started
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#using-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Methods
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeouts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Timeouts
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-pydantic-model-for-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a Pydantic model for request
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-pydantic-model-for-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a pydantic model for response
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-callback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using a callback
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Handling exceptions
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-custom-handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding a custom handler
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuring-request/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring your request
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources-services/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resources and Services
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenAPI Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-note/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer's Note
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whats-new/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    What's New?
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Getting started</h1>
+
+<p>Assuming you already have arrest installed in your system, let us create a simple connection.
+We have a REST endpoint <code>http://example.com/api/v1</code> which has a resource <code>/user</code> with method <code>GET</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Service</span><span class="p">,</span> <span class="n">Resource</span>
+
+<span class="n">example_svc</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com/api/v1&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Resource</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+            <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+            <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Now that our service is defined, we can proceed to use it elsewhere.</p>
+<div class="highlight"><pre><span></span><code><span class="k">await</span> <span class="n">example_svc</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>If we want to enable exception handling, simply import <code>ArrestHTTPException</code>, or more generic <code>ArrestError</code></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest.exceptions</span> <span class="kn">import</span> <span class="n">ArrestHTTPException</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">example_svc</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ArrestHTTPException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exc</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">exc</span><span class="o">.</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">return</span> <span class="n">resp</span>
+</code></pre></div>
+<hr />
+<h2 id="using-methods">Using Methods<a class="headerlink" href="#using-methods" title="Permanent link">&para;</a></h2>
+<p>We have the following HTTP Methods available. They can be found in <code>arrest.http.Methods</code> enum.</p>
+<p><div class="highlight"><pre><span></span><code>GET
+POST
+PUT
+PATCH
+DELETE
+HEAD
+OPTIONS
+</code></pre></div>
+There are also equivalent helper functions for each of these methods available for your resource.
+Simply run <code>.get</code>, <code>.post</code>, <code>.put</code>, <code>.patch</code>, <code>.delete</code>, <code>.head</code>, <code>.options</code>.
+Or you can directly make use of <code>.request()</code> and supply the method in it.</p>
+<hr />
+<h2 id="retries">Retries<a class="headerlink" href="#retries" title="Permanent link">&para;</a></h2>
+<p>There are no retries built-in in Arrest. However they can be configured in many different ways.
+You can use the retry mechanism from httpx transport (e.g. <code>httpx.AsyncHTTPTransport(retries=3)</code>), or use the <code>retry</code> field in <code>Service</code> or <code>Resource</code> specific setting and provide the number of retries. Arrest uses <a href="https://github.com/jd/tenacity">tenacity</a> under-the-hood for its internal retries.</p>
+<p>If you want to learn more, please refer to <a href="../whats-new/#standardized-retry-mechanism-with-more-flexibility">this</a></p>
+<hr />
+<h2 id="timeouts">Timeouts<a class="headerlink" href="#timeouts" title="Permanent link">&para;</a></h2>
+<p>Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
+If you want to provide a custom timeout, you can put it at a service-level or at a resource-level in the <code>timeout</code> argument.
+Alternatively, if you want to disable timeouts, you can do so by setting <code>timeout=httpx.Timeout(None)</code>.</p>
+<p>The <code>timeout</code> can take either an integer value for the number of seconds, or an instance of <code>httpx.Timeout</code>.</p>
+<p>If you set <code>timeout=None</code>, this is equivalent to <code>timeout=httpx.Timeout(None)</code>, which will disable timeouts for the client.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">arrest</span> <span class="kn">import</span> <span class="n">Service</span><span class="p">,</span> <span class="n">Resource</span>
+
+
+<span class="n">example_svc</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://example.com/api/v1&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Resource</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+            <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+            <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+    <span class="n">timeout</span><span class="o">=</span><span class="mi">240</span> <span class="c1"># 4 minutes</span>
+<span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="using-a-pydantic-model-for-request">Using a Pydantic model for request<a class="headerlink" href="#using-a-pydantic-model-for-request" title="Permanent link">&para;</a></h2>
+<p>You can also provide an additional request type for your handlers. This can be done by passing a third entry to your handler tuple containing the pydantic class, or pass it directly to the handler dict or <code>ResourceHandler</code> initialization.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="k">class</span> <span class="nc">UserRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/abc,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">UserRequest</span><span class="p">)</span> <span class="c1"># or ResourceHandler(method=&quot;POST&quot;, route=&quot;/&quot;, request=UserRequest)</span>
+                                   <span class="c1"># or {&quot;method&quot;: &quot;POST&quot;, &quot;route&quot;: &quot;/&quot;, &quot;request&quot;: UserRequest}</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Notice how we only supplied <code>route</code> for our resource? Arrest automatically infers the resource name based on the resource route. Hence we have deduced our resource to be <code>abc</code>.</p>
+<p>Now that our handler is initialized with a request, we can make a request with instances of type <code>UserRequest</code></p>
+<div class="admonition note">
+<p class="admonition-title">Important</p>
+<p>All fields in the pydantic model by default will be sent as the JSON body payload. If you want to send other params such as <code>headers</code> or <code>query</code>, see below.</p>
+</div>
+<hr />
+<h2 id="using-a-pydantic-model-for-response">Using a pydantic model for response<a class="headerlink" href="#using-a-pydantic-model-for-response" title="Permanent link">&para;</a></h2>
+<p>Similar to request, you can pass an additional fourth argument in the handler tuple for specifying a pydantic model for the handler.
+If provided it will automatically deserialize the returned success json response into either a model instance or a list of model instances.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">UserResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">created_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">updated_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">is_deleted</span><span class="p">:</span> <span class="nb">bool</span>
+
+<span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/</span><span class="si">{user_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">UserResponse</span><span class="p">),</span> <span class="c1"># if no request type to be supplied, leave it as `None`</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">svc</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># type: UserResponse</span>
+</code></pre></div>
+<hr />
+<h2 id="using-a-callback">Using a callback<a class="headerlink" href="#using-a-callback" title="Permanent link">&para;</a></h2>
+<p>Sometimes you want to chain a call to another function with the response you get from the api. This can be something like logging or auditing somewhere or triggering another api.
+You can already do that by calling the function after awaiting the api call response.
+However, Arrest provides a dedicated <code>callback</code> option for each handler, which can be passed as the fifth argument to the handler tuple (or set as a field in the dict or <code>ResourceHandler</code>).
+<code>callback</code> can take any callable that can be either sync or async.
+If it is specified, the response type from the api call will be the response type of the callback.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if you specify a response type to your handler, the callback needs to accept argument of appropriate response type.</p>
+</div>
+<p>Any exception thrown by the callback is re-raised.</p>
+<div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">demo_callback</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;foo has been barred&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+<span class="n">service</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span>
+    <span class="n">Resource</span><span class="p">(</span>
+        <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+        <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">ResourceHandler</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">Methods</span><span class="o">.</span><span class="n">GET</span><span class="p">,</span>
+                <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span>
+                <span class="n">callback</span><span class="o">=</span><span class="n">demo_callback</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<span class="c1"># &gt;&gt;&gt; foo has been barred</span>
+<span class="c1"># response == None</span>
+</code></pre></div>
+<hr />
+<h2 id="handling-exceptions">Handling exceptions<a class="headerlink" href="#handling-exceptions" title="Permanent link">&para;</a></h2>
+<p>All of Arrest's exceptions/errors subclass <code>ArrestError</code>.
+The most important one is <code>ArrestHTTPException</code> which wraps the httpx-specific errors that might occur from making a request.
+Any response that does not have a success status code (i.e. 200-299) will throw an <code>ArrestHTTPException</code> with the appropriate <code>status_code</code> and <code>data</code>.</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><span class="k">try</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">xyz_service</span><span class="o">.</span><span class="n">users</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/123&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ArrestHTTPException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exc</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">exc</span><span class="o">.</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># do something with the error response</span>
+</code></pre></div>
+</div>
+<p>Any other error such as <code>TimeoutException</code> or <code>RequestError</code> will result in a <code>ArrestHTTPException</code> with <code>status_code=500</code>
+See <a href="../api/">API Documentation</a> for further details.</p>
+<hr />
+<h2 id="adding-a-custom-handler">Adding a custom handler<a class="headerlink" href="#adding-a-custom-handler" title="Permanent link">&para;</a></h2>
+<p>If you want to add a custom function to handle an api request and have complete control over the request and response, you can use the <code>Resource.handler</code> decorator to decorate an async function and write your own custom logic.
+You have to specify the path relative to the resource in the decorators argument.
+This function will be registered as a method to the same resource you're decorating it with and can be accessed as <code>await resource.function_name(...)</code>
+You can also invoke the function as a free function as <code>await function_name(...)</code></p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Creating a handler this way does not have any data validation or pydantic wrapping enabled. Neither does it do exception handling.
+It only does the default retry on httpx Exceptions using <code>backoff</code>.</p>
+</div>
+<p>If you use the decorator, the first two arguments of your decorated function will have to be defined as <code>self</code> and <code>url</code>.
+The <code>url</code> will be the fully-constructed path using the service's <code>base_url</code>, the resource's <code>route</code> and the provided <code>path</code> in the decorator, should you choose to use it,</p>
+<p>The <code>self</code> argument is a reference to the same resource instance you're decorating the function with, this means you can access all the members of the <code>Resource</code> class inside your function. Including <code>self._client</code>, which is where your custom client instance is stored if you have set it during your resource initialization (or injected it via service).</p>
+<p>You can also access all the httpx related args using <code>self._httpx_args</code> which is a <code>TypedDict</code>, so you can easily instantiate your own AsyncClient by unpacking and initializing with those args.</p>
+<p>Or you can just roll with your own custom logic.</p>
+<p>Once defined you have to access the function via the resource instance, as it is now a member of your resource.</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><span class="n">res</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span>
+    <span class="n">route</span><span class="o">=</span><span class="s2">&quot;/user&quot;</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">svc</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_service&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://www.example.com&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">svc</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+<span class="nd">@svc</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">handler</span><span class="p">(</span><span class="s2">&quot;/media&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">download_user_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">meta_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="c1"># url == http://www.example.com/user/media</span>
+    <span class="n">urlnew</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">meta_id</span><span class="si">}</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">urlnew</span><span class="p">)</span>
+        <span class="o">...</span>
+
+    <span class="c1"># or</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_httpx_args</span><span class="p">)</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">urlnew</span><span class="p">)</span>
+
+    <span class="c1"># or</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">urlnew</span><span class="p">)</span> <span class="c1"># if client is specified</span>
+
+
+<span class="n">metadata</span> <span class="o">=</span> <span class="k">await</span> <span class="n">svc</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">download_user_metadata</span><span class="p">(</span><span class="n">meta_id</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="c1"># or</span>
+<span class="n">metadata</span> <span class="o">=</span> <span class="k">await</span> <span class="n">download_user_metadata</span><span class="p">(</span><span class="n">meta_id</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+</code></pre></div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.tabs", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>
