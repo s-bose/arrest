@@ -1,5 +1,5 @@
 Assuming you already have arrest installed in your system, let us create a simple connection.
-We have a REST endpoint `http://example.com/api/v1` which has a resource `/user` with method `GET`
+We have a REST endpoint `http://example.com/api/v1` which has a resource `/user` with method `GET`.
 
 ```python
 from arrest import Service, Resource
@@ -68,6 +68,10 @@ If you want to learn more, please refer to [this](whats-new.md#standardized-retr
 ## Timeouts
 Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
 If you want to provide a custom timeout, you can put it at a service-level or at a resource-level in the `timeout` argument.
+Alternatively, if you want to disable timeouts, you can do so by setting `timeout=httpx.Timeout(None)`.
+
+The `timeout` can take either an integer value for the number of seconds, or an instance of `httpx.Timeout`.
+
 
 ```python
 from arrest import Service, Resource
@@ -85,7 +89,7 @@ example_svc = Service(
             ]
         )
     ],
-    timeout=
+    timeout=240 # 4 minutes
 )
 ```
 

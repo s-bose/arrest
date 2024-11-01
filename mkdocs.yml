@@ -26,8 +26,9 @@ theme:
 
   features:
     - navigation.sections
+    - navigation.tabs
     - content.code.copy
-
+    - toc.integrate
 
 nav:
   - Introduction: index.md
