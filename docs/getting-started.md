@@ -1,5 +1,5 @@
 Assuming you already have arrest installed in your system, let us create a simple connection.
-We have a REST endpoint `http://example.com/api/v1` which has a resource `/user` with method `GET`
+We have a REST endpoint `http://example.com/api/v1` which has a resource `/user` with method `GET`.
 
 ```python
 from arrest import Service, Resource
@@ -57,13 +57,43 @@ Or you can directly make use of `.request()` and supply the method in it.
 
 ---
 ## Retries
-Retries are built-in in any http requests being made. Arrest uses [`backoff`](https://github.com/litl/backoff) to configure function retries.
-It retries on any `httpx.HTTPError` or `TimeoutException` or `ArrestHTTPException`.
-By default the no. of retries is 3, although it can be configured by setting the environment variable `ARREST_MAX_RETRIES`
+There are no retries built-in in Arrest. However they can be configured in many different ways.
+You can use the retry mechanism from httpx transport (e.g. `httpx.AsyncHTTPTransport(retries=3)`), or use the `retry` field in `Service` or `Resource` specific setting and provide the number of retries. Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retries.
+
+If you want to learn more, please refer to [this](whats-new.md#standardized-retry-mechanism-with-more-flexibility)
+
+
 
 ---
 ## Timeouts
-Arrest also provides a default timeout of 60 seconds in all its http requests. It can again be configured by setting the environment variable `ARREST_DEFAULT_TIMEOUT`
+Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
+If you want to provide a custom timeout, you can put it at a service-level or at a resource-level in the `timeout` argument.
+Alternatively, if you want to disable timeouts, you can do so by setting `timeout=httpx.Timeout(None)`.
+
+The `timeout` can take either an integer value for the number of seconds, or an instance of `httpx.Timeout`.
+
+If you set `timeout=None`, this is equivalent to `timeout=httpx.Timeout(None)`, which will disable timeouts for the client.
+
+
+```python
+from arrest import Service, Resource
+
+
+example_svc = Service(
+    name="example",
+    url="http://example.com/api/v1",
+    resources=[
+        Resource(
+            name="user",
+            route="/user",
+            handlers=[
+                ("GET", "/")
+            ]
+        )
+    ],
+    timeout=240 # 4 minutes
+)
+```
 
 ---
 ## Using a Pydantic model for request

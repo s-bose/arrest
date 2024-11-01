@@ -21,9 +21,7 @@ def test_service_template():
 
     with TemporaryDirectory() as tmpdir:
         filepath = tmpdir
-        ServiceTemplate(services=[service], destination_path=Path(filepath)).render_and_save()
-        with open(f"{tmpdir}/services.py", "r") as file:
-            content = file.read()
+        content = ServiceTemplate(services=[service], destination_path=Path(filepath)).render()
 
         assert content == (
             "from arrest import Service\n"
@@ -50,13 +48,10 @@ def test_resource_template():
 
     with TemporaryDirectory() as tmpdir:
         filepath = tmpdir
-        ResourceTemplate(
+        content = ResourceTemplate(
             schema_module="models", resources=[resource], destination_path=Path(filepath)
-        ).render_and_save()
-        with open(f"{tmpdir}/resources.py", "r") as file:
-            content = file.read()
+        ).render()
 
-        print(content)
         assert content == (
             "from arrest import Resource\n"
             "from .models import UserRequest, UserResponse\n"
@@ -68,6 +63,34 @@ def test_resource_template():
             '        ("GET", "/", UserRequest, UserResponse),\n'
             '        ("PUT", "/{userId}", UserRequest, None),\n'
             '        ("GET", "/{postsId}", None, None),\n'
+            "    ]\n"
+            ")\n"
+        )
+
+
+def test_root_resource_template():
+    root = ResourceSchema(
+        name="root",
+        route="",
+        handlers=[
+            HandlerSchema(method="GET", route="/"),
+        ],
+    )
+
+    with TemporaryDirectory() as tmpdir:
+        filepath = tmpdir
+        content = ResourceTemplate(
+            schema_module="models", resources=[root], destination_path=Path(filepath)
+        ).render()
+
+        assert content == (
+            "from arrest import Resource\n"
+            "\n\n"
+            "root = Resource(\n"
+            '    name="root",\n'
+            '    route="",\n'
+            "    handlers=[\n"
+            '        ("GET", "/", None, None),\n'
             "    ]\n"
             ")\n"
         )

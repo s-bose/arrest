@@ -12,8 +12,7 @@ theme:
         primary: purple
         accent: light purple
         toggle:
-          # icon: material/lightbulb
-          icon: material/brightness-4
+          icon: material/lightbulb
           name: Switch to dark mode
 
       # Palette toggle for dark mode
@@ -22,12 +21,14 @@ theme:
         primary: deep purple
         accent: purple
         toggle:
-          # icon: material/lightbulb-outline
-          icon: material/brightness-7
+          icon: material/lightbulb-outline
           name: Switch to light mode
 
   features:
     - navigation.sections
+    - navigation.tabs
+    - content.code.copy
+    - toc.integrate
 
 nav:
   - Introduction: index.md
@@ -38,6 +39,8 @@ nav:
   - OpenAPI Integration: openapi.md
   - Developer's Note: dev-note.md
   - API Documentation: api.md
+  - Release Notes: release-notes.md
+  - What's New?: whats-new.md
 
 markdown_extensions:
   - pymdownx.superfences
@@ -49,6 +52,8 @@ markdown_extensions:
       custom_checkbox: true
       clickable_checkbox: false
   - attr_list
+  - toc:
+      permalink: true
 
 plugins:
   - search
@@ -59,3 +64,10 @@ plugins:
           options:
             heading_level: 4
             merge_init_into_class: true
+
+
+watch:
+  - mkdocs.yml
+  - .readthedocs.yaml
+  - arrest
+  - docs

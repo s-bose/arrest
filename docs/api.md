@@ -23,7 +23,7 @@
             - delete
             - head
             - options
-
+            - handler
 ## Httpx Client Arguments
 ::: arrest._config.HttpxClientInputs
 

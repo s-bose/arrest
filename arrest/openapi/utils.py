@@ -9,6 +9,20 @@ def get_ref_schema(reference: Reference | Any) -> str | None:
         return ref.split("/")[-1]
 
 
-def sanitize_name(name: str) -> str:
-    name = name.lower().replace(" ", "_")
-    return re.sub("[^A-Za-z0-9]+", "_", name)
+def is_pascal(name: str) -> bool:
+    return re.match(r"^[A-Z][A-Za-z]*$", name) is not None
+
+
+def convert_to_pascal(name: str | None):
+    if not name:
+        return None
+
+    if is_pascal(name):
+        return name
+
+    return to_pascal(name)
+
+
+def to_pascal(name: str) -> str:
+    """Convert a snake_case string to PascalCase."""
+    return re.sub("([0-9A-Za-z])_(?=[0-9A-Z])", lambda m: m.group(1), name.title())

@@ -6,9 +6,12 @@ import httpx
 from typing_extensions import Unpack
 
 from arrest._config import HttpxClientInputs
+from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
+from arrest.types import ExceptionHandlers
+from arrest.utils import extract_resource_and_suffix
 
 
 class Service:
@@ -19,6 +22,8 @@ class Service:
         description: Optional[str] = None,
         resources: Optional[list[Resource]] = [],
         client: Optional[httpx.AsyncClient] = None,
+        exception_handlers: ExceptionHandlers = None,
+        retry: Optional[int] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -35,16 +40,20 @@ class Service:
                 A list of resources provided by the service
             client:
                 An httpx.AsyncClient instance
+            retry:
+                Optional argument to specify the number of retries across all resources
             kwargs:
                 Additional httpx.AsyncClient parameters. [see more](api.md/#httpx-client-arguments)
         """
-
         self.name = name
         self.url = url
         self.description = description
         self.resources: dict[str, Resource] = {}
+
+        self._exception_handlers: ExceptionHandlers = {} if exception_handlers is None else exception_handlers
+
         for resource in resources:
-            self.add_resource(resource, client=client, **kwargs)
+            self.add_resource(resource, client=client, retry=retry, **kwargs)
 
         self.get = partial(self.request, method=Methods.GET)
         self.post = partial(self.request, method=Methods.POST)
@@ -58,6 +67,7 @@ class Service:
         self,
         resource: Resource,
         client: Optional[httpx.AsyncClient] = None,
+        retry: Optional[int] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -70,6 +80,9 @@ class Service:
         resource.base_url = self.url
         resource.initialize_handlers(base_url=self.url)
         resource.initialize_httpx(client=client, **kwargs)
+        resource.exception_handlers = self._exception_handlers
+        resource.retry = retry
+
         self.resources[resource.name] = resource
         setattr(self, resource.name, resource)
 
@@ -78,6 +91,11 @@ class Service:
         Helper function to make a request directly
         from the service level
 
+        Note:
+            If you provide `path` as an empty string or `/`, this would
+            try to find a root resource definition, if any
+
+
         Parameters:
             path:
                 Requested path needs to have the following syntax:
@@ -85,12 +103,13 @@ class Service:
             method:
                 Requested HTTP Method
         """
-        parts = path.strip("/").split("/")
-        resource, suffix = parts[0], "/".join(parts[1:])
 
+        resource, suffix = extract_resource_and_suffix(path=path)
+        if len(resource) == 0:
+            resource = ROOT_RESOURCE
         if resource not in self.resources:
             raise ResourceNotFound(message=f"resource {resource} not found")
-        return await self.resources[resource].request(path=f"/{suffix}", method=method, **kwargs)
+        return await self.resources[resource].request(path=suffix, method=method, **kwargs)
 
     def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
         if hasattr(self, key):
@@ -99,3 +118,6 @@ class Service:
 
     def __dir__(self):  # pragma: no cover
         return list(itertools.chain(dir(super()), self.resources))
+
+    def add_exception_handlers(self, exc_handlers: ExceptionHandlers):
+        self._exception_handlers |= exc_handlers

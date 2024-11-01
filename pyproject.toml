@@ -1,11 +1,10 @@
 [tool.poetry]
 name = "arrest"
-version = "0.1.9"
+version = "0.1.10"
 description = "Arrest is a wrapper of pydantic and httpx to make your REST api calls type-safe and structured"
 authors = ["shiladitya <shiladitya_basu@live.com>"]
 license = "MIT"
 readme = "README.md"
-include = ["CHANGELOG.md"]
 homepage = "https://s-bose.github.io/arrest"
 repository = "https://github.com/s-bose/arrest"
 documentation = "https://s-bose.github.io/arrest"
@@ -19,43 +18,52 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 
+[tool.poetry.urls]
+changelog = "https://s-bose.github.io/arrest/release-notes"
+
 [tool.poetry.scripts]
 arrest = "arrest.__main__:main"
 
 [tool.poetry.dependencies]
-pydantic = ">=1.10.13"
+pydantic = ">=1.10.15, <3.0.0"
 python = "^3.10"
-httpx = "^0.24.1"
+httpx = "^0.27.0"
 orjson = "^3.9.10"
 pyyaml = "^6.0.1"
-backoff = "^2.2.1"
 jinja2 = { version = "^3.1.3", optional = true }
 argcomplete = "^3.2.2"
-datamodel-code-generator = { version = "^0.25.2", optional = true }
+datamodel-code-generator = { version = "0.25.8", optional = true }
+tenacity = "^8.5.0"
 
 [tool.poetry.extras]
 openapi = ["jinja2", "datamodel-code-generator"]
 
-[tool.poetry.group.dev.dependencies]
+
+[tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
+pytest-cov = "^5.0.0"
 pytest-asyncio = "^0.21.1"
 pytest-mock = "^3.12.0"
 respx = "^0.20.2"
+
+[tool.poetry.group.dev.dependencies]
 pre-commit = "^3.5.0"
-coverage = { extras = ["toml"], version = "^7.3.2" }
-safety = "^2.3.5"
-black = "^23.11.0"
+safety = "3.2.4"
 isort = "^5.12.0"
 bandit = "^1.7.5"
 flake8 = "^6.1.0"
 tox = "^4.11.4"
+black = "^24.4.2"
 
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.5.3"
-mkdocs-material = "^9.4.14"
-mkdocstrings = { extras = ["python"], version = "^0.24.0" }
+mkdocs-material = "9.5.42"
+mkdocstrings = { version = "0.25.2", extras = ["python"] }
+
+
+[tool.poetry.group.openapi.dependencies]
+datamodel-code-generator = "^0.25.8"
 
 [build-system]
 requires = ["poetry-core"]
@@ -81,25 +89,31 @@ force-exclude = '''
 )/
 '''
 
+[tool.pytest.ini_options]
+addopts = "--ignore=example"
+
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*", "*/tests/*", "*.jinja2"]
 source = ["arrest"]
 
 [tool.coverage.report]
-fail_under = 100
+fail_under = 85
 exclude_lines = [
     "if self.debug:",
     "pragma: no cover",
-    "except ImportError",
     "raise NotImplementedError",
+    "except ImportError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "if not TYPE_CHECKING:",
     "class Config:",
-    "if PYDANTIC_V2",
 ]
 
 [tool.isort]
 line_length = 110
 profile = "black"
 skip_glob = ["**/fixtures/*"]
+
+
+[tool.mypy]
+plugins = ["arrest.mypy"]

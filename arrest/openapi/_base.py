@@ -2,7 +2,8 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Optional
 
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import FileSystemLoader, Template
+from jinja2.sandbox import SandboxedEnvironment
 from pydantic import BaseModel
 
 from arrest._config import PYDANTIC_V2
@@ -13,7 +14,7 @@ from arrest.openapi._config import TEMPLATE_DIR
 def get_template(template_filepath: Path) -> Template:
     template_dir = Path(__file__).parents[0] / TEMPLATE_DIR
     loader = FileSystemLoader(str(template_dir / template_filepath.parent))
-    environment = Environment(loader=loader)
+    environment = SandboxedEnvironment(loader=loader)
     return environment.get_template(template_filepath.name)
 
 

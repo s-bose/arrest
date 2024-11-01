@@ -1,9 +1,10 @@
 # pylint: disable=W0707
 import functools
 import inspect
-from typing import Any, Mapping, Optional, Type, Union, cast
+import json
+from typing import Any, List, Mapping, Optional, Tuple, TypeVar, Union, cast
+from urllib.parse import urljoin, urlparse
 
-import backoff
 import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
@@ -12,13 +13,25 @@ from typing_extensions import Unpack
 
 from arrest._config import PYDANTIC_V2, HttpxClientInputs
 from arrest.converters import compile_path
-from arrest.defaults import DEFAULT_TIMEOUT, MAX_RETRIES
+from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Param, Params, ParamTypes
-from arrest.utils import extract_model_field, join_url, jsonify, validate_request_model
+from arrest.types import ExceptionHandlers
+from arrest.utils import (
+    extract_model_field,
+    extract_resource_and_suffix,
+    is_rootmodel,
+    join_url,
+    jsonable_encoder,
+    lookup_exception_handler,
+)
+from arrest.utils import retry as arrest_retry
+from arrest.utils import validate_model
+
+T = TypeVar("T")
 
 
 class Resource:
@@ -46,17 +59,17 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        response_model: Optional[Type[BaseModel]] = None,
+        response_model: Optional[T] = None,
         handlers: Union[
-            list[ResourceHandler],
-            list[Mapping[str, Any]],
-            list[tuple[Any, ...]],
+            List[ResourceHandler],
+            List[Mapping[str, Any]],
+            List[Tuple[Any, ...]],
         ] = None,
         client: Optional[httpx.AsyncClient] = None,
+        retry: Optional[int] = None,
         **kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
-
         Parameters:
             name:
                 Unique name of the resource
@@ -68,6 +81,8 @@ class Resource:
                 List of handlers
             client:
                 An httpx.AsyncClient instance
+            retry:
+                Optional argument to specify the number of retries
             kwargs:
                 Additional httpx.AsyncClient parameters, [see more](api.md/#httpx-client-arguments)
         """
@@ -77,33 +92,51 @@ class Resource:
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
+        self.retry = retry
 
-        derived_name = name if name else self.route.strip("/").split("/")[0]
-        self.name = derived_name if derived_name else "root"
+        self.name = self.get_resource_name(name=name)
         self.response_model = response_model
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
+        self._exception_handlers: ExceptionHandlers = None
+
+        # initialize default GET handler
+        self._bind_handler(
+            base_url=self.base_url,
+            handler=ResourceHandler(
+                method=Methods.GET,
+                route=extract_resource_and_suffix(self.route)[1],
+                request=None,
+                response=self.response_model,
+                callback=None,
+            ),
+        )
+
         self.initialize_handlers(handlers=handlers)
         self.initialize_httpx(client=client, **kwargs)
+
+    def get_resource_name(self, name: Optional[str]) -> str:
+        derived_name = name if name else self.route.strip("/").split("/")[0]
+        return derived_name if derived_name else ROOT_RESOURCE
 
     def handler(
         self,
         path: str,
     ) -> Any:
-        url = join_url(self.base_url, self.route, path)
+        """
+        Decorator to bind a custom handler to the resource
+
+        Args:
+            path (str): path relative to the current resource
+
+        Returns:
+            Any
+        """
 
         def wrapper(func):
             @functools.wraps(func)
-            @backoff.on_exception(
-                backoff.expo,
-                (
-                    httpx.HTTPError,
-                    httpx.TimeoutException,
-                ),
-                max_tries=MAX_RETRIES,
-                jitter=backoff.full_jitter,
-            )
             async def wrapped(*args, **kwargs):
+                url = join_url(self.base_url, self.route, path)
                 return await func(self, url, *args, **kwargs)
 
             if getattr(self, func.__name__, None) is None:
@@ -157,6 +190,8 @@ class Resource:
 
         params: dict = {}
 
+        path_query_params, path = self._extract_query_params(path)
+
         if not (match := self.get_matching_handler(method=method, path=path, **kwargs)):
             logger.warning("no matching handler found for request")
             raise HandlerNotFound(message="no matching handler found for request")
@@ -167,15 +202,29 @@ class Resource:
             request_type=handler.request,
             request_data=request,
             headers=headers,
-            query=query,
-            **kwargs,
+            query={**(query or {}), **path_query_params},
         )
 
         response_type = handler.response or self.response_model or None
 
-        response = await self._build_request(
-            url=url, method=method, params=params, response_type=response_type
+        fn_make_request = (
+            arrest_retry(n_retries=self.retry, exceptions=(ArrestHTTPException, Exception))(self.make_request)
+            if self.retry
+            else self.make_request
         )
+
+        try:
+            response = await fn_make_request(
+                url=url, method=method, params=params, response_type=response_type
+            )
+
+        # custom exception handling
+        except Exception as exc:
+            exc_handler = lookup_exception_handler(self.exception_handlers, exc)
+            if not exc_handler:
+                raise exc
+
+            response = exc_handler(exc)
 
         if handler.callback:
             try:
@@ -346,8 +395,8 @@ class Resource:
 
     def extract_request_params(
         self,
-        request_type: Type[BaseModel] | None,
-        request_data: BaseModel | Mapping[str, Any] | None,
+        request_type: Any,
+        request_data: Any,
         headers: Mapping[str, str] | None = None,
         query: Mapping[str, Any] | None = None,
     ) -> Params:
@@ -356,13 +405,15 @@ class Resource:
 
         Parameters:
             request_type:
-                a pydantic class for holding the request data
+                a python type for the request data
             request_data:
-                instance of the above containing the data
-            kwargs:
-                optional keyword-arguments containing query parameters
+                instance of the above type containing the request data
+            headers:
+                optional dictionary containing additional header key-value pairs
+            query:
+                optional dictionary containing additional query key-value pairs
         Returns:
-            a dictionary containing `header`, `body`, `query` params in separate dicts
+            a `Params` object containing `header`, `body`, `query` fields
         """
 
         header_params = headers or {}
@@ -371,7 +422,18 @@ class Resource:
 
         if request_type:
             # perform type validation on `request_data`
-            request_data = validate_request_model(type_=request_type, obj=request_data)
+            request_data = validate_model(type_=request_type, obj=request_data)
+
+        if is_rootmodel(request_data):
+            # TODO: FUTURE - currently treats RootModels as `Body`
+            # If you want to use `Header` and `Query` field annotations`
+            # Use a normal BaseModel
+
+            return Params(
+                header=Headers(header_params),
+                query=QueryParams(query_params),
+                body=jsonable_encoder(request_data),
+            )
 
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
@@ -395,83 +457,70 @@ class Resource:
         return Params(
             header=Headers(header_params),
             query=QueryParams(query_params),
-            body=jsonify(body_params),
+            body=jsonable_encoder(body_params),
         )
 
-    @backoff.on_exception(
-        backoff.expo,
-        (
-            httpx.HTTPError,
-            httpx.TimeoutException,
-            ArrestHTTPException,
-        ),
-        max_tries=MAX_RETRIES,
-        jitter=backoff.full_jitter,
-    )
-    async def _build_request(
+    async def make_request(
         self,
         url: str,
         method: Methods,
         params: Params,
-        response_type: Optional[Type[BaseModel]],
+        response_type: Any,
     ) -> Any:
         """
-        (private) makes the actual http call using httpx
+        (private) prepares and makes a http request,
+        parses the response and raises appropriate exceptions
 
-        Parameters
-        ----------
+        Parameters:
+            url:
+                the complete url of the endpoint
+            method:
+                one of the available http methods
+            params:
+                dict containing `header`, `query` and `body` params
+            response_type:
+                a python type to deserialize the json response to
 
-        url : str
-            the complete url of the endpoint
-        method : Methods
-            one of the available http methods
-        params : dict
-            dict containing `header`, `query` and `body` params
-        response_type : Optional[Type[BaseModel]]
-            optional response_type to deserialize the json response to
-
-        Returns
-        -------
-
-        Any
-            a json object or a parsed pydantic object
+        Returns:
+            Any:
+                the returned json object or a parsed instance of `response_type`
         """
 
         try:
             if self._client:
-                response = await self._make_request(
+                response = await self.__make_request(
                     client=self._client, url=url, method=method, params=params
                 )
             else:
                 async with httpx.AsyncClient(base_url=self.base_url, **self._httpx_args) as client:
-                    response = await self._make_request(client=client, url=url, method=method, params=params)
+                    response = await self.__make_request(client=client, url=url, method=method, params=params)
 
             status_code = response.status_code
-            logger.debug(f"{method!s} {url} returned with status code {status_code!s}")
+            logger.info(f"{method!s} {url} returned with status code {status_code!s}")
             response.raise_for_status()
             response_body = response.json()
 
-            # parse response to pydantic model
             parsed_response = response_body
             if response_type:
-                response_type
-                if isinstance(response_body, list):
-                    parsed_response = [response_type(**item) for item in response_body]
-                elif isinstance(response_body, dict):
-                    parsed_response = response_type(**response_body)
-                else:
-                    raise ValueError(f"could not parse response to pydantic model {response_type.__name__}")
+                parsed_response = validate_model(response_type, response_body)
 
             return parsed_response
 
-        # exception handling
+        # TODO - Future - add support for non-json responses
+        # except json.JSONDecodeError:
+        #     # response content-type is not json
+        #     return response.read().decode("utf-8", errors="strict")
+
         except httpx.HTTPStatusError as exc:
-            err_response_body = exc.response.json()
+            try:
+                err_response_body = exc.response.json()
+            except json.JSONDecodeError:
+                err_response_body = exc.response.read().decode("utf-8", errors="strict")
             raise ArrestHTTPException(status_code=exc.response.status_code, data=err_response_body) from exc
 
         except httpx.TimeoutException:
             raise ArrestHTTPException(
-                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                status_code=httpx.codes.REQUEST_TIMEOUT,
                 data="request timed out",
             )
 
@@ -481,9 +530,21 @@ class Resource:
                 data="error occured while making request",
             )
 
-    async def _make_request(
+    async def __make_request(
         self, client: httpx.AsyncClient, url: str, method: Methods, params: Params
     ) -> httpx.Response:
+        """(private) makes the actual http request using httpx
+
+        Args:
+            client (httpx.AsyncClient)
+            url (str)
+            method (Methods)
+            params (Params)
+
+        Returns:
+            httpx.Response
+        """
+
         header_params, query_params, body_params = (
             params.header,
             params.query,
@@ -550,6 +611,12 @@ class Resource:
 
         self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
 
+    def _extract_query_params(self, url: str) -> tuple[QueryParams, str]:
+        url_parsed = urlparse(url)
+        url_without_query = urljoin(url, urlparse(url).path)
+
+        return QueryParams(url_parsed.query), url_without_query
+
     def initialize_handlers(
         self,
         base_url: str | None = None,
@@ -561,10 +628,10 @@ class Resource:
         Should not be used separately (unless you want to break things)
         """
         if self.routes:
-            handlers = list(self.routes.values())
+            handlers = list(self.routes.values()) + (handlers or [])
 
         if not handlers:
-            return
+            return  # pragma: no cover
 
         for _handler in handlers:
             try:
@@ -592,7 +659,7 @@ class Resource:
                             callback=len(rest) >= 3 and rest[2] or None,
                         ),
                     )
-                elif isinstance(_handler, BaseModel):
+                elif isinstance(_handler, ResourceHandler):
                     self._bind_handler(base_url=base_url, handler=_handler)
                 else:
                     raise ValueError("invalid handler type specified")
@@ -608,11 +675,12 @@ class Resource:
             # already initialized
             self._httpx_args |= kwargs
         else:
-            timeout = kwargs.get("timeout")
-            if not timeout:
-                kwargs["timeout"] = httpx.Timeout(timeout=DEFAULT_TIMEOUT, connect=DEFAULT_TIMEOUT)
-
-            if isinstance(timeout, int):
-                kwargs["timeout"] = httpx.Timeout(timeout=timeout, connect=timeout)
-
             self._httpx_args = HttpxClientInputs(**kwargs)
+
+    @property
+    def exception_handlers(self):
+        return self._exception_handlers
+
+    @exception_handlers.setter
+    def exception_handlers(self, exc_handlers: ExceptionHandlers):
+        self._exception_handlers = exc_handlers

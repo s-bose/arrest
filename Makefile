@@ -5,19 +5,22 @@ install:
 	poetry install --with dev,docs
 
 clean:
-	find . -name '*.pyc' -delete
-	find . -name '__pycache__' -delete
+	bash ./scripts/clean.sh
 
 lint:
-	poetry run black --check .
-	poetry run flake8 .
-	isort --check-only --diff tests
+	bash ./scripts/lint.sh
 
 test:
-	poetry run pytest -vvv
+	bash ./scripts/test.sh
 
 coverage:
-	poetry run pytest --cov=arrest --cov-report=term-missing --cov-report=html
+	bash ./scripts/coverage.sh; \
+	poetry run coverage report --show-missing; \
+	poetry run coverage html
 
-tox:
-	tox -- --cov=arrest --cov-report=term-missing --cov-report=term
+
+safety:
+	poetry run safety check -i 70612 # jinja2 SSTI vuln
+
+serve:
+	serve htmlcov/ -p 3000

@@ -1,9 +1,15 @@
 .venv
+venv
 __pycache__
+.pytest_cache
 .idea
 
 .coverage
+coverage.xml
+.requirements.txt
 dist/*
 site/*
 .tox
 *.ipynb
+NOTES.md
+TODO.md

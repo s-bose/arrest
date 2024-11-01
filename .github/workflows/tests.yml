@@ -6,8 +6,6 @@ on:
       - "master"
 
   pull_request:
-    types:
-      - opened
     branches:
       - master
 
@@ -37,20 +35,28 @@ jobs:
     - name: Upgrade pip
       run: poetry run pip install --upgrade pip
 
-    - name: Run Tests
-      run: poetry run pytest --cov=arrest --cov-report=term-missing --cov-report=html --cov-report=xml
     - name: Run black
       run: poetry run black . --check
+
     - name: Run isort
       run: poetry run isort . --check-only --profile black
+
     - name: Run flake8
       run: poetry run flake8 .
+
     - name: Run bandit
       run: poetry run bandit .
+
     - name: Run saftey
-      run: poetry run safety check
-    - name: Run tox
-      run: poetry run tox
+      run: poetry run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
+
+    - name: Run Tests
+      run: bash ./scripts/coverage.sh
+
+    - name: Run Coverage xml
+      run: |
+          poetry run coverage report --show-missing
+          poetry run coverage xml
 
     - name: Codecov coverage
       uses: codecov/codecov-action@v3

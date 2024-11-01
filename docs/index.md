@@ -18,10 +18,25 @@ Arrest
 
 ---
 
-Arrest is a small utility to easily structure and validate your REST api calls using pydantic and httpx
 
-Built on top of Pydantic and httpx.
-Arrest is like a postman client for your api calls. It provides a simple layer of Pydantic encapsulation over Httpx HTTP calls to ensure structural integrity of your api definitions in a single file, as well as provide Pydantic's strength of data validation.
+Enable data validation for REST APIs.
+
+Arrest provides an easy and declarative way of defining, managing, and calling RESTful HTTP APIs with type validation, retries, exception handling, and other batteries included.
+
+Arrest lets you define your RESTful API services in a simple encapsulation that takes care of the following:
+1. Type validation for request and response data
+2. HTTP request retries
+3. Manage your services definitions in one place
+4. Exception handling
+5. Hooks for custom exceptions
+6. Callbacks
+7. Automatic code generation from OpenAPI Schema
+
+Here is an example of a typical client-side functions for interacting with an HTTP Service.
+![](assets/screenshot_httpx.png)
+
+And here is the same functionality achieved using Arrest.
+![](assets/screenshot_arrest.png)
 
 ## Installation
 
@@ -107,7 +122,6 @@ You might also have noticed that a custom request DTOs can be provided such as `
 Arrest is still in its infancy. There are a lot of new features we would love to integrate in future. But there are certain caveats and assumptions that Arrest makes which are important to know.
 
 1. It currently only supports JSON as both request and response. So if your service does not deal with JSON then probably you have to do it the old way.
-2. It does not deal with cookies or authentication yet, but hopefully will be integrated pretty soon.
-3. It follows the resource-oriented REST api design. If your service does not have clear distinction for different resources and CRUD methods to access them then it might be a bit wonky to integrate it properly within Arrest.
+2. It follows the resource-oriented REST api design. If your service does not have clear distinction for different resources and CRUD methods to access them then it might be a bit wonky to integrate it properly within Arrest.
 
 All things considered, it is still a work in progress, and we would greatly appreciate if you find any bugs and notify us in the issue-tracker.

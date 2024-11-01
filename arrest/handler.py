@@ -1,6 +1,6 @@
 import difflib
 import re
-from typing import Callable, NamedTuple, Pattern, Type
+from typing import Callable, NamedTuple, Pattern, TypeVar
 
 from pydantic import AnyUrl, BaseModel
 
@@ -8,6 +8,8 @@ from arrest.converters import replace_params
 from arrest.exceptions import ConversionError
 from arrest.http import Methods
 from arrest.logging import logger
+
+T = TypeVar("T")
 
 
 class HandlerKey(NamedTuple):
@@ -24,10 +26,10 @@ class ResourceHandler(BaseModel):
             HTTP Method for the handler
         route (str):
             Unique path to the handler from its parent resource
-        request (Type[BaseModel], optional):
-            Pydantic type to validate the request with
-        response (Type[BaseModel], optional):
-            Pydantic type to deserialize the HTTP response
+        request (T, optional):
+            Python type to validate the request with
+        response (T, optional):
+            Python type to deserialize the HTTP response
         callback (Callable, optional):
             A callable (sync or async) to execute with the HTTP
             response
@@ -35,8 +37,8 @@ class ResourceHandler(BaseModel):
 
     method: Methods
     route: str
-    request: Type[BaseModel] | None = None
-    response: Type[BaseModel] | None = None
+    request: T | None = None
+    response: T | None = None
     callback: Callable | None = None
     path_format: str | None = None
     path_regex: Pattern | None = None
