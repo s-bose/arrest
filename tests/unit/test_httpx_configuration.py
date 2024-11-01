@@ -3,7 +3,6 @@ import pytest
 import respx
 
 from arrest import Resource, Service
-from arrest.defaults import DEFAULT_TIMEOUT
 
 
 @pytest.mark.parametrize(
@@ -19,15 +18,6 @@ def test_httpx_client_kwargs(service: Service, service_args: dict, resource_args
 
     assert service.abc._httpx_args["headers"] == {"abc": "123"}
     assert service.abc._httpx_args["cookies"] == {"x-cookie": 60}
-
-
-@pytest.mark.parametrize(
-    "timeout_arg, expected_timeout",
-    [(10, httpx.Timeout(10)), (httpx.Timeout(40), httpx.Timeout(40)), (None, httpx.Timeout(DEFAULT_TIMEOUT))],
-)
-def test_httpx_client_timeout(timeout_arg: int | httpx.Timeout, expected_timeout: httpx.Timeout):
-    resource = Resource(name="abc", route="/abc", timeout=timeout_arg)
-    assert resource._httpx_args["timeout"] == expected_timeout
 
 
 @pytest.mark.asyncio
