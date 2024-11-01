@@ -8,7 +8,6 @@ readme = "README.md"
 homepage = "https://s-bose.github.io/arrest"
 repository = "https://github.com/s-bose/arrest"
 documentation = "https://s-bose.github.io/arrest"
-changelog = "https://github.com/s-bose/arrest/release-notes"
 keywords = ["arrest", "rest", "pydantic", "httpx", "api"]
 classifiers = [
     "Natural Language :: English",
@@ -18,6 +17,9 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries",
 ]
+
+[tool.poetry.urls]
+changelog = "https://s-bose.github.io/arrest/release-notes"
 
 [tool.poetry.scripts]
 arrest = "arrest.__main__:main"
