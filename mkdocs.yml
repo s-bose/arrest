@@ -34,6 +34,7 @@ nav:
   - Introduction: index.md
   - Getting Started:
     - getting-started.md
+    - Examples: examples.md
     - Configuring your request: configuring-request.md
     - Resources and Services: resources-services.md
   - OpenAPI Integration: openapi.md

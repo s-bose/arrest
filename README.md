@@ -7,7 +7,7 @@
 [![PyPi](https://img.shields.io/pypi/v/arrest.svg)](https://pypi.python.org/pypi/arrest)
 
 - Documentation: https://s-bose.github.io/arrest/
-
+0.30.6
 Enable data validation for REST APIs.
 
 Arrest provides an easy and declarative way of defining, managing, and calling RESTful HTTP APIs with type validation, retries, exception handling, and other batteries included.
@@ -21,18 +21,12 @@ Arrest lets you define your RESTful API services in a simple encapsulation that 
 6. Callbacks
 7. Automatic code generation from OpenAPI Schema
 
-Here is an example of a typical client-side functions for interacting with an HTTP Service.
-![](./docs/assets/screenshot_httpx.png)
-
-And here is the same functionality achieved using Arrest.
-![](./docs/assets/screenshot_arrest.png)
-
-
 ## Contents
 
 1. [Installation](#installation)
 2. [Getting Started](#getting-started)
-3. [Contributing](#contributing)
+3. [Examples](#examples)
+4. [Contributing](#contributing)
 
 ## Installation
 
@@ -52,6 +46,9 @@ uv add arrest
 ```
 
 ## Getting Started
+
+Assuming you already have arrest installed in your system, let us create a simple connection.
+We have a REST endpoint `htthttps://www.xyz-service.default.local.cluster/api/v1` which has a resource `/users` with method `GET`.
 
 ```python
 import logging
@@ -80,7 +77,68 @@ except ArrestHTTPException as exc:
     logging.warning(f"{exc.status_code} {exc.data}")
 ```
 
-##
+This will make an HTTP GET request to `https://www.xyz-service.default.local.cluster/api/v1/users/123`.
+
+You can also provide a request type for your handlers. This can be done by passing a third entry to your handler tuple containing the pydantic class, or pass it directly to the handler dict or `ResourceHandler` initialization.
+
+```python
+from pydantic import BaseModel
+
+class UserRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str
+
+Resource(
+    route="/users,
+    handlers=[
+        ("POST", "/", UserRequest) # or ResourceHandler(method="POST", route="/", request=UserRequest)
+                                   # or {"method": "POST", "route": "/", "request": UserRequest}
+    ]
+)
+
+await service.users.post("/", request={
+    "name": "John Doe",
+    "email": "john_doe@gmail.com",
+    "password": "secret",
+    "role": "admin"
+    }
+)
+```
+
+This gets automatically validated and parsed as `UserRequest` before sending the request payload to the server. If any validation error is raised the request won't go.
+
+
+Similar to request, you can pass an additional fourth argument in the handler tuple for specifying a pydantic model for the handler.
+If provided it will automatically deserialize the returned success json response into either a model instance or a list of model instances.
+
+
+## Examples
+
+```python
+class UserResponse(BaseModel):
+    name: str
+    email: str
+    role: str
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+
+Resource(
+    route="/user",
+    handlers=[
+        ("GET", "/{user_id}", None, UserResponse), # if no request type to be supplied, leave it as `None`
+    ]
+)
+
+user_id = "123"
+response = await svc.user.get(f"/{user_id}") # type: UserResponse
+```
+
+Here, the JSON response from `https://www.xyz-service.default.local.cluster/api/v1/users/123` will be deserialized into `UserResponse` model instance.
+
+For more info, please check the [docs](https://s-bose.github.io/arrest/getting-started)
 
 
 ## Contributing
