@@ -27,6 +27,7 @@ Arrest lets you define your RESTful API services in a simple encapsulation that 
 2. [Getting Started](#getting-started)
 3. [Examples](#examples)
 4. [Contributing](#contributing)
+5. [Roadmap](#roadmap)
 
 ## Installation
 
@@ -156,3 +157,81 @@ To use the service, simply call `example_service.users.get("")`.
 ## Contributing
 
 Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+
+## Roadmap
+
+Arrest is under active development. Listed below are a few ideas for the next release. Any sort of contribution towards them is very much welcome.
+
+1. Support for non-JSON request and response types.
+
+Arrest is currently limited by its strict requirement of the APIs being JSON compliant.
+The following types would be supported in the next release:
+
+- `FormData` requests
+
+```python
+from arrest.types import FormData
+
+class UserForm(FormData):
+    username: str
+    password: str
+```
+
+- `UrlEncoded` requests
+
+    ```python
+    from arrest.types import UrlEncoded
+
+    class UserRegister(UrlEncoded):
+        email: str
+        password: str
+    ```
+
+- `XML` responses
+
+```python
+from pydantic import Field
+from arrest.types import XMLResponse
+
+class UserResponse(XMLResponse):
+    id: str
+    username: str
+    email: str
+    role: str = Field(alias="@role")
+```
+
+For requests, I think its beneficial to have types for `application/form-data` and `application/x-www-form-urlencoded` with the added parsing and validation of Pydantic.
+`FormData` and `UrlEncoded` classes themselves will be inherited from `pydantic.BaseModel`.
+
+For responses, it would be nice to have a way to parse the XML response into some sort of data model, because you most probably would always do that (unless you like working with raw strings).
+`XMLResponse` is similarly inherited from `pydantic.BaseModel`. If you use just `XMLResponse` in declaring your handler response type, the response will automatically be converted into a python dictionary.
+
+- As of now, I have no plans for making a request type for XML. But what would be a better alternative is the ability to do something like this:
+
+```python
+from arrest import Resource
+from arrest.types import XMLResponse
+
+user = Resource(
+    route="/users",
+    handlers=[
+        ("POST", "/user_data", str, XMLResponse)
+    ]
+)
+
+
+user_data = """<User>
+    <Id>123</Id>
+    <Name>John</Name>
+    <Email>john@email</Email>
+    <Role>admin</Role>
+</User>"""
+
+response = await service.user.post("/user_data", data=user_data, headers={"Content-Type": "application/xml"})
+
+assert response == {"Id": "123", "Name": "John", "Email": "john@email", "Role": "admin"}
+```
+
+The problem with using a data model for XML requests is the fact that the deserialization of the model might not always produce an XML string that conforms to the expected schema.
+
+However, I would encourage anyone who has any idea about any of this, or a better way to support these types, to [open an issue](https://github.com/s-bose/arrest/issues) and start a discussion.
