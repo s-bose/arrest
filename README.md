@@ -26,12 +26,6 @@
 
 # Arrest
 
-
-[![codecov](https://codecov.io/github/s-bose/arrest/graph/badge.svg?token=VBU3156QHP)](https://codecov.io/github/s-bose/arrest)
-
-[![PyPi](https://img.shields.io/pypi/v/arrest.svg)](https://pypi.python.org/pypi/arrest)
-</p>
-
 - Documentation: https://s-bose.github.io/arrest/
 
 Enable data validation for REST APIs.
