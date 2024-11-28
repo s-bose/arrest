@@ -1,32 +1,36 @@
-<p align="center">
-    <a href="https://pepy.tech/projects/arrest">
-        <img src="https://static.pepy.tech/badge/arrest" alt="PyPI Downloads">
-    </a>
-    <a href="https://github.com/s-bose/arrest/actions/workflows/tests.yml">
-        <img src="https://github.com/s-bose/arrest/actions/workflows/tests.yml/badge.svg">
-    </a>
-    <a href="https://codecov.io/github/s-bose/arrest">
-        <img src="https://codecov.io/github/s-bose/arrest/graph/badge.svg?token=VBU3156QHP">
-    </a>
-    <a href="https://pypi.python.org/pypi/arrest">
-        <img src="https://img.shields.io/pypi/v/arrest.svg">
-    </a>
-    <a href="https://www.codefactor.io/repository/github/s-bose/arrest">
-        <img src="https://www.codefactor.io/repository/github/s-bose/arrest/badge" alt="CodeFactor">
-    </a>
-    <a href="https://github.com/s-bose/arrest">
-        <img src="https://img.shields.io/pypi/pyversions/arrest" alt="PyPI - Python Versions">
-    </a>
-    <a href="https://github.com/s-bose/arrest/blob/master/LICENSE">
-        <img src="https://img.shields.io/pypi/l/arrest" alt="PyPI - License">
-    </a>
-</p>
+<h1 align="center" style="font-size: 3rem; margin: 0">
+Arrest
+</h1>
 
 ---
 
-# Arrest
+<div align="center">
+    <p>
+        <a href="https://pepy.tech/projects/arrest">
+            <img src="https://static.pepy.tech/badge/arrest" alt="PyPI Downloads">
+        </a>
+        <a href="https://github.com/s-bose/arrest/actions/workflows/tests.yml">
+            <img src="https://github.com/s-bose/arrest/actions/workflows/tests.yml/badge.svg">
+        </a>
+        <a href="https://codecov.io/github/s-bose/arrest">
+            <img src="https://codecov.io/github/s-bose/arrest/graph/badge.svg?token=VBU3156QHP">
+        </a>
+        <a href="https://pypi.python.org/pypi/arrest">
+            <img src="https://img.shields.io/pypi/v/arrest.svg">
+        </a>
+        <a href="https://www.codefactor.io/repository/github/s-bose/arrest">
+            <img src="https://www.codefactor.io/repository/github/s-bose/arrest/badge" alt="CodeFactor">
+        </a>
+        <a href="https://github.com/s-bose/arrest">
+            <img src="https://img.shields.io/pypi/pyversions/arrest" alt="PyPI - Python Versions">
+        </a>
+        <a href="https://github.com/s-bose/arrest/blob/master/LICENSE">
+            <img src="https://img.shields.io/pypi/l/arrest" alt="PyPI - License">
+        </a>
+    </p>
+</div>
 
-- Documentation: https://s-bose.github.io/arrest/
+- **Documentation**: https://s-bose.github.io/arrest/
 
 Enable data validation for REST APIs.
 
