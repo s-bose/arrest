@@ -5,20 +5,11 @@ supports openapi >= v3.0
 
 from typing import Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Extra, Field
-
-from arrest._config import PYDANTIC_V2
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Base(BaseModel):
-    if PYDANTIC_V2:
-        model_config = ConfigDict(extra="allow", populate_by_name=True)
-
-    else:
-
-        class Config:
-            extra = Extra.allow
-            allow_population_by_field_name = True
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class Info(Base):
@@ -42,7 +33,9 @@ class Reference(Base):
 
 
 class MediaType(BaseModel):
-    media_type_schema: Optional[Union[Reference, dict]] = Field(default=None, alias="schema")
+    media_type_schema: Optional[Union[Reference, dict]] = Field(
+        default=None, alias="schema"
+    )
 
 
 class RequestBody(BaseModel):

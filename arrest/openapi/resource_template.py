@@ -29,7 +29,10 @@ class ResourceTemplate(TemplateBase):
     TEMPLATE_FILEPATH: ClassVar[str] = "resources.jinja2"
 
     def __init__(
-        self, schema_module: str, resources: list[ResourceSchema], destination_path: Path | str
+        self,
+        schema_module: str,
+        resources: list[ResourceSchema],
+        destination_path: Path | str,
     ) -> None:
         schema_imports = set()
         for resource in resources:
@@ -41,7 +44,9 @@ class ResourceTemplate(TemplateBase):
         super().__init__(
             source=self.TEMPLATE_FILEPATH,
             params=ResourceParams(
-                schema_module=schema_module, schema_imports=schema_imports, resources=resources
+                schema_module=schema_module,
+                schema_imports=schema_imports,
+                resources=resources,
             ),
             destination_path=destination_path,
         )

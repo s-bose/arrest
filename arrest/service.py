@@ -50,7 +50,9 @@ class Service:
         self.description = description
         self.resources: dict[str, Resource] = {}
 
-        self._exception_handlers: ExceptionHandlers = {} if exception_handlers is None else exception_handlers
+        self._exception_handlers: ExceptionHandlers = (
+            {} if exception_handlers is None else exception_handlers
+        )
 
         for resource in resources:
             self.add_resource(resource, client=client, retry=retry, **kwargs)
@@ -109,7 +111,9 @@ class Service:
             resource = ROOT_RESOURCE
         if resource not in self.resources:
             raise ResourceNotFound(message=f"resource {resource} not found")
-        return await self.resources[resource].request(path=suffix, method=method, **kwargs)
+        return await self.resources[resource].request(
+            path=suffix, method=method, **kwargs
+        )
 
     def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
         if hasattr(self, key):

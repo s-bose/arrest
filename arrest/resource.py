@@ -8,10 +8,9 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from httpx import Headers, QueryParams
 from pydantic import BaseModel, ValidationError
-from pydantic.fields import FieldInfo
 from typing_extensions import Unpack
 
-from arrest._config import PYDANTIC_V2, HttpxClientInputs
+from arrest._config import HttpxClientInputs
 from arrest.converters import compile_path
 from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ArrestHTTPException, HandlerNotFound
@@ -27,9 +26,9 @@ from arrest.utils import (
     join_url,
     jsonable_encoder,
     lookup_exception_handler,
+    validate_model,
 )
 from arrest.utils import retry as arrest_retry
-from arrest.utils import validate_model
 
 T = TypeVar("T")
 
@@ -61,9 +60,7 @@ class Resource:
         route: Optional[str],
         response_model: Optional[T] = None,
         handlers: Union[
-            List[ResourceHandler],
-            List[Mapping[str, Any]],
-            List[Tuple[Any, ...]],
+            List[ResourceHandler], List[Mapping[str, Any]], List[Tuple[Any, ...]], None
         ] = None,
         client: Optional[httpx.AsyncClient] = None,
         retry: Optional[int] = None,
@@ -208,7 +205,9 @@ class Resource:
         response_type = handler.response or self.response_model or None
 
         fn_make_request = (
-            arrest_retry(n_retries=self.retry, exceptions=(ArrestHTTPException, Exception))(self.make_request)
+            arrest_retry(
+                n_retries=self.retry, exceptions=(ArrestHTTPException, Exception)
+            )(self.make_request)
             if self.retry
             else self.make_request
         )
@@ -397,8 +396,8 @@ class Resource:
         self,
         request_type: Any,
         request_data: Any,
-        headers: Mapping[str, str] | None = None,
-        query: Mapping[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query: dict[str, Any] | None = None,
     ) -> Params:
         """
         extracts `header`, `body` and `query` params from the pydantic request model
@@ -417,8 +416,8 @@ class Resource:
         """
 
         header_params = headers or {}
-        query_params = query or {}
-        body_params = {}
+        query_params: dict[str, Any] = query or {}
+        body_params: dict[Any, Any] = {}
 
         if request_type:
             # perform type validation on `request_data`
@@ -437,12 +436,12 @@ class Resource:
 
         if isinstance(request_data, BaseModel):
             # extract pydantic fields into `Query`, `Body` and `Header`
-            model_fields: dict = request_data.model_fields if PYDANTIC_V2 else request_data.__fields__
+            model_fields = request_data.__class__.model_fields
 
             for field_name, field in model_fields.items():
-                field_info = field if PYDANTIC_V2 else field.field_info
+                field_info = field
                 field_info = cast(Param, field_info)
-                if not hasattr(field_info, "_param_type") and isinstance(field_info, FieldInfo):
+                if not hasattr(field_info, "_param_type"):
                     body_params |= extract_model_field(request_data, field_name)
                 elif field_info._param_type == ParamTypes.query:
                     query_params |= extract_model_field(request_data, field_name)
@@ -492,8 +491,12 @@ class Resource:
                     client=self._client, url=url, method=method, params=params
                 )
             else:
-                async with httpx.AsyncClient(base_url=self.base_url, **self._httpx_args) as client:
-                    response = await self.__make_request(client=client, url=url, method=method, params=params)
+                async with httpx.AsyncClient(
+                    base_url=self.base_url, **self._httpx_args
+                ) as client:
+                    response = await self.__make_request(
+                        client=client, url=url, method=method, params=params
+                    )
 
             status_code = response.status_code
             logger.info(f"{method!s} {url} returned with status code {status_code!s}")
@@ -516,7 +519,9 @@ class Resource:
                 err_response_body = exc.response.json()
             except json.JSONDecodeError:
                 err_response_body = exc.response.read().decode("utf-8", errors="strict")
-            raise ArrestHTTPException(status_code=exc.response.status_code, data=err_response_body) from exc
+            raise ArrestHTTPException(
+                status_code=exc.response.status_code, data=err_response_body
+            ) from exc
 
         except httpx.TimeoutException:
             raise ArrestHTTPException(
@@ -552,7 +557,9 @@ class Resource:
         )
         match method:
             case Methods.GET:
-                response = await client.get(url=url, params=query_params, headers=header_params)
+                response = await client.get(
+                    url=url, params=query_params, headers=header_params
+                )
             case Methods.POST:
                 response = await client.post(
                     url=url,
@@ -581,10 +588,14 @@ class Resource:
                     headers=header_params,
                 )
             case Methods.HEAD:
-                response = await client.head(url=url, params=query_params, headers=header_params)
+                response = await client.head(
+                    url=url, params=query_params, headers=header_params
+                )
 
             case Methods.OPTIONS:
-                response = await client.options(url=url, params=query_params, headers=header_params)
+                response = await client.options(
+                    url=url, params=query_params, headers=header_params
+                )
 
         return response
 
@@ -597,7 +608,9 @@ class Resource:
                 url = join_url(self.route, parsed_path)
                 return handler, url
 
-    def _bind_handler(self, base_url: str | None = None, *, handler: ResourceHandler) -> None:
+    def _bind_handler(
+        self, base_url: str | None = None, *, handler: ResourceHandler
+    ) -> None:
         """
         compose a fully-qualified url by joining base service url, resource url
         and handler url,
@@ -607,7 +620,9 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
-        handler.path_regex, handler.path_format, handler.param_types = compile_path(handler.route)
+        handler.path_regex, handler.path_format, handler.param_types = compile_path(
+            handler.route
+        )
 
         self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
 
@@ -620,7 +635,9 @@ class Resource:
     def initialize_handlers(
         self,
         base_url: str | None = None,
-        handlers: list[ResourceHandler] | list[Mapping[str, Any]] | list[tuple[Any, ...]] = None,
+        handlers: list[ResourceHandler]
+        | list[Mapping[str, Any]]
+        | list[tuple[Any, ...]] = None,
     ) -> None:
         """
         specifically used to inject `base_url` from a Service class to
@@ -636,12 +653,18 @@ class Resource:
         for _handler in handlers:
             try:
                 if isinstance(_handler, dict):
-                    self._bind_handler(base_url=base_url, handler=ResourceHandler(**_handler))
+                    self._bind_handler(
+                        base_url=base_url, handler=ResourceHandler(**_handler)
+                    )
                 elif isinstance(_handler, tuple):
                     if len(_handler) < 2:
-                        raise ValueError("Too few arguments to unpack. Expected atleast 2")
+                        raise ValueError(
+                            "Too few arguments to unpack. Expected atleast 2"
+                        )
                     if len(_handler) > 5:
-                        raise ValueError(f"Too many arguments to unpack. Expected 5, got {len(_handler)}")
+                        raise ValueError(
+                            f"Too many arguments to unpack. Expected 5, got {len(_handler)}"
+                        )
 
                     method, route, rest = (
                         _handler[0],

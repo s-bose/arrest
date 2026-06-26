@@ -22,8 +22,10 @@ class ServiceParams(BaseModel):
 class ServiceTemplate(TemplateBase):
     TEMPLATE_FILEPATH: ClassVar[str] = "services.jinja2"
 
-    def __init__(self, services: list[ServiceSchema], destination_path: Path | str) -> None:
-        resource_imports = set()
+    def __init__(
+        self, services: list[ServiceSchema], destination_path: Path | str
+    ) -> None:
+        resource_imports = set[str]()
         for service in services:
             resource_imports.update(service.resources)
 
