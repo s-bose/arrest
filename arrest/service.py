@@ -43,7 +43,7 @@ class Service:
             retry:
                 Optional argument to specify the number of retries across all resources
             kwargs:
-                Additional httpx.AsyncClient parameters. [see more](api.md/#httpx-client-arguments)
+                Additional httpx.AsyncClient parameters. [see more](api.md#httpx-client-arguments)
         """
         self.name = name
         self.url = url

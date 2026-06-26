@@ -53,11 +53,11 @@ URLs (*deprecated*).
 URLs
 * **timeout** - *(optional)* The timeout configuration to use when sending
 requests.
-* **follow_redirects** - *(optional)* A boolean indicating whether to follow redirects. [See more](https://www.python-httpx.org/quickstart/#redirection-and-history)
+* **follow_redirects** - *(optional)* A boolean indicating whether to follow redirects. [See more](https://www.python-httpx.org/quickstart#redirection-and-history)
 * **limits** - *(optional)* The limits configuration to use.
 * **max_redirects** - *(optional)* The maximum number of redirect responses
 that should be followed.
-* **event_hooks** - *(optional)* - A dictionary to set event hook callbacks for request and response events. [See more](https://www.python-httpx.org/advanced/#event-hooks)
+* **event_hooks** - *(optional)* - A dictionary to set event hook callbacks for request and response events. [See more](https://www.python-httpx.org/advanced#event-hooks)
 * **transport** - *(optional)* A transport class to use for sending requests
 over the network.
 * **trust_env** - *(optional)* Enables or disables usage of environment

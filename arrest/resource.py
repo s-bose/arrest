@@ -81,7 +81,7 @@ class Resource:
             retry:
                 Optional argument to specify the number of retries
             kwargs:
-                Additional httpx.AsyncClient parameters, [see more](api.md/#httpx-client-arguments)
+                Additional httpx.AsyncClient parameters, [see more](api.md#httpx-client-arguments)
         """
 
         self._client: Optional[httpx.AsyncClient] = None

@@ -174,4 +174,4 @@ from arrest.openapi import OpenAPIGenerator
 ...
 ```
 
-For more info, check the [API Documentation](api.md/#openapigenerator)
+For more info, check the [API Documentation](api.md#openapigenerator)

@@ -1,6 +1,6 @@
 If you want to enrich your HTTP request with additional arguments such as headers or query parameters, you can specify them in the HTTP request as dictionaries in `headers` and `query` fields.
 
-Additionally, Arrest offers custom field types `Header`, `Query` and `Body`, which are inherited from pydantic's [`FieldInfo`](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo), that you can use in defining your pydantic request model.
+Additionally, Arrest offers custom field types `Header`, `Query` and `Body`, which are inherited from pydantic's [`FieldInfo`](https://docs.pydantic.dev/latest/api/fields#pydantic.fields.FieldInfo), that you can use in defining your pydantic request model.
 
 
 ### Header
@@ -128,7 +128,7 @@ You can also pass a plain dictionary or a list as request. They will get passed 
 
 ### Additional Configuration
 Arrest also allows providing other http parameters such as cookies, auth, transport, etc, or even your own instance of `httpx.AsyncClient` (or other classes subclassing it), if you choose to do so.
-If you want to customize the httpx client and specify more parameters either at resource-level or at service-level, you can check out [Resources & Services](resources-services.md/#resources).
+If you want to customize the httpx client and specify more parameters either at resource-level or at service-level, you can check out [Resources & Services](resources-services.md#resources).
 
 ### Path parameters
 Path parameters are a bit tricky as they are not set as pydantic fields.
