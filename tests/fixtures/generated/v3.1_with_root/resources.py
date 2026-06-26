@@ -6,7 +6,7 @@ root = Resource(
     route="",
     handlers=[
         ("GET", "/", None, None),
-    ],
+    ]
 )
 
 health = Resource(
@@ -14,7 +14,7 @@ health = Resource(
     route="/health",
     handlers=[
         ("GET", "", None, None),
-    ],
+    ]
 )
 
 pets = Resource(
@@ -24,5 +24,5 @@ pets = Resource(
         ("GET", "", None, Pets),
         ("POST", "", None, None),
         ("GET", "/{petId}", None, Pet),
-    ],
+    ]
 )

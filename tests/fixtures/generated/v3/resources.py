@@ -13,7 +13,7 @@ pet = Resource(
         ("POST", "/{petId}", None, None),
         ("DELETE", "/{petId}", None, None),
         ("POST", "/{petId}/uploadImage", None, ApiResponse),
-    ],
+    ]
 )
 
 store = Resource(
@@ -24,7 +24,7 @@ store = Resource(
         ("POST", "/order", Order, Order),
         ("GET", "/order/{orderId}", None, Order),
         ("DELETE", "/order/{orderId}", None, None),
-    ],
+    ]
 )
 
 user = Resource(
@@ -38,5 +38,5 @@ user = Resource(
         ("GET", "/{username}", None, User),
         ("PUT", "/{username}", User, None),
         ("DELETE", "/{username}", None, None),
-    ],
+    ]
 )
