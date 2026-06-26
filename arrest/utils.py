@@ -76,7 +76,7 @@ def validate_model(type_: T, obj: Any) -> T:  # pragma: no cover
 
 def is_rootmodel(obj: Any):
     """checks whether a pydantic object is a rootmodel instance"""
-    return hasattr(obj, "__root__") or hasattr(obj, "root")
+    return hasattr(obj, "root")
 
 
 def jsonable_encoder(obj: Any) -> Any:
@@ -98,10 +98,6 @@ def jsonable_encoder(obj: Any) -> Any:
     """
     if isinstance(obj, BaseModel):
         obj_dict = obj.model_dump()
-
-        if "__root__" in obj_dict:
-            obj_dict = obj_dict["__root__"]
-
         return jsonable_encoder(obj_dict)
 
     if dataclasses.is_dataclass(obj):

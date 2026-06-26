@@ -50,7 +50,11 @@ class ArrestConfig:
         Excludes arrest-internal fields (``max_retries``).
         """
         internal_fields = {f.name for f in fields(self) if f.metadata.get("internal")}
-        return {k: v for k, v in asdict(self).items() if k not in internal_fields}
+        return {
+            k: v
+            for k, v in asdict(self).items()
+            if k not in internal_fields and v is not None
+        }
 
     def merge(self, overrides: "ArrestConfig | None") -> "ArrestConfig":
         """Return a new config with *overrides* layered on top of *self*."""

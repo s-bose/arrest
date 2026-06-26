@@ -112,3 +112,15 @@ async def test_no_response_type(service, mock_httpx):
 
     response = await service.user.get("/")
     assert response == mock_response
+
+
+@pytest.mark.asyncio
+async def test_empty_response_returns_none(service, mock_httpx):
+    mock_httpx.get(url__regex="/user/*", name="http_request").mock(
+        return_value=httpx.Response(204)
+    )
+
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/")]))
+
+    response = await service.user.get("/")
+    assert response is None
