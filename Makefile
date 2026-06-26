@@ -1,29 +1,28 @@
 .PHONY: install clean lint test coverage docs
 
 install:
-	uv sync
-	uv sync --group dev --group docs
+	uv sync --all-groups --all-extras
 
 clean:
 	bash ./scripts/clean.sh
 
-lint:
+lint: install
 	bash ./scripts/lint.sh
 
-lint-fix:
+lint-fix: install
 	bash ./scripts/lint.sh --fix
 
-test:
+test: install
 	bash ./scripts/test.sh
 
-coverage:
+coverage: install
 	bash ./scripts/coverage.sh; \
 	uv run coverage report --show-missing; \
 	uv run coverage html
 
 
-safety:
+safety: install
 	uv run safety check -i 70612 # jinja2 SSTI vuln
 
-serve-docs:
+serve-docs: install
 	serve htmlcov/ -p 3000
