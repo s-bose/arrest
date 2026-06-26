@@ -1,9 +1,8 @@
 from typing import Any, Callable, Mapping, Optional, TypedDict, Union
-
+import ssl
 from httpx import AsyncBaseTransport, Limits, _types
-from pydantic.version import VERSION as PYDANTIC_VERSION
 
-PYDANTIC_V2 = PYDANTIC_VERSION.startswith("2")
+VerifyType = Union[bool, str, ssl.SSLContext, None]
 
 
 class HttpxClientInputs(TypedDict, total=False):
@@ -16,10 +15,10 @@ class HttpxClientInputs(TypedDict, total=False):
     params: Optional[_types.QueryParamTypes]
     headers: Optional[_types.HeaderTypes]
     cookies: Optional[_types.CookieTypes]
-    verify: Optional[_types.VerifyTypes]
+    verify: Optional[VerifyType]
     cert: Optional[_types.CertTypes]
     http2: Optional[bool]
-    proxies: Optional[_types.ProxiesTypes]
+    proxies: Optional[_types.ProxyTypes]
     mounts: Optional[Mapping[str, AsyncBaseTransport]]
     timeout: Optional[_types.TimeoutTypes]
     follow_redirects: Optional[bool]

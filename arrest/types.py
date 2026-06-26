@@ -1,5 +1,4 @@
-from typing import Any, Callable, Mapping, TypeAlias, TypeVar
+from typing import Any, Callable, Mapping, Optional
 
-ET = TypeVar("ET", bound=Exception)
-ExceptionHandler: TypeAlias = Callable[[ET], Any]
-ExceptionHandlers: TypeAlias = Mapping[ET, ExceptionHandler]
+ExceptionHandler = Callable[[Exception], Any]
+ExceptionHandlers = Optional[Mapping[type[Exception], ExceptionHandler]]

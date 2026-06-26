@@ -98,9 +98,9 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
         param_name, converter_type = match.groups("str")
         converter_type = converter_type.lstrip(":").casefold()
 
-        assert (
-            converter_type in CONVERTER_REGEX
-        ), f"Invalid converter specified, available converters {CONVERTER_REGEX.keys()}"
+        assert converter_type in CONVERTER_REGEX, (
+            f"Invalid converter specified, available converters {CONVERTER_REGEX.keys()}"
+        )
 
         converter = CONVERTER_REGEX[converter_type]
 

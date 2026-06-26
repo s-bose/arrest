@@ -42,7 +42,9 @@ class Body(Param):
 
 
 class Params:
-    def __init__(self, *, header: httpx.Headers, query: httpx.QueryParams, body: Any) -> None:
+    def __init__(
+        self, *, header: httpx.Headers, query: httpx.QueryParams, body: Any
+    ) -> None:
         self.header = header
         self.query = query
         self.body = body

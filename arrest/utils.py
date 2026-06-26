@@ -11,22 +11,10 @@ from typing import Any, Optional, TypeVar
 
 import orjson
 import tenacity
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
-try:
-    from pydantic import TypeAdapter
-except ImportError:
-    pass
-
-from arrest._config import PYDANTIC_V2
 from arrest.logging import logger
 from arrest.types import ExceptionHandler, ExceptionHandlers
-
-if not PYDANTIC_V2:  # pragma: no cover
-    try:
-        from pydantic import parse_obj_as
-    except ImportError:
-        pass
 
 T = TypeVar("T")
 
@@ -36,7 +24,7 @@ def sanitize_name(name: str) -> str:
     return re.sub("[^A-Za-z0-9]+", "_", name)
 
 
-def join_url(base_url: str, *urls: list[str]) -> str:
+def join_url(base_url: str, *urls: str) -> str:
     path = posixpath.join(base_url, *[url.lstrip("/") for url in urls])
     if not urls[-1].endswith("/"):
         path = path.rstrip("/")
@@ -53,17 +41,14 @@ def extract_resource_and_suffix(path: str) -> tuple[str, str]:
     return resource, suffix
 
 
-def extract_model_field(model: BaseModel, field: str) -> dict:
+def extract_model_field(model: BaseModel, field: str) -> dict[Any, Any]:
     """
     reuse pydantic's own deserializer to extract single field
     as a json parsed dict
     """
-    default = {}
+    default: dict[Any, Any] = {}
 
-    if PYDANTIC_V2:
-        value = model.model_dump_json(include={field}, by_alias=True)
-    else:
-        value = model.json(include={field}, by_alias=True)
+    value = model.model_dump_json(include={field}, by_alias=True)
     value = orjson.loads(value)
     if not value:
         return default
@@ -85,16 +70,13 @@ def validate_model(type_: T, obj: Any) -> T:  # pragma: no cover
     Returns:
         T: type converted python object
     """
-    if PYDANTIC_V2:
-        type_adapter = TypeAdapter(type_)
-        return type_adapter.validate_python(obj)
-
-    return parse_obj_as(type_, obj)
+    type_adapter = TypeAdapter(type_)
+    return type_adapter.validate_python(obj)
 
 
 def is_rootmodel(obj: Any):
-    """checks whether a pydantic object is a rootmodel instance (v1 & v2)"""
-    return hasattr(obj, "__root__") or hasattr(obj, "root")  # pydantic v2
+    """checks whether a pydantic object is a rootmodel instance"""
+    return hasattr(obj, "__root__") or hasattr(obj, "root")
 
 
 def jsonable_encoder(obj: Any) -> Any:
@@ -115,10 +97,7 @@ def jsonable_encoder(obj: Any) -> Any:
         Any: json-serialized object
     """
     if isinstance(obj, BaseModel):
-        if PYDANTIC_V2:
-            obj_dict = obj.model_dump()
-        else:
-            obj_dict = obj.dict()
+        obj_dict = obj.model_dump()
 
         if "__root__" in obj_dict:
             obj_dict = obj_dict["__root__"]
@@ -207,7 +186,7 @@ def retry(*, n_retries: int, exceptions: tuple[Exception]):
 
 
 def lookup_exception_handler(
-    exc_handlers: Optional[ExceptionHandlers], exc: Exception
+    exc_handlers: ExceptionHandlers, exc: Exception
 ) -> Optional[ExceptionHandler]:
     if not exc_handlers:
         return None

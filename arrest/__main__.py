@@ -9,10 +9,12 @@ from arrest.common import Exit
 from arrest.logging import logger
 
 try:
-    import datamodel_code_generator
-    import jinja2
+    import datamodel_code_generator  # noqa: F401
+    import jinja2  # noqa: F401
 except ImportError:  # pragma: no cover
-    logger.warning("Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`")
+    logger.warning(
+        "Dependencies missing. Please install extra dependencies by `pip install arrest[openapi]`"
+    )
     sys.exit(Exit.ERROR)
 
 from arrest.cli.arguments import arg_parser
@@ -38,22 +40,25 @@ def main(args: Optional[Sequence[str]] = None):
         return Exit.ERROR
 
     if not namespace.url:
-        print("Missing `--url`. An http or file url needs to be specified", file=sys.stdout)
+        print(
+            "Missing `--url`. An http or file url needs to be specified",
+            file=sys.stdout,
+        )
         arg_parser.print_help(file=sys.stdout)
         return Exit.ERROR
 
     if not (output := namespace.output):
         output = Path().resolve(namespace.output)
-        print(f"No output path specified. Using current directory {output!s}", file=sys.stdout)
-
-    use_pydantic_v2 = namespace.pydantic == "v2"
+        print(
+            f"No output path specified. Using current directory {output!s}",
+            file=sys.stdout,
+        )
 
     try:
         generator = OpenAPIGenerator(
             url=namespace.url,
             output_path=output,
             dir_name=namespace.dir,
-            use_pydantic_v2=use_pydantic_v2,
         )
 
         generator.generate_schema()
