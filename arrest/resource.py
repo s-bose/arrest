@@ -3,7 +3,7 @@ import functools
 import inspect
 import json
 from functools import cached_property
-from typing import Any, List, Mapping, Optional, Tuple, TypeVar, Union, cast
+from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union, cast
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -32,6 +32,7 @@ from arrest.utils import (
 from arrest.utils import retry as arrest_retry
 
 T = TypeVar("T")
+ResourceHandlerType: TypeAlias = ResourceHandler | Mapping[str, Any] | tuple[Any, ...]
 
 
 class Resource:
@@ -60,9 +61,7 @@ class Resource:
         *,
         route: Optional[str],
         response_model: Optional[T] = None,
-        handlers: Union[
-            List[ResourceHandler], List[Mapping[str, Any]], List[Tuple[Any, ...]], None
-        ] = None,
+        handlers: list[ResourceHandlerType] | None = None,
         client: Optional[httpx.AsyncClient] = None,
         # config: per-request defaults (merge through the chain)
         headers: Optional[dict[str, str]] = None,
@@ -107,10 +106,10 @@ class Resource:
         """
 
         self._client: Optional[httpx.AsyncClient] = None
-        self._transport_kwargs = HttpxClientInputs(**client_kwargs)
+        self._transport_kwargs = client_kwargs
 
         self.base_url = "/"  # will be filled once bound to a service
-        self.route = route
+        self.route = route or ""
 
         self.name = self.get_resource_name(name=name)
         self.response_model = response_model
@@ -140,7 +139,7 @@ class Resource:
             ),
         )
 
-        self.initialize_handlers(handlers=handlers)
+        self.initialize_handlers(handlers=handlers if handlers else [])
         if client:
             self._client = client
 
@@ -566,7 +565,8 @@ class Resource:
                 )
             else:
                 async with httpx.AsyncClient(
-                    base_url=self.base_url, **self._transport_kwargs
+                    base_url=self.base_url,
+                    **self._transport_kwargs,
                 ) as client:
                     response = await self.__make_request(
                         client=client,
@@ -710,22 +710,24 @@ class Resource:
     def initialize_handlers(
         self,
         base_url: str | None = None,
-        handlers: list[ResourceHandler]
-        | list[Mapping[str, Any]]
-        | list[tuple[Any, ...]] = None,
+        handlers: list[ResourceHandlerType] | None = None,
     ) -> None:
         """
         specifically used to inject `base_url` from a Service class to
         downstream Resources.
         Should not be used separately (unless you want to break things)
         """
-        if self.routes:
-            handlers = list(self.routes.values()) + (handlers or [])
 
-        if not handlers:
+        _handlers: list[ResourceHandlerType] = (
+            list(self.routes.values()) if self.routes else []
+        )
+        if handlers:
+            _handlers.extend(handlers)
+
+        if not _handlers:
             return  # pragma: no cover
 
-        for _handler in handlers:
+        for _handler in _handlers:
             try:
                 if isinstance(_handler, dict):
                     self._bind_handler(

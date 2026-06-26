@@ -168,6 +168,10 @@ def test_resource_handler_empty(resource: Resource):
     assert root_handler.method == Methods.GET
     assert root_handler.route == ""
 
+    # unbound handler with no path_regex returns None from parse_path
+    handler = ResourceHandler(method=Methods.GET, route="/unbound")
+    assert handler.parse_path(method=Methods.GET, path="/unbound") is None
+
 
 def test_resource_multiple_handler_same_signature():
     res = Resource(

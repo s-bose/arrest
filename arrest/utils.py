@@ -101,7 +101,7 @@ def jsonable_encoder(obj: Any) -> Any:
         return jsonable_encoder(obj_dict)
 
     if dataclasses.is_dataclass(obj):
-        return jsonable_encoder(dataclasses.asdict(obj))
+        return jsonable_encoder(dataclasses.asdict(obj))  # type: ignore[arg-type]
 
     if isinstance(obj, enum.Enum):
         return obj.value
@@ -143,7 +143,7 @@ def jsonable_encoder(obj: Any) -> Any:
     return jsonable_encoder(data)
 
 
-def retry(*, n_retries: int, exceptions: tuple[Exception]):
+def retry(*, n_retries: int, exceptions: tuple[type[Exception], ...]):
     def wrapper(func):
         @wraps(func)
         def sync_wrapped(*args, **kwargs):

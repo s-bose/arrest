@@ -1,15 +1,13 @@
 import difflib
 import re
-from typing import Callable, NamedTuple, Pattern, TypeVar
+from typing import Any, Callable, NamedTuple, Pattern
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import BaseModel
 
 from arrest.converters import replace_params
 from arrest.exceptions import ConversionError
 from arrest.http import Methods
 from arrest.logging import logger
-
-T = TypeVar("T")
 
 
 class HandlerKey(NamedTuple):
@@ -37,16 +35,14 @@ class ResourceHandler(BaseModel):
 
     method: Methods
     route: str
-    request: T | None = None
-    response: T | None = None
+    request: Any | None = None
+    response: Any | None = None
     callback: Callable | None = None
     path_format: str | None = None
     path_regex: Pattern | None = None
-    param_types: dict[str, type] | None = None
+    param_types: Any = None
 
-    def parse_path(
-        self, method: Methods, path: str | AnyUrl, **kwargs
-    ) -> str | AnyUrl | None:
+    def parse_path(self, method: Methods, path: str, **kwargs) -> str | None:
         if method != self.method:
             return None
 
@@ -55,15 +51,19 @@ class ResourceHandler(BaseModel):
 
         return self.__parse_exact_path(path)
 
-    def __parse_exact_path(self, path: str | AnyUrl) -> str | AnyUrl | None:
+    def __parse_exact_path(self, path: str) -> str | None:
+        if not self.path_regex:
+            return None
         if self.path_regex.fullmatch(path):
             return path
 
-    def __resolve_path_param(self, path: str | AnyUrl, **kwargs) -> str | AnyUrl | None:
+    def __resolve_path_param(self, path: str, **kwargs) -> str | None:
         params = self.__extract_path_params(path)
         if params is None:
             return None
 
+        if not self.path_format or not self.param_types:
+            return None
         params |= kwargs
 
         try:
@@ -80,7 +80,9 @@ class ResourceHandler(BaseModel):
 
         return self.__parse_exact_path(parsed_path)
 
-    def __extract_path_params(self, path: str | AnyUrl) -> dict | None:
+    def __extract_path_params(self, path: str) -> dict | None:
+        if not self.path_format:
+            return None
         differ = difflib.Differ()
         diff = list(differ.compare(self.path_format.split("/"), path.split("/")))
 

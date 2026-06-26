@@ -57,7 +57,7 @@ def main(args: Optional[Sequence[str]] = None):
     try:
         generator = OpenAPIGenerator(
             url=namespace.url,
-            output_path=output,
+            output_path=str(output),
             dir_name=namespace.dir,
         )
 

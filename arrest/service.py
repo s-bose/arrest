@@ -23,7 +23,7 @@ class Service:
         description: Optional[str] = None,
         resources: Optional[list[Resource]] = None,
         client: Optional[httpx.AsyncClient] = None,
-        exception_handlers: ExceptionHandlers = None,
+        exception_handlers: ExceptionHandlers | None = None,
         # config: per-request defaults (merge through the chain)
         headers: Optional[dict[str, str]] = None,
         cookies: Optional[dict[str, Any]] = None,
@@ -81,7 +81,7 @@ class Service:
             follow_redirects=follow_redirects,
         )
 
-        self._exception_handlers: ExceptionHandlers = (
+        self._exception_handlers = (
             {} if exception_handlers is None else exception_handlers
         )
 
@@ -134,7 +134,10 @@ class Service:
         if client and not resource._client:
             resource._client = client
         if client_kwargs:
-            resource._transport_kwargs |= client_kwargs
+            resource._transport_kwargs = {  # type: ignore[assignment]
+                **resource._transport_kwargs,
+                **client_kwargs,
+            }
 
         resource.exception_handlers = self._exception_handlers
 

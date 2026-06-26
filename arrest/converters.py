@@ -5,7 +5,7 @@ https://github.com/encode/starlette/blob/master/starlette/routing.py
 import math
 import re
 import uuid
-from typing import Any, ClassVar, Generic, Mapping, Pattern, TypeVar
+from typing import Any, ClassVar, Generic, Pattern, TypeVar
 from uuid import UUID
 
 from arrest.exceptions import ConversionError
@@ -70,7 +70,7 @@ class UUIDConverter(Converter[uuid.UUID]):
         return str(value)
 
 
-CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
+CONVERTER_REGEX: dict[str, Converter[Any]] = {
     "str": StrConverter(),
     "int": IntegerConverter(),
     "float": FloatConverter(),
@@ -78,7 +78,7 @@ CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
 }
 
 
-def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
+def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, Converter[Any]]]:
     """
     Given a path string, like: "/{username:str}",
 
@@ -98,7 +98,7 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
     path_format = ""
 
     idx = 0
-    parsed_path_params: dict[str, type] = {}
+    parsed_path_params: dict[str, Converter[Any]] = {}
 
     for match in PARAM_REGEX.finditer(path):
         param_name, converter_type = match.groups("str")
