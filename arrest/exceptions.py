@@ -15,6 +15,12 @@ class ArrestHTTPException(ArrestError):
         self.data = data
 
 
+class ResponseError(ArrestError):
+    def __init__(self, message: str):
+        super().__init__()
+        self.message = message
+
+
 class NotFoundException(ArrestError):
     def __init__(self, message: str):
         self.message = message

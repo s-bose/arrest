@@ -1,5 +1,5 @@
 import ssl
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Callable, Mapping, Optional, TypedDict, Union
 
 from httpx import AsyncBaseTransport, Limits, _types
@@ -35,17 +35,25 @@ class ArrestConfig:
         per-call kwargs  >  handler config  >  resource config  >  service config
 
     Dict fields (``headers``, ``cookies``, ``params``) merge additively.
-    Scalar fields (``timeout``, ``retry``, ``auth``, ``follow_redirects``) are
-    overridden by the highest-priority non-``None`` value.
+    Scalar fields (``timeout``, ``max_retries``, ``auth``, ``follow_redirects``)
+    are overridden by the highest-priority non-``None`` value.
     """
 
     headers: dict[str, str] = field(default_factory=dict)
     cookies: dict[str, Any] = field(default_factory=dict)
     params: dict[str, Any] = field(default_factory=dict)
     timeout: float | None = None
-    retry: int | None = None
-    auth: Any | None = None  # arrest.auth types or httpx auth
+    auth: Any | None = None
     follow_redirects: bool | None = None
+    max_retries: int | None = field(default=None, metadata={"internal": True})
+
+    def httpx_args(self) -> dict[str, Any]:
+        """Return only fields valid as ``httpx.AsyncClient`` / request kwargs.
+
+        Excludes arrest-internal fields (``max_retries``).
+        """
+        internal_fields = {f.name for f in fields(self) if f.metadata.get("internal")}
+        return {k: v for k, v in asdict(self).items() if k not in internal_fields}
 
     def merge(self, overrides: "ArrestConfig | None") -> "ArrestConfig":
         """Return a new config with *overrides* layered on top of *self*."""
@@ -58,7 +66,11 @@ class ArrestConfig:
             timeout=overrides.timeout
             if overrides.timeout is not None
             else self.timeout,
-            retry=overrides.retry if overrides.retry is not None else self.retry,
+            max_retries=(
+                overrides.max_retries
+                if overrides.max_retries is not None
+                else self.max_retries
+            ),
             auth=overrides.auth if overrides.auth is not None else self.auth,
             follow_redirects=(
                 overrides.follow_redirects

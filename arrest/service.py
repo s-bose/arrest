@@ -29,10 +29,10 @@ class Service:
         cookies: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
         timeout: Optional[float] = None,
-        retry: Optional[int] = None,
+        max_retries: Optional[int] = None,
         auth: Any = None,
         follow_redirects: Optional[bool] = None,
-        # transport: passed once to httpx.AsyncClient
+        # ── transport: passed once to httpx.AsyncClient ─────────────────
         **client_kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -49,15 +49,17 @@ class Service:
                 A list of resources provided by the service
             client:
                 An httpx.AsyncClient instance
-            retry:
-                Optional argument to specify the number of retries across all resources
+            max_retries:
+                Maximum number of application-level retries managed
+                by tenacity. If you want to to transport-level retry,
+                check out [docs](whats-new.md#use-the-standard-retry-mechanism-from-httpx-transport)
             headers / cookies / params:
                 Default request headers / cookies / query params for every resource.
                 Merged additively; per-resource/handler/call values append.
             timeout:
                 Default request timeout (seconds).
             auth:
-                Default authentication (BearerAuth, BasicAuth, or httpx auth).
+                Default authentication.
             follow_redirects:
                 Whether to follow redirects by default.
             client_kwargs:
@@ -74,7 +76,7 @@ class Service:
             cookies=cookies or {},
             params=params or {},
             timeout=timeout,
-            retry=retry,
+            max_retries=max_retries,
             auth=auth,
             follow_redirects=follow_redirects,
         )
@@ -104,7 +106,7 @@ class Service:
         cookies: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
         timeout: Optional[float] = None,
-        retry: Optional[int] = None,
+        max_retries: Optional[int] = None,
         auth: Any = None,
         follow_redirects: Optional[bool] = None,
         **client_kwargs: Unpack[HttpxClientInputs],
@@ -123,7 +125,7 @@ class Service:
                 cookies=cookies or {},
                 params=params or {},
                 timeout=timeout,
-                retry=retry,
+                max_retries=max_retries,
                 auth=auth,
                 follow_redirects=follow_redirects,
             )

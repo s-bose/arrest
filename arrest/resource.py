@@ -2,7 +2,6 @@
 import functools
 import inspect
 import json
-from dataclasses import asdict
 from functools import cached_property
 from typing import Any, List, Mapping, Optional, Tuple, TypeVar, Union, cast
 from urllib.parse import urljoin, urlparse
@@ -70,7 +69,7 @@ class Resource:
         cookies: Optional[dict[str, Any]] = None,
         params: Optional[dict[str, Any]] = None,
         timeout: Optional[float] = None,
-        retry: Optional[int] = None,
+        max_retries: Optional[int] = None,
         auth: Any = None,
         follow_redirects: Optional[bool] = None,
         **client_kwargs: Unpack[HttpxClientInputs],
@@ -87,11 +86,16 @@ class Resource:
                 List of handlers
             client:
                 An httpx.AsyncClient instance
-            retry:
-                Optional argument to specify the number of retries
-            headers / cookies / params:
-                Default request headers / cookies / query params for this resource.
-                Merged additively; per-handler/call values append.
+            max_retries:
+                Maximum number of application-level retries managed
+                by tenacity. If you want to to transport-level retry,
+                check out [docs](whats-new.md#use-the-standard-retry-mechanism-from-httpx-transport)
+            headers:
+                Default request headers for this resource
+            cookies:
+                Default request cookies for this resource
+            params:
+                Default query params for this resource
             timeout:
                 Default request timeout (seconds).
             auth:
@@ -117,7 +121,7 @@ class Resource:
             cookies=cookies or {},
             params=params or {},
             timeout=timeout,
-            retry=retry,
+            max_retries=max_retries,
             auth=auth,
             follow_redirects=follow_redirects,
         )
@@ -142,13 +146,11 @@ class Resource:
 
     @cached_property
     def httpx_args(self) -> dict:
-        """Transport + per-request defaults, ready for ``httpx.AsyncClient(**...").
+        """Transport + httpx-compatible config, ready for ``httpx.AsyncClient(**...").
 
         Read-only.  Frozen on first access.  Use this in custom handlers.
         """
-        kwargs = {**self._transport_kwargs, **asdict(self.config)}
-        kwargs.pop("retry", None)  # arrest-internal, not an httpx kwarg
-        return kwargs
+        return {**self._transport_kwargs, **self.config.httpx_args()}
 
     def get_resource_name(self, name: Optional[str]) -> str:
         derived_name = name if name else self.route.strip("/").split("/")[0]
@@ -266,7 +268,7 @@ class Resource:
 
         response_type = handler.response or self.response_model or None
 
-        retry_count = final_config.retry
+        retry_count = final_config.max_retries
 
         fn_make_request = (
             arrest_retry(
