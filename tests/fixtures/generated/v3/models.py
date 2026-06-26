@@ -10,86 +10,86 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 
 class Status(Enum):
-    placed = 'placed'
-    approved = 'approved'
-    delivered = 'delivered'
+    placed = "placed"
+    approved = "approved"
+    delivered = "delivered"
 
 
 class Order(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'order'}},
+        json_schema_extra={"xml": {"name": "order"}},
     )
     id: int | None = Field(None, examples=[10])
     petId: int | None = Field(None, examples=[198772])
     quantity: int | None = Field(None, examples=[7])
     shipDate: AwareDatetime | None = None
     status: Status | None = Field(
-        None, description='Order Status', examples=['approved']
+        None, description="Order Status", examples=["approved"]
     )
     complete: bool | None = None
 
 
 class Address(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'address'}},
+        json_schema_extra={"xml": {"name": "address"}},
     )
-    street: str | None = Field(None, examples=['437 Lytton'])
-    city: str | None = Field(None, examples=['Palo Alto'])
-    state: str | None = Field(None, examples=['CA'])
-    zip: str | None = Field(None, examples=['94301'])
+    street: str | None = Field(None, examples=["437 Lytton"])
+    city: str | None = Field(None, examples=["Palo Alto"])
+    state: str | None = Field(None, examples=["CA"])
+    zip: str | None = Field(None, examples=["94301"])
 
 
 class Category(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'category'}},
+        json_schema_extra={"xml": {"name": "category"}},
     )
     id: int | None = Field(None, examples=[1])
-    name: str | None = Field(None, examples=['Dogs'])
+    name: str | None = Field(None, examples=["Dogs"])
 
 
 class User(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'user'}},
+        json_schema_extra={"xml": {"name": "user"}},
     )
     id: int | None = Field(None, examples=[10])
-    username: str | None = Field(None, examples=['theUser'])
-    firstName: str | None = Field(None, examples=['John'])
-    lastName: str | None = Field(None, examples=['James'])
-    email: str | None = Field(None, examples=['john@email.com'])
-    password: str | None = Field(None, examples=['12345'])
-    phone: str | None = Field(None, examples=['12345'])
-    userStatus: int | None = Field(None, description='User Status', examples=[1])
+    username: str | None = Field(None, examples=["theUser"])
+    firstName: str | None = Field(None, examples=["John"])
+    lastName: str | None = Field(None, examples=["James"])
+    email: str | None = Field(None, examples=["john@email.com"])
+    password: str | None = Field(None, examples=["12345"])
+    phone: str | None = Field(None, examples=["12345"])
+    userStatus: int | None = Field(None, description="User Status", examples=[1])
 
 
 class Tag(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'tag'}},
+        json_schema_extra={"xml": {"name": "tag"}},
     )
     id: int | None = None
     name: str | None = None
 
 
 class Status1(Enum):
-    available = 'available'
-    pending = 'pending'
-    sold = 'sold'
+    available = "available"
+    pending = "pending"
+    sold = "sold"
 
 
 class Pet(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'pet'}},
+        json_schema_extra={"xml": {"name": "pet"}},
     )
     id: int | None = Field(None, examples=[10])
-    name: str = Field(..., examples=['doggie'])
+    name: str = Field(..., examples=["doggie"])
     category: Category | None = None
-    photoUrls: list[str] = Field(..., json_schema_extra={'xml': {'wrapped': True}})
-    tags: list[Tag] | None = Field(None, json_schema_extra={'xml': {'wrapped': True}})
-    status: Status1 | None = Field(None, description='pet status in the store')
+    photoUrls: list[str] = Field(..., json_schema_extra={"xml": {"wrapped": True}})
+    tags: list[Tag] | None = Field(None, json_schema_extra={"xml": {"wrapped": True}})
+    status: Status1 | None = Field(None, description="pet status in the store")
 
 
 class ApiResponse(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': '##default'}},
+        json_schema_extra={"xml": {"name": "##default"}},
     )
     code: int | None = None
     type: str | None = None
@@ -98,10 +98,10 @@ class ApiResponse(BaseModel):
 
 class Customer(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={'xml': {'name': 'customer'}},
+        json_schema_extra={"xml": {"name": "customer"}},
     )
     id: int | None = Field(None, examples=[100000])
-    username: str | None = Field(None, examples=['fehguy'])
+    username: str | None = Field(None, examples=["fehguy"])
     address: list[Address] | None = Field(
-        None, json_schema_extra={'xml': {'name': 'addresses', 'wrapped': True}}
+        None, json_schema_extra={"xml": {"name": "addresses", "wrapped": True}}
     )

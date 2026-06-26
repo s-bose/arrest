@@ -8,5 +8,5 @@ pets = Resource(
         ("GET", "", None, Pets),
         ("POST", "", None, None),
         ("GET", "/{petId}", None, Pet),
-    ]
+    ],
 )
