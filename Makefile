@@ -10,6 +10,9 @@ clean:
 lint:
 	bash ./scripts/lint.sh
 
+lint-fix:
+	bash ./scripts/lint.sh --fix
+
 test:
 	bash ./scripts/test.sh
 
