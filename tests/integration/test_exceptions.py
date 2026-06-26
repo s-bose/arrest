@@ -215,3 +215,12 @@ async def test_custom_exception_handler(
             await service.user.get("")
             if detail:
                 assert exc.value.detail == detail
+
+
+def test_response_error_str():
+    """ResponseError passes message to super().__init__."""
+    from arrest.exceptions import ResponseError
+
+    err = ResponseError("something went wrong")
+    assert str(err) == "something went wrong"
+    assert err.message == "something went wrong"

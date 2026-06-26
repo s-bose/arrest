@@ -124,3 +124,22 @@ async def test_empty_response_returns_none(service, mock_httpx):
 
     response = await service.user.get("/")
     assert response is None
+
+
+@pytest.mark.asyncio
+async def test_response_undecodable_body(service, mock_httpx):
+    """Non-JSON body with charset mismatch → ResponseError."""
+    from arrest.exceptions import ResponseError
+
+    mock_httpx.get(url__regex="/user/*", name="http_request").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"\xff\xfe",
+            headers={"Content-Type": "application/json; charset=iso-8859-1"},
+        )
+    )
+
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/")]))
+
+    with pytest.raises(ResponseError):
+        await service.user.get("/")

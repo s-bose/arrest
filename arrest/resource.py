@@ -586,7 +586,7 @@ class Resource:
             except json.JSONDecodeError:
                 try:
                     response_body = response.read().decode("utf-8", errors="strict")
-                except Exception:
+                except UnicodeDecodeError:
                     raise ResponseError("Could not parse HTTP response")
 
             parsed_response = response_body
