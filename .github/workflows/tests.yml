@@ -14,51 +14,42 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11']
-        poetry-version: ['1.4.2']
-        os: ['ubuntu-latest', 'windows-latest']
+        python-version: ["3.10", "3.11"]
+        os: ["ubuntu-latest", "windows-latest"]
 
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install poetry
-      uses:  abatilo/actions-poetry@v2
-      with:
-          poetry-version: ${{ matrix.poetry-version }}
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: poetry install --all-extras
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
-    - name: Upgrade pip
-      run: poetry run pip install --upgrade pip
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
 
-    - name: Run black
-      run: poetry run black . --check
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
 
-    - name: Run isort
-      run: poetry run isort . --check-only --profile black
+      - name: Run ruff
+        run: uv run ruff check . && uv run ruff format --check
 
-    - name: Run flake8
-      run: poetry run flake8 .
+      - name: Run bandit
+        run: uv run bandit .
 
-    - name: Run bandit
-      run: poetry run bandit .
+      - name: Run safety
+        run: uv run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
 
-    - name: Run saftey
-      run: poetry run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
+      - name: Run Tests
+        run: bash ./scripts/coverage.sh
 
-    - name: Run Tests
-      run: bash ./scripts/coverage.sh
+      - name: Run Coverage xml
+        run: |
+          uv run coverage report --show-missing
+          uv run coverage xml
 
-    - name: Run Coverage xml
-      run: |
-          poetry run coverage report --show-missing
-          poetry run coverage xml
-
-    - name: Codecov coverage
-      uses: codecov/codecov-action@v3
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Codecov coverage
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
