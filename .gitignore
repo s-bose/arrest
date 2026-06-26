@@ -9,7 +9,6 @@ coverage.xml
 .requirements.txt
 dist/*
 site/*
-.tox
 *.ipynb
 NOTES.md
 TODO.md

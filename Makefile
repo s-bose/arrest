@@ -1,4 +1,4 @@
-.PHONY: install clean lint test coverage docs
+.PHONY: install clean lint lint-fix test coverage fixtures docs
 
 install:
 	uv sync --all-groups --all-extras
@@ -23,6 +23,9 @@ coverage: install
 
 safety: install
 	uv run safety check -i 70612 # jinja2 SSTI vuln
+
+fixtures:
+	uv run python scripts/regenerate_fixtures.py
 
 serve-docs: install
 	serve htmlcov/ -p 3000

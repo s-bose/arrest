@@ -31,11 +31,11 @@ from arrest.utils import retry
 
 try:
     from datamodel_code_generator import (
-        DataModelType,
         InputFileType,
         OpenAPIScope,
         generate,
     )
+    from datamodel_code_generator.enums import DataModelType
 except ImportError:  # pragma: no cover
     sys.exit(1)
 
@@ -102,7 +102,7 @@ class OpenAPIGenerator:
             with open(self.url, "rb") as file:
                 return file.read()
 
-    def generate_schema(self, fmt: Optional[Format] = None):
+    def generate_schema(self, fmt: Optional[Format] = None, silent: bool = False):
         """Generates the boilerplate files against an OpenAPI Spec
 
         Parameters:
@@ -126,18 +126,24 @@ class OpenAPIGenerator:
         Path.mkdir(output_path, exist_ok=True)
 
         self.generate_component_schema(
-            input_bytes=openapi_bytes, schema_path=schema_path
+            input_bytes=openapi_bytes, schema_path=schema_path, silent=silent
         )
         resources = self.generate_resource_file(
-            openapi=openapi, schema_path=schema_path, resource_path=output_path
+            openapi=openapi,
+            schema_path=schema_path,
+            resource_path=output_path,
+            silent=silent,
         )
         self.generate_service_file(
-            openapi=openapi, service_path=output_path, resources=resources
+            openapi=openapi,
+            service_path=output_path,
+            resources=resources,
+            silent=silent,
         )
         InitTemplate(destination_path=output_path).render_and_save()
 
     def generate_component_schema(
-        self, input_bytes: bytes, schema_path: Path | str
+        self, input_bytes: bytes, schema_path: Path | str, silent: bool = False
     ) -> None:
         generate(
             input_=input_bytes.decode("utf-8"),
@@ -146,9 +152,11 @@ class OpenAPIGenerator:
             output=schema_path,
             output_model_type=DataModelType.PydanticV2BaseModel,
         )
-        logger.info(
-            f"generated pydantic models from schema definitions in : {schema_path}"
-        )
+
+        if not silent:
+            logger.info(
+                f"generated pydantic models from schema definitions in : {schema_path}"
+            )
 
     def generate_service_file(
         self,
@@ -157,6 +165,7 @@ class OpenAPIGenerator:
         service_name: Optional[str] = None,
         service_path: Path | str,
         resources: list[ResourceSchema],
+        silent: bool = False,
     ):
         services = list(
             self._build_arrest_service(
@@ -167,7 +176,9 @@ class OpenAPIGenerator:
         ServiceTemplate(
             services=services, destination_path=service_path
         ).render_and_save()
-        logger.info(f"generated arrest services in : {service_path}/services.py")
+
+        if not silent:
+            logger.info(f"generated arrest services in : {service_path}/services.py")
 
     def get_service_name(
         self, openapi: OpenAPI, service_name: Optional[str] = None
@@ -176,7 +187,11 @@ class OpenAPIGenerator:
         return sanitize_name(name)
 
     def generate_resource_file(
-        self, openapi: OpenAPI, schema_path: Path | str, resource_path: Path | str
+        self,
+        openapi: OpenAPI,
+        schema_path: Path | str,
+        resource_path: Path | str,
+        silent: bool = False,
     ) -> list[ResourceSchema]:
         resources = list(self._build_arrest_resources(openapi=openapi))
         path, _ = os.path.splitext(schema_path)
@@ -185,7 +200,9 @@ class OpenAPIGenerator:
         ResourceTemplate(
             schema_module=module, resources=resources, destination_path=resource_path
         ).render_and_save()
-        logger.info(f"generated arrest resources in : {resource_path}/resources.py")
+
+        if not silent:
+            logger.info(f"generated arrest resources in : {resource_path}/resources.py")
         return resources
 
     def _build_arrest_service(
