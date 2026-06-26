@@ -1,4 +1,4 @@
-Assuming you already have arrest installed in your system, let us create a simple connection.
+Assuming you already have arrest installed, let's create a simple connection.
 We have a REST endpoint `http://example.com/api/v1` which has a resource `/user` with method `GET`.
 
 ```python
@@ -57,8 +57,8 @@ Or you can directly make use of `.request()` and supply the method in it.
 
 ---
 ## Retries
-There are no retries built-in in Arrest. However they can be configured in many different ways.
-You can use the retry mechanism from httpx transport (e.g. `httpx.AsyncHTTPTransport(retries=3)`), or use the `retry` field in `Service` or `Resource` specific setting and provide the number of retries. Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retries.
+There are no retries built into Arrest. However they can be configured in many different ways.
+You can use the retry mechanism from httpx transport (e.g. `httpx.AsyncHTTPTransport(retries=3)`), or use the `max_retries` field in `Service` or `Resource` specific setting and provide the number of retries. Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retries.
 
 If you want to learn more, please refer to [this](whats-new.md#standardized-retry-mechanism-with-more-flexibility)
 
@@ -67,7 +67,7 @@ If you want to learn more, please refer to [this](whats-new.md#standardized-retr
 ---
 ## Timeouts
 Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
-If you want to provide a custom timeout, you can put it at a service-level or at a resource-level in the `timeout` argument.
+If you want to provide a custom timeout, you can set it at the service level or at the resource level with the `timeout` argument.
 Alternatively, if you want to disable timeouts, you can do so by setting `timeout=httpx.Timeout(None)`.
 
 The `timeout` can take either an integer value for the number of seconds, or an instance of `httpx.Timeout`.
@@ -117,7 +117,7 @@ Resource(
 )
 ```
 
-Notice how we only supplied `route` for our resource? Arrest automatically infers the resource name based on the resource route. Hence we have deduced our resource to be `abc`.
+Notice how we only supplied `route` for our resource? Arrest automatically infers the resource name based on the resource route. Hence arrest deduces our resource to be `abc`.
 
 Now that our handler is initialized with a request, we can make a request with instances of type `UserRequest`
 
@@ -157,7 +157,7 @@ However, Arrest provides a dedicated `callback` option for each handler, which c
 If it is specified, the response type from the api call will be the response type of the callback.
 
 !!! Note
-    if you specify a response type to your handler, the callback needs to accept argument of appropriate response type.
+    If you specify a response type to your handler, the callback needs to accept argument of appropriate response type.
 
 Any exception thrown by the callback is re-raised.
 
@@ -214,14 +214,14 @@ You can also invoke the function as a free function as `await function_name(...)
 
 !!! Important
     Creating a handler this way does not have any data validation or pydantic wrapping enabled. Neither does it do exception handling.
-    It only does the default retry on httpx Exceptions using `backoff`.
+    It only does the default retry on exceptions using `tenacity`.
 
 If you use the decorator, the first two arguments of your decorated function will have to be defined as `self` and `url`.
 The `url` will be the fully-constructed path using the service's `base_url`, the resource's `route` and the provided `path` in the decorator, should you choose to use it,
 
 The `self` argument is a reference to the same resource instance you're decorating the function with, this means you can access all the members of the `Resource` class inside your function. Including `self._client`, which is where your custom client instance is stored if you have set it during your resource initialization (or injected it via service).
 
-You can also access all the httpx related args using `self._httpx_args` which is a `TypedDict`, so you can easily instantiate your own AsyncClient by unpacking and initializing with those args.
+You can also access all the httpx related args using `self.httpx_args` which is a dictionary, so you can easily instantiate your own AsyncClient by unpacking it.
 
 Or you can just roll with your own custom logic.
 
@@ -254,7 +254,7 @@ Once defined you have to access the function via the resource instance, as it is
             ...
 
         # or
-        async with httpx.AsyncClient(**self._httpx_args) as client:
+        async with httpx.AsyncClient(**self.httpx_args) as client:
             resp = await client.get(urlnew)
 
         # or

@@ -47,8 +47,8 @@ two-tuple of (certificate file, key file), or a three-tuple of (certificate
 file, key file, password).
 * **http2** - *(optional)* A boolean indicating if HTTP/2 support should be
 enabled. Defaults to `False`.
-* **proxies** - *(optional)* A dictionary mapping HTTP protocols to proxy
-URLs (*deprecated*).
+* **proxy** - *(optional)* A dictionary mapping HTTP protocols to proxy
+URLs
 * **mounts** - *(optional)* A dictionary mapping HTTP protocols to proxy
 URLs
 * **timeout** - *(optional)* The timeout configuration to use when sending
@@ -70,7 +70,6 @@ header. Set to a callable for automatic character set detection. Default: "utf-8
 **Parameters not included**
 
 * **base_url** - Already used internally in `Resource`, therefore no need to set it from kwargs
-* **app** - Not required currently as Arrest is primarily built to make external http requests
 
 ## `ResourceHandler`
 

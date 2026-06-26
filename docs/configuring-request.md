@@ -47,7 +47,7 @@ This is useful when you want to group together all the components of your reques
     ```
 
 !!! warning
-    Arrest does NOT convert any non-str values to str and convert `snake_case` to `kebab-case` before sending the fields as headers in the request.
+    Arrest does NOT convert non-str values to str or convert `snake_case` to `kebab-case` before sending the fields as headers in the request.
     If you want to send `kebab-case` headers you need to:
 
     1. specify them as `kebab-case` in the dictionary passed to the `headers` keyword or Resource class definition.
@@ -121,7 +121,7 @@ You can make use of `arrest.params.Body` when defining the body fields, although
     ```
 
 If you do not have a request type specified to the handler, you can still pass a pydantic object but no model validation will take place and Arrest will extract the fields as per their defaults.
-You can also pass a plain dictionary or a list as request. They will get passed as json payload.
+You can also pass a plain dictionary or a list as request. They will be passed as a JSON payload.
 
 !!! note "regarding json payloads"
     Arrest uses `orjson` for serializing the request payload. This was chosen because the stdlib `json` does not parse datetime which `orjson` does.
