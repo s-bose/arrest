@@ -38,8 +38,11 @@ jobs:
       - name: Run bandit
         run: uv run bandit .
 
+      - uses: pyupio/safety-action@1
+        with:
+          api-key: ${{ secrets.SAFETY_API_KEY }}
       - name: Run safety
-        run: uv run safety check -i 70612 # ignore Jinja2 vuln as the templates are sandboxed
+        run: uv run safety scan
 
       - name: Run Tests
         run: bash ./scripts/coverage.sh

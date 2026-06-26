@@ -22,7 +22,7 @@ coverage: install
 
 
 safety: install
-	uv run safety check -i 70612 # jinja2 SSTI vuln
+	uv run safety scan -i 70612 # jinja2 SSTI vuln
 
 fixtures:
 	uv run python scripts/regenerate_fixtures.py
