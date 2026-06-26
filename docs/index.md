@@ -59,9 +59,9 @@ And here is the same functionality achieved using Arrest.
 $ pip install arrest
 ```
 
-### using `poetry`
+### using `uv`
 ```shell
-$ poetry add arrest
+$ uv add arrest
 ```
 
 ### using `github`

@@ -66,18 +66,6 @@ This is useful when you want to group together all the components of your reques
     # header = {"x-user-agent": "mozila"}
     ```
 
-    ```python
-    # using pydantic@v1
-
-    class UserRequest(BaseModel):
-        x_user_agent: str = Header(alias="x-user-agent")
-
-        class Config:
-            allow_population_by_field_name = True
-
-    await service.user.post("/", request=UserRequest(x_user_agent="mozila"))
-    # header = {"x-user-agent": "mozila"}
-    ```
 
 
 ### Query

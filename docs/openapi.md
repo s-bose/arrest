@@ -14,7 +14,7 @@ Arrest uses [datamodel-code-generator](https://github.com/koxudaxi/datamodel-cod
 ```bash
 pip install "arrest[openapi]"
 
-poetry add 'arrest[openapi]'
+uv add 'arrest[openapi]'
 ```
 
 This installs two additional dependencies.
@@ -116,7 +116,6 @@ options:
   -h, --help            show this help message and exit
   -o OUTPUT, --output OUTPUT
                         output directory for generated files (default: current working directory)
-  --pydantic {v1,v2}    pydantic version to generate the schema definitions
   -u URL, --url URL     HTTP or file url for the openapi schema
   -d DIR, --dir DIR     Folder containing the files (default: OpenAPI specification title)
 ```
@@ -125,7 +124,7 @@ By default Arrest will look for the `title` of the specification and use that to
 If it can't find one, it will use `api` as the directory name instead.
 Alternatively you can specify your own custom name by providing `-d` or `--dir`
 
-`--pydantic` is used to denote the pydantic version (`v1` or `v2`) that the generated schema definitions will use (defaults to `v1`)
+`--pydantic` has been removed. Pydantic v2 is now the only supported version.
 
 
 ## What works and what does not
