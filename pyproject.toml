@@ -67,18 +67,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["arrest"]
 
-[tool.ruff]
-line-length = 110
-exclude = [
-    ".git",
-    ".mypy_cache",
-    ".tox",
-    ".venv",
-    "build",
-    "venv",
-    "tests/fixtures",
-]
-
 [tool.pytest.ini_options]
 addopts = "--ignore=example"
 
