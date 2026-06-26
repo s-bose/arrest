@@ -38,7 +38,7 @@ jobs:
       - name: Run bandit
         run: uv run bandit .
 
-      - uses: pyupio/safety-action@1
+      - uses: pyupio/safety-action@v1
         with:
           api-key: ${{ secrets.SAFETY_API_KEY }}
       - name: Run safety
