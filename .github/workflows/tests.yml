@@ -38,11 +38,10 @@ jobs:
       - name: Run bandit
         run: uv run bandit .
 
-      - uses: pyupio/safety-action@v1
+      - name: Run safety
+        uses: pyupio/safety-action@v1
         with:
           api-key: ${{ secrets.SAFETY_API_KEY }}
-      - name: Run safety
-        run: uv run safety scan
 
       - name: Run Tests
         run: bash ./scripts/coverage.sh
