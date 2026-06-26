@@ -31,12 +31,3 @@ jobs:
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: uv publish
-
-      - name: Install dependencies
-        run: uv sync --group docs
-
-      - name: Build docs
-        run: uv run mkdocs build
-
-      - name: Publish Docs
-        run: uv run mkdocs gh-deploy --force
