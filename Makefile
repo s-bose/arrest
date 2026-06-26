@@ -22,5 +22,5 @@ coverage:
 safety:
 	uv run safety check -i 70612 # jinja2 SSTI vuln
 
-serve:
+serve-docs:
 	serve htmlcov/ -p 3000
