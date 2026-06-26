@@ -53,7 +53,6 @@ version = "0.1.10"
 source = { editable = "." }
 dependencies = [
     { name = "argcomplete" },
-    { name = "datamodel-code-generator" },
     { name = "httpx" },
     { name = "orjson" },
     { name = "pydantic" },
@@ -90,7 +89,6 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "argcomplete", specifier = ">=3.2.2" },
-    { name = "datamodel-code-generator", specifier = ">=0.33.0" },
     { name = "datamodel-code-generator", marker = "extra == 'openapi'", specifier = ">=0.33.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "jinja2", marker = "extra == 'openapi'", specifier = ">=3.1.3" },

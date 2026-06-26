@@ -39,6 +39,7 @@ jobs:
         run: uv run bandit .
 
       - name: Run safety
+        if: runner.os != 'Windows'
         uses: pyupio/safety-action@v1
         with:
           api-key: ${{ secrets.SAFETY_API_KEY }}
