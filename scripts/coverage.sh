@@ -4,4 +4,4 @@ set -euox pipefail
 rm -rf .tox
 [ -e .coverage ] && rm .coverage
 
-poetry run tox
+uv run pytest --cov=arrest --cov-report=term-missing --no-cov-on-fail

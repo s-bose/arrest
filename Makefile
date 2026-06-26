@@ -1,8 +1,8 @@
 .PHONY: install clean lint test coverage docs
 
 install:
-	poetry install
-	poetry install --with dev,docs
+	uv sync
+	uv sync --group dev --group docs
 
 clean:
 	bash ./scripts/clean.sh
@@ -15,12 +15,12 @@ test:
 
 coverage:
 	bash ./scripts/coverage.sh; \
-	poetry run coverage report --show-missing; \
-	poetry run coverage html
+	uv run coverage report --show-missing; \
+	uv run coverage html
 
 
 safety:
-	poetry run safety check -i 70612 # jinja2 SSTI vuln
+	uv run safety check -i 70612 # jinja2 SSTI vuln
 
 serve:
 	serve htmlcov/ -p 3000

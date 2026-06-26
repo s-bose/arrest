@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-poetry run black --check .
-poetry run flake8 .
-isort --check-only --diff tests
+uv run black --check .
+uv run flake8 .
+uv run isort --check-only --diff tests

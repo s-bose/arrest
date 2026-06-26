@@ -1,13 +1,10 @@
-[tool.poetry]
+[project]
 name = "arrest"
 version = "0.1.10"
 description = "Arrest is a wrapper of pydantic and httpx to make your REST api calls type-safe and structured"
-authors = ["shiladitya <shiladitya_basu@live.com>"]
-license = "MIT"
+authors = [{ name = "shiladitya", email = "shiladitya_basu@live.com" }]
+license = { text = "MIT" }
 readme = "README.md"
-homepage = "https://s-bose.github.io/arrest"
-repository = "https://github.com/s-bose/arrest"
-documentation = "https://s-bose.github.io/arrest"
 keywords = ["arrest", "rest", "pydantic", "httpx", "api"]
 classifiers = [
     "Natural Language :: English",
@@ -17,57 +14,62 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries",
 ]
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0,<3.0.0",
+    "httpx>=0.27.0",
+    "orjson>=3.9.10",
+    "pyyaml>=6.0.1",
+    "argcomplete>=3.2.2",
+    "tenacity>=8.5.0",
+]
 
-[tool.poetry.urls]
-changelog = "https://s-bose.github.io/arrest/release-notes"
+[project.urls]
+Homepage = "https://s-bose.github.io/arrest"
+Repository = "https://github.com/s-bose/arrest"
+Documentation = "https://s-bose.github.io/arrest"
+Changelog = "https://s-bose.github.io/arrest/release-notes"
 
-[tool.poetry.scripts]
+[project.scripts]
 arrest = "arrest.__main__:main"
 
-[tool.poetry.dependencies]
-pydantic = ">=1.10.15, <3.0.0"
-python = "^3.10"
-httpx = "^0.27.0"
-orjson = "^3.9.10"
-pyyaml = "^6.0.1"
-jinja2 = { version = "^3.1.3", optional = true }
-argcomplete = "^3.2.2"
-datamodel-code-generator = { version = "0.25.8", optional = true }
-tenacity = "^8.5.0"
+[project.optional-dependencies]
+openapi = [
+    "jinja2>=3.1.3",
+    "datamodel-code-generator==0.25.8",
+]
 
-[tool.poetry.extras]
-openapi = ["jinja2", "datamodel-code-generator"]
-
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.0"
-pytest-cov = "^5.0.0"
-pytest-asyncio = "^0.21.1"
-pytest-mock = "^3.12.0"
-respx = "^0.20.2"
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^3.5.0"
-safety = "3.2.4"
-isort = "^5.12.0"
-bandit = "^1.7.5"
-flake8 = "^6.1.0"
-tox = "^4.11.4"
-black = "^24.4.2"
-
-
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.5.3"
-mkdocs-material = "9.5.42"
-mkdocstrings = { version = "0.25.2", extras = ["python"] }
-
-
-[tool.poetry.group.openapi.dependencies]
-datamodel-code-generator = "^0.25.8"
+[dependency-groups]
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=5.0.0",
+    "pytest-asyncio>=0.21.1",
+    "pytest-mock>=3.12.0",
+    "respx>=0.20.2",
+]
+dev = [
+    "pre-commit>=3.5.0",
+    "safety==3.2.4",
+    "isort>=5.12.0",
+    "bandit>=1.7.5",
+    "flake8>=6.1.0",
+    "black>=24.4.2",
+]
+docs = [
+    "mkdocs>=1.5.3",
+    "mkdocs-material==9.5.42",
+    "mkdocstrings[python]==0.25.2",
+]
+openapi = [
+    "datamodel-code-generator>=0.25.8",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["arrest"]
 
 [tool.black]
 target-version = ["py310"]
