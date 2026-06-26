@@ -1,7 +1,10 @@
 [project]
 site_name = "Arrest"
 site_author = "Shiladitya Bose"
+repo_name = "s-bose/arrest"
+repo_url = "https://github.com/s-bose/arrest"
 nav = [
+
     { Introduction = "index.md" },
     { "Getting Started" = [
         "getting-started.md",
