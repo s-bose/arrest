@@ -1,10 +1,8 @@
 import ssl
 from dataclasses import asdict, dataclass, field, fields
-from typing import Any, Callable, Mapping, Optional, TypedDict, Union
+from typing import Any, Callable, Mapping, TypedDict
 
 from httpx import AsyncBaseTransport, Limits, _types
-
-VerifyType = Union[bool, str, ssl.SSLContext, None]
 
 
 class HttpxClientInputs(TypedDict, total=False):
@@ -14,17 +12,16 @@ class HttpxClientInputs(TypedDict, total=False):
     For per-request defaults (headers, cookies, timeout, etc.) see :class:`ArrestConfig`.
     """
 
-    verify: Optional[VerifyType]
-    cert: Optional[_types.CertTypes]
-    http2: Optional[bool]
-    proxies: Optional[_types.ProxyTypes]
-    mounts: Optional[Mapping[str, AsyncBaseTransport]]
-    limits: Optional[Limits]
-    transport: Optional[AsyncBaseTransport]
-    trust_env: Optional[bool]
-    event_hooks: Optional[Mapping[str, list[Callable[..., Any]]]]
-    default_encoding: Union[str, Callable[[bytes], str]]
-    app: Callable[..., Any]
+    verify: ssl.SSLContext | bool | str
+    cert: _types.CertTypes | None
+    http2: bool
+    proxy: _types.ProxyTypes | None
+    mounts: Mapping[str, AsyncBaseTransport] | None
+    limits: Limits
+    transport: AsyncBaseTransport | None
+    trust_env: bool
+    event_hooks: Mapping[str, list[Callable[..., Any]]] | None
+    default_encoding: str | Callable[[bytes], str]
 
 
 @dataclass

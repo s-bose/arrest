@@ -48,7 +48,7 @@ def main(args: Optional[Sequence[str]] = None):
         return Exit.ERROR
 
     if not (output := namespace.output):
-        output = Path().resolve(namespace.output)
+        output = Path.cwd()
         print(
             f"No output path specified. Using current directory {output!s}",
             file=sys.stdout,

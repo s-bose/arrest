@@ -13,12 +13,13 @@ class ArrestHTTPException(ArrestError):
     def __init__(self, status_code: int, data: dict | str) -> None:
         self.status_code = status_code
         self.data = data
+        super().__init__(str(data))
 
 
 class ResponseError(ArrestError):
     def __init__(self, message: str):
-        super().__init__()
         self.message = message
+        super().__init__(message)
 
 
 class NotFoundException(ArrestError):

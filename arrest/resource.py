@@ -107,7 +107,7 @@ class Resource:
         """
 
         self._client: Optional[httpx.AsyncClient] = None
-        self._transport_kwargs = dict(client_kwargs)
+        self._transport_kwargs = HttpxClientInputs(**client_kwargs)
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route
