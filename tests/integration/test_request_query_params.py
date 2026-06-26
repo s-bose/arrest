@@ -33,11 +33,13 @@ async def test_request_query_params(service, mock_httpx):
 
     await service.user.post("/profile", request=UserRequest(limit=1, q="abc"))
 
-    assert len(mock_httpx["http_request"].calls) == 1
+    if len(mock_httpx["http_request"].calls) != 1:
+        raise AssertionError(
+            f"Expected 1 call, got {len(mock_httpx['http_request'].calls)}"
+        )
     req: httpx.Request = mock_httpx["http_request"].calls[0].request
-    assert httpx.QueryParams(req.url.query) == httpx.QueryParams(
-        {"limit": 1, "q": "abc"}
-    )
+    if httpx.QueryParams(req.url.query) != httpx.QueryParams({"limit": 1, "q": "abc"}):
+        raise AssertionError(f"Query params mismatch: {req.url.query}")
 
 
 @pytest.mark.asyncio
@@ -63,7 +65,10 @@ async def test_request_query_params_invalid_type(service, mocker, mock_httpx):
         await service.user.post("/profile", request=FooModel(bar=1))
 
     handler, _ = get_matching_handler.spy_return
-    assert handler.route == "/profile"
+    if handler.route != "/profile":
+        raise AssertionError(
+            f"Handler route mismatch: expected '/profile', got {handler.route!r}"
+        )
 
 
 @pytest.mark.asyncio
@@ -105,9 +110,10 @@ async def test_request_query_params_in_url(service, mock_httpx):
 
     await service.user.get("/profile?limit=2&q=abc")
     request: httpx.Request = mock_httpx["http_request"].calls[0].request
-    assert httpx.QueryParams(request.url.query) == httpx.QueryParams(
+    if httpx.QueryParams(request.url.query) != httpx.QueryParams(
         {"limit": "2", "q": "abc"}
-    )
+    ):
+        raise AssertionError(f"URL query params mismatch: {request.url.query}")
 
 
 @pytest.mark.asyncio
@@ -128,9 +134,10 @@ async def test_request_query_params_in_arguments(service, mock_httpx):
     await service.user.get("/profile", query={"limit": 2, "q": "abc"})
     request: httpx.Request = mock_httpx["http_request"].calls[0].request
 
-    assert httpx.QueryParams(request.url.params) == httpx.QueryParams(
+    if httpx.QueryParams(request.url.params) != httpx.QueryParams(
         {"limit": 2, "q": "abc"}
-    )
+    ):
+        raise AssertionError(f"Query arg params mismatch: {request.url.params}")
 
 
 @pytest.mark.asyncio
@@ -167,6 +174,9 @@ async def test_query_params_in_both_request_model_and_arguments(
     )
 
     request: httpx.Request = mock_httpx["http_request"].calls[0].request
-    assert httpx.QueryParams(request.url.params) == httpx.QueryParams(
+    if httpx.QueryParams(request.url.params) != httpx.QueryParams(
         {"limit": 2, "value": "xyz"}
-    )
+    ):
+        raise AssertionError(
+            f"Combined query/request params mismatch: {request.url.params}"
+        )

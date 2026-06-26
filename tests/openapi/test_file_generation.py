@@ -58,13 +58,17 @@ async def test_openapi_generate_from_file(fixture_dir, fixture_file):
         openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
-        assert set(list(FileNames)) == set(generated_files)
-
-        fixture_dir = os.path.join(FIXTURE_PATH, "generated", fixture_dir)
-        for filename in list(FileNames):
-            assert validate_file_contents(
-                src_dir=dir_name, dst_dir=fixture_dir, filename=filename
+        if set(list(FileNames)) != set(generated_files):
+            raise AssertionError(
+                f"Generated files mismatch: expected {set(FileNames)}, got {set(generated_files)}"
             )
+
+        fixture_dst_dir = os.path.join(FIXTURE_PATH, "generated", fixture_dir)
+        for filename in list(FileNames):
+            if not validate_file_contents(
+                src_dir=dir_name, dst_dir=fixture_dst_dir, filename=filename
+            ):
+                raise AssertionError(f"File content mismatch: {fixture_dir}/{filename}")
 
 
 @pytest.mark.asyncio
@@ -103,13 +107,19 @@ async def test_openapi_generate_from_http(
         openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
-        assert set(list(FileNames)) == set(generated_files)
-
-        fixture_dir = os.path.join(FIXTURE_PATH, "generated", openapi_version)
-        for filename in list(FileNames):
-            assert validate_file_contents(
-                src_dir=dir_name, dst_dir=fixture_dir, filename=filename
+        if set(list(FileNames)) != set(generated_files):
+            raise AssertionError(
+                f"Generated files mismatch: expected {set(FileNames)}, got {set(generated_files)}"
             )
+
+        fixture_dst_dir = os.path.join(FIXTURE_PATH, "generated", openapi_version)
+        for filename in list(FileNames):
+            if not validate_file_contents(
+                src_dir=dir_name, dst_dir=fixture_dst_dir, filename=filename
+            ):
+                raise AssertionError(
+                    f"File content mismatch: {openapi_version}/{filename}"
+                )
 
 
 @pytest.mark.asyncio
