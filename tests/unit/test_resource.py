@@ -190,7 +190,9 @@ def test_resource_multiple_handler_same_signature():
 async def test_resource_decorator():
     class UserResource(Resource):
         def __init__(self, **kwargs) -> None:
-            super().__init__(route="/user", handlers=[("GET", "/"), ("POST", "/")], **kwargs)
+            super().__init__(
+                route="/user", handlers=[("GET", "/"), ("POST", "/")], **kwargs
+            )
 
     res = UserResource()
 

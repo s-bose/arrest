@@ -16,10 +16,14 @@ async def test_decorate_custom_handler_within_service_scope(service, mock_httpx)
     )
 
     mock_httpx.get(url__regex="/user/posts/*").mock(
-        return_value=httpx.Response(200, json={"user": "john doe", "email": "john@doe.com"})
+        return_value=httpx.Response(
+            200, json={"user": "john doe", "email": "john@doe.com"}
+        )
     )
 
-    service.add_resource(Resource(route="/user", handlers=[("GET", "/"), ("POST", "/")]))
+    service.add_resource(
+        Resource(route="/user", handlers=[("GET", "/"), ("POST", "/")])
+    )
 
     @service.user.handler("/posts")
     async def get_posts(self, url, *, post_id: int):
@@ -50,7 +54,9 @@ async def test_decorate_custom_handler_outside_service_scope(service, mock_httpx
     )
 
     mock_httpx.get(url__regex="/user/posts/*").mock(
-        return_value=httpx.Response(200, json={"user": "john doe", "email": "john@doe.com"})
+        return_value=httpx.Response(
+            200, json={"user": "john doe", "email": "john@doe.com"}
+        )
     )
 
     user = Resource(route="/user", handlers=[("GET", "/"), ("POST", "/")])

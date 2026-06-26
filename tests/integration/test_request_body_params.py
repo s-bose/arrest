@@ -7,9 +7,9 @@ import httpx
 import pytest
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
+from pydantic import RootModel
 from respx.patterns import M
 
-from arrest._config import PYDANTIC_V2
 from arrest.http import Methods
 from arrest.params import Body
 from arrest.resource import Resource
@@ -30,16 +30,8 @@ class UserRequestDC:
     dob: typing.Optional[datetime] = None
 
 
-if PYDANTIC_V2:
-    from pydantic import RootModel
-
-    class UserRequestRoot(RootModel):
-        root: list[UserRequest]
-
-else:
-
-    class UserRequestRoot(BaseModel):
-        __root__: list[UserRequest]
+class UserRequestRoot(RootModel):
+    root: list[UserRequest]
 
 
 @pytest.mark.parametrize(
@@ -140,10 +132,8 @@ else:
             None,
         ),
         (
-            (
-                UserRequestRoot(root=[{"id": 0, "name": "username", "email": "user@email.com"}])
-                if PYDANTIC_V2
-                else UserRequestRoot(__root__=[{"id": 0, "name": "username", "email": "user@email.com"}])
+            UserRequestRoot(
+                root=[{"id": 0, "name": "username", "email": "user@email.com"}]
             ),
             UserRequestRoot,
             [{"id": 0, "name": "username", "email": "user@email.com", "dob": None}],

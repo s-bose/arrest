@@ -14,7 +14,9 @@ from arrest import Resource, Service
     ],
 )
 def test_httpx_client_kwargs(service: Service, service_args: dict, resource_args: dict):
-    service.add_resource(Resource(name="abc", route="/abc", **resource_args), **service_args)
+    service.add_resource(
+        Resource(name="abc", route="/abc", **resource_args), **service_args
+    )
 
     assert service.abc._httpx_args["headers"] == {"abc": "123"}
     assert service.abc._httpx_args["cookies"] == {"x-cookie": 60}

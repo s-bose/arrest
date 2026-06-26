@@ -11,7 +11,7 @@ try:
 except ImportError:
     pass
 
-from arrest._config import PYDANTIC_V2
+
 from arrest.utils import (
     extract_model_field,
     extract_resource_and_suffix,
@@ -45,15 +45,8 @@ class MyEnum(str, enum.Enum):
     field = "field"
 
 
-if PYDANTIC_V2:
-
-    class MyModelRoot(RootModel):
-        root: list[MyModel]
-
-else:
-
-    class MyModelRoot(BaseModel):
-        __root__: list[MyModel]
+class MyModelRoot(RootModel):
+    root: list[MyModel]
 
 
 def test_extract_model_field():
@@ -115,7 +108,12 @@ def test_extract_resource_and_suffix(path: str, resource: str, suffix: str):
         (list[MyEnum], ["field"], list, MyEnum),
         (MyModel, {"a": "a", "b": "b", "c": 123}, MyModel, None),
         (MyModel, MyModel(a="a", b="b", c=123), MyModel, None),
-        (list[MyModel], [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}], list, MyModel),
+        (
+            list[MyModel],
+            [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
+            list,
+            MyModel,
+        ),
         (
             typing.List[MyModel],
             [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
@@ -136,7 +134,12 @@ def test_extract_resource_and_suffix(path: str, resource: str, suffix: str):
         ),
         (dict[str, MyModel], {"val": {"a": "a", "b": "b", "c": 123}}, dict, MyModel),
         (dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}, dict, MyModel),
-        (typing.Dict[str, MyModel], {"val": MyModel(a="a", b="b", c=123)}, dict, MyModel),
+        (
+            typing.Dict[str, MyModel],
+            {"val": MyModel(a="a", b="b", c=123)},
+            dict,
+            MyModel,
+        ),
         (MyModelDC, {"a": "a", "b": "b", "c": 123}, MyModelDC, None),
         (MyModelDC, MyModelDC(a="a", b="b", c=123), MyModelDC, None),
         (MyModelRoot, [{"a": "a", "b": "b", "c": 123}], MyModelRoot, None),
@@ -184,7 +187,10 @@ def test_validate_model(type_, obj, new_type, member_type):
             (MyModel(a="a", b="b", c=123), MyModel(a="A", b="B", c=456)),
             [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
         ),
-        ({"val": MyModel(a="a", b="b", c=123)}, {"val": {"a": "a", "b": "b", "c": 123}}),
+        (
+            {"val": MyModel(a="a", b="b", c=123)},
+            {"val": {"a": "a", "b": "b", "c": 123}},
+        ),
         (MyModelDC(a="a", b="b", c=123), {"a": "a", "b": "b", "c": 123}),
         (
             [MyModelDC(a="a", b="b", c=123), MyModelDC(a="A", b="B", c=456)],
@@ -194,7 +200,10 @@ def test_validate_model(type_, obj, new_type, member_type):
             (MyModelDC(a="a", b="b", c=123), MyModelDC(a="A", b="B", c=456)),
             [{"a": "a", "b": "b", "c": 123}, {"a": "A", "b": "B", "c": 456}],
         ),
-        ({"val": MyModelDC(a="a", b="b", c=123)}, {"val": {"a": "a", "b": "b", "c": 123}}),
+        (
+            {"val": MyModelDC(a="a", b="b", c=123)},
+            {"val": {"a": "a", "b": "b", "c": 123}},
+        ),
         (datetime(year=2023, month=1, day=1), "2023-01-01T00:00:00"),
     ],
 )
@@ -203,10 +212,7 @@ def test_jsonable_encoder(obj, obj_serialized):
 
 
 def test_jsonable_encoder_rootmodel():
-    if PYDANTIC_V2:
-        obj = MyModelRoot(root=[MyModel(a="a", b="b", c=123)])
-    else:
-        obj = MyModelRoot(__root__=[MyModel(a="a", b="b", c=123)])
+    obj = MyModelRoot(root=[MyModel(a="a", b="b", c=123)])
 
     obj_serialized = [{"a": "a", "b": "b", "c": 123}]
 

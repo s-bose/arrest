@@ -2,7 +2,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from arrest.openapi.init_template import InitTemplate
-from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, ResourceTemplate
+from arrest.openapi.resource_template import (
+    HandlerSchema,
+    ResourceSchema,
+    ResourceTemplate,
+)
 from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 
 
@@ -21,7 +25,9 @@ def test_service_template():
 
     with TemporaryDirectory() as tmpdir:
         filepath = tmpdir
-        content = ServiceTemplate(services=[service], destination_path=Path(filepath)).render()
+        content = ServiceTemplate(
+            services=[service], destination_path=Path(filepath)
+        ).render()
 
         assert content == (
             "from arrest import Service\n"
@@ -40,7 +46,9 @@ def test_resource_template():
         name="user",
         route="/user",
         handlers=[
-            HandlerSchema(method="GET", route="/", request="UserRequest", response="UserResponse"),
+            HandlerSchema(
+                method="GET", route="/", request="UserRequest", response="UserResponse"
+            ),
             HandlerSchema(method="PUT", route="/{userId}", request="UserRequest"),
             HandlerSchema(method="GET", route="/{postsId}"),
         ],
@@ -49,7 +57,9 @@ def test_resource_template():
     with TemporaryDirectory() as tmpdir:
         filepath = tmpdir
         content = ResourceTemplate(
-            schema_module="models", resources=[resource], destination_path=Path(filepath)
+            schema_module="models",
+            resources=[resource],
+            destination_path=Path(filepath),
         ).render()
 
         assert content == (

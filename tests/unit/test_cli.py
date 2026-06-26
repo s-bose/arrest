@@ -61,7 +61,8 @@ def test_output(capsys: CaptureFixture[str], mocker):
 
 def test_exception(capsys: CaptureFixture[str], mocker):
     mocker.patch(
-        "arrest.openapi.OpenAPIGenerator.generate_schema", side_effect=ArrestError("something went wrong")
+        "arrest.openapi.OpenAPIGenerator.generate_schema",
+        side_effect=ArrestError("something went wrong"),
     )
 
     return_value = main(["--url", "tests/fixtures/openapi_petstore.json"])

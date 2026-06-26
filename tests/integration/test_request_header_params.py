@@ -3,7 +3,6 @@ import pytest
 from pydantic import BaseModel, ConfigDict
 from respx.patterns import M
 
-from arrest._config import PYDANTIC_V2
 from arrest.http import Methods
 from arrest.params import Body, Header
 from arrest.resource import Resource
@@ -43,7 +42,9 @@ from arrest.resource import Resource
     ],
 )
 @pytest.mark.asyncio
-async def test_request_header_params(service, mock_httpx, resource_header, kwarg_header, expected_result):
+async def test_request_header_params(
+    service, mock_httpx, resource_header, kwarg_header, expected_result
+):
     patterns = [
         M(url__regex="/user/*", method__in=["POST"]),
     ]
@@ -53,23 +54,13 @@ async def test_request_header_params(service, mock_httpx, resource_header, kwarg
     )
 
     class UserRequest(BaseModel):
-        if PYDANTIC_V2:
-            x_max_age: str = Header(serialization_alias="x-max-age")
-            x_user_agent: str = Header(serialization_alias="x-user-agent")
-        else:
-            x_max_age: str = Header(alias="x-max-age")
-            x_user_agent: str = Header(alias="x-user-agent")
+        model_config = ConfigDict(populate_by_name=True)
+        x_max_age: str = Header(serialization_alias="x-max-age")
+        x_user_agent: str = Header(serialization_alias="x-user-agent")
 
         name: str = Body(...)
         email: str
         password: str
-
-        if PYDANTIC_V2:
-            model_config = ConfigDict(populate_by_name=True)
-        else:
-
-            class Config:
-                allow_population_by_field_name = True
 
     service.add_resource(
         Resource(
@@ -102,9 +93,9 @@ async def test_request_header_params(service, mock_httpx, resource_header, kwarg
 
 @pytest.mark.asyncio
 async def test_request_header_params_arguments(service, mock_httpx):
-    mock_httpx.route(url__regex="/user/*", name="http_request", method__in=["GET", "POST"]).mock(
-        return_value=httpx.Response(200, json={"status": "OK"})
-    )
+    mock_httpx.route(
+        url__regex="/user/*", name="http_request", method__in=["GET", "POST"]
+    ).mock(return_value=httpx.Response(200, json={"status": "OK"}))
 
     service.add_resource(
         Resource(
@@ -133,22 +124,12 @@ async def test_header_params_in_both_request_model_and_arguments(service, mock_h
     )
 
     class UserRequest(BaseModel):
-        if PYDANTIC_V2:
-            x_user_agent: str = Header(serialization_alias="x-user-agent")
-        else:
-            x_user_agent: str = Header(alias="x-user-agent")
+        model_config = ConfigDict(populate_by_name=True)
+        x_user_agent: str = Header(serialization_alias="x-user-agent")
 
         name: str
         email: str
         password: str
-
-        if PYDANTIC_V2:
-            model_config = ConfigDict(populate_by_name=True)
-
-        else:
-
-            class Config:
-                allow_population_by_field_name = True
 
     service.add_resource(
         Resource(
@@ -161,7 +142,9 @@ async def test_header_params_in_both_request_model_and_arguments(service, mock_h
 
     await service.user.get(
         "/profile",
-        request=UserRequest(x_user_agent="mozila", name="abc", email="abc@email.com", password="123"),
+        request=UserRequest(
+            x_user_agent="mozila", name="abc", email="abc@email.com", password="123"
+        ),
         headers={"x-header": "123"},
     )
 

@@ -5,7 +5,12 @@ from typing import Any
 import httpx
 import pytest
 
-from arrest.exceptions import ArrestError, ArrestHTTPException, HandlerNotFound, ResourceNotFound
+from arrest.exceptions import (
+    ArrestError,
+    ArrestHTTPException,
+    HandlerNotFound,
+    ResourceNotFound,
+)
 from arrest.http import Methods
 from arrest.resource import Resource
 
@@ -44,7 +49,9 @@ async def test_http_exception(service, mock_httpx):
 async def test_non_json_http_exception(service, mock_httpx):
     mock_httpx.post(url__regex="/user/*", name="http_request").mock(
         side_effect=httpx.Response(
-            status_code=400, text="<xml>helloworld</xml>", headers={"Content-Type": "application/xml"}
+            status_code=400,
+            text="<xml>helloworld</xml>",
+            headers={"Content-Type": "application/xml"},
         )
     )
 
@@ -67,7 +74,9 @@ async def test_non_json_http_exception(service, mock_httpx):
 async def test_non_json_response_exception(service, mock_httpx):
     mock_httpx.post(url__regex="/user/*", name="http_request").mock(
         side_effect=httpx.Response(
-            status_code=200, text="<xml>helloworld</xml>", headers={"Content-Type": "application/xml"}
+            status_code=200,
+            text="<xml>helloworld</xml>",
+            headers={"Content-Type": "application/xml"},
         )
     )
 
@@ -160,12 +169,18 @@ async def test_resource_not_found(service):
     argnames="exc_raised, expected_exc_caught, detail",
     argvalues=[
         (ArrestError("Internal Error"), HTTPException, "Something went wrong"),
-        (ArrestHTTPException(status_code=404, data="Not found"), HTTPException, "Not found"),
+        (
+            ArrestHTTPException(status_code=404, data="Not found"),
+            HTTPException,
+            "Not found",
+        ),
         (ValueError("foo is not bar"), None, None),
     ],
 )
 @pytest.mark.asyncio
-async def test_custom_exception_handler(service, mocker, exc_raised, expected_exc_caught, detail):
+async def test_custom_exception_handler(
+    service, mocker, exc_raised, expected_exc_caught, detail
+):
     def http_exc_handler(exc: ArrestHTTPException):
         raise HTTPException(status_code=exc.status_code, detail=exc.data)
 
