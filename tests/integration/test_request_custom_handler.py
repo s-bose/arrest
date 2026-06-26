@@ -29,7 +29,7 @@ async def test_decorate_custom_handler_within_service_scope(service, mock_httpx)
     async def get_posts(self, url, *, post_id: int):
         url = f"{url}/{post_id}"
 
-        async with httpx.AsyncClient(**self._httpx_args) as client:
+        async with httpx.AsyncClient(**self.httpx_args) as client:
             resp = await client.get(url)
 
         return resp.json()
@@ -65,7 +65,7 @@ async def test_decorate_custom_handler_outside_service_scope(service, mock_httpx
     @user.handler("/posts")
     async def get_posts(self, url, *, post_id: int):
         url = f"{url}/{post_id}"
-        async with httpx.AsyncClient(**self._httpx_args) as client:
+        async with httpx.AsyncClient(**self.httpx_args) as client:
             resp = await client.get(url)
 
         return resp.json()

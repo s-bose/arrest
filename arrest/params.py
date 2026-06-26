@@ -12,7 +12,7 @@ class ParamTypes(Enum):
     body = "Body"
 
 
-class Param(FieldInfo):
+class Param(FieldInfo):  # type: ignore[misc]
     _param_type: ParamTypes
 
     def __init__(self, default: Any = None, **kwargs: Unpack[Any]) -> None:

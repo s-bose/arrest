@@ -13,13 +13,15 @@ from arrest import Resource, Service
         ({"headers": {"abc": "123"}}, {"cookies": {"x-cookie": 60}}),
     ],
 )
-def test_httpx_client_kwargs(service: Service, service_args: dict, resource_args: dict):
+def test_config_headers_cookies(
+    service: Service, service_args: dict, resource_args: dict
+):
     service.add_resource(
         Resource(name="abc", route="/abc", **resource_args), **service_args
     )
 
-    assert service.abc._httpx_args["headers"] == {"abc": "123"}
-    assert service.abc._httpx_args["cookies"] == {"x-cookie": 60}
+    assert service.abc.config.headers == {"abc": "123"}
+    assert service.abc.config.cookies == {"x-cookie": 60}
 
 
 @pytest.mark.asyncio

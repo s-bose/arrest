@@ -89,8 +89,8 @@ async def test_non_json_response_exception(service, mock_httpx):
         )
     )
 
-    with pytest.raises(json.JSONDecodeError):
-        await service.user.post("/profile")
+    response = await service.user.post("/profile")
+    assert response == "<xml>helloworld</xml>"
 
 
 @pytest.mark.asyncio
