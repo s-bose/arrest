@@ -24,7 +24,9 @@ class UserResponse(BaseModel):
 
 @pytest.mark.asyncio
 async def test_response_type(service, mock_httpx):
-    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)]))
+    service.add_resource(
+        Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)])
+    )
 
     mock_response = dict(
         user_id=str(uuid4()),
@@ -46,7 +48,9 @@ async def test_response_type(service, mock_httpx):
 
 @pytest.mark.asyncio
 async def test_list_response_type(service, mock_httpx):
-    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/", None, list[UserResponse])]))
+    service.add_resource(
+        Resource(route="/user", handlers=[(Methods.GET, "/", None, list[UserResponse])])
+    )
 
     res_1 = dict(
         user_id=str(uuid4()),
@@ -78,7 +82,9 @@ async def test_list_response_type(service, mock_httpx):
 
 @pytest.mark.asyncio
 async def test_response_type_invalid_type(service, mock_httpx):
-    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)]))
+    service.add_resource(
+        Resource(route="/user", handlers=[(Methods.GET, "/", None, UserResponse)])
+    )
     mock_httpx.get(url__regex="/user/*", name="http_request").mock(
         return_value=httpx.Response(200, json=123.45)
     )
@@ -106,3 +112,34 @@ async def test_no_response_type(service, mock_httpx):
 
     response = await service.user.get("/")
     assert response == mock_response
+
+
+@pytest.mark.asyncio
+async def test_empty_response_returns_none(service, mock_httpx):
+    mock_httpx.get(url__regex="/user/*", name="http_request").mock(
+        return_value=httpx.Response(204)
+    )
+
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/")]))
+
+    response = await service.user.get("/")
+    assert response is None
+
+
+@pytest.mark.asyncio
+async def test_response_undecodable_body(service, mock_httpx):
+    """Non-JSON body with charset mismatch → ResponseError."""
+    from arrest.exceptions import ResponseError
+
+    mock_httpx.get(url__regex="/user/*", name="http_request").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"\xff\xfe",
+            headers={"Content-Type": "application/json; charset=iso-8859-1"},
+        )
+    )
+
+    service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/")]))
+
+    with pytest.raises(ResponseError):
+        await service.user.get("/")

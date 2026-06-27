@@ -79,7 +79,11 @@ def test_generate_services(servers, service_ids, urls):
         (
             {
                 "200": Response(
-                    content={"application/json": MediaType(schema=Reference(ref="#/components/schemas/User"))}
+                    content={
+                        "application/json": MediaType(
+                            schema=Reference(ref="#/components/schemas/User")
+                        )
+                    }
                 )
             },
             None,
@@ -91,7 +95,10 @@ def test_generate_services(servers, service_ids, urls):
                 "200": Response(
                     content={
                         "application/json": MediaType(
-                            schema={"type": "array", "items": {"$ref": "#/components/schemas/Pet"}}
+                            schema={
+                                "type": "array",
+                                "items": {"$ref": "#/components/schemas/Pet"},
+                            }
                         )
                     }
                 )
@@ -106,7 +113,10 @@ def test_generate_services(servers, service_ids, urls):
                 "200": Response(
                     content={
                         "application/xml": MediaType(
-                            schema={"type": "array", "items": {"$ref": "#/components/schemas/Pet"}}
+                            schema={
+                                "type": "array",
+                                "items": {"$ref": "#/components/schemas/Pet"},
+                            }
                         )
                     }
                 )
@@ -124,15 +134,11 @@ def test_generate_services(servers, service_ids, urls):
         (
             None,
             RequestBody(
-                content={"application/json": MediaType(schema=Reference(ref="#/components/schemas/User"))}
-            ),
-            "User",
-            None,
-        ),
-        (
-            None,
-            RequestBody(
-                content={"application/json": MediaType(schema=Reference(ref="#/components/schemas/User"))}
+                content={
+                    "application/json": MediaType(
+                        schema=Reference(ref="#/components/schemas/User")
+                    )
+                }
             ),
             "User",
             None,
@@ -142,7 +148,22 @@ def test_generate_services(servers, service_ids, urls):
             RequestBody(
                 content={
                     "application/json": MediaType(
-                        schema={"type": "array", "items": {"$ref": "#/components/schemas/Pet"}}
+                        schema=Reference(ref="#/components/schemas/User")
+                    )
+                }
+            ),
+            "User",
+            None,
+        ),
+        (
+            None,
+            RequestBody(
+                content={
+                    "application/json": MediaType(
+                        schema={
+                            "type": "array",
+                            "items": {"$ref": "#/components/schemas/Pet"},
+                        }
                     )
                 }
             ),
@@ -162,7 +183,11 @@ def test_generate_resources(responses, request_body, parsed_request, parsed_resp
 
     openapi = OpenAPI(
         info=Info(title="api", version="0.1"),
-        paths={"/user/items": PathItem(get=Operation(responses=responses, requestBody=request_body))},
+        paths={
+            "/user/items": PathItem(
+                get=Operation(responses=responses, requestBody=request_body)
+            )
+        },
     )
 
     resources = list(generator._build_arrest_resources(openapi=openapi))
@@ -175,3 +200,10 @@ def test_generate_resources(responses, request_body, parsed_request, parsed_resp
     assert handler.route == "/items"
     assert handler.request == parsed_request
     assert handler.response == parsed_response
+
+
+def test_build_handlers_none_path_item():
+    """_build_handlers returns empty list when path_item is None."""
+    gen = OpenAPIGenerator(url="https://example.com/openapi.json", output_path="/tmp")
+    result = gen._build_handlers(route="/users", path_item=None)
+    assert result == []

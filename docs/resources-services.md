@@ -3,9 +3,9 @@ A resource can be thought of as an entity that provides one or more HTTP verb ac
 
 Resources have a base `route`, a `name`, (or derived from `route`), and a list of handlers.
 
-Handlers are a list of paths and their correspnding HTTP verb. These are the many different ways of interacting with the said resource.
+Handlers are a list of paths and their corresponding HTTP verb. These are the many different ways of interacting with the said resource.
 
-For example, you can define a resource as followed:
+For example, you can define a resource as follows:
 
 ```python
 user = Resource(
@@ -80,14 +80,14 @@ The caveat is that you have to manually close the client after you are done. Usu
 ### Using httpx arguments
 You can directly pass most of the httpx client arguments as kwargs for the Resource instance. This allows you to have a more fine-grained control on configuring the httpx client.
 
-For the full list of available arguments, please check [here](api.md/#httpx-client-arguments)
+For the full list of available arguments, please check [here](api.md#httpx-client-arguments)
 
 ## Services
 Services are the main entrypoint to your API calls. A service is a single url endpoint of a server whose REST APIs you are going to interface.
 A service has the following core fields.
 
 - *name* - name of the service
-- *url* - URl of the service (without any trailing slashes)
+- *url* - URL of the service (without any trailing slashes)
 - *resources* - a list of resources for this service
 
 ---
@@ -124,7 +124,7 @@ You can directly pass most of the httpx client arguments as kwargs for the Servi
 
 This will override these fields if also set from any resource under this service.
 
-For the full list of available arguments, please check [here](api.md/#httpx-client-arguments)
+For the full list of available arguments, please check [here](api.md#httpx-client-arguments)
 
 
 ## Root resources

@@ -1,26 +1,31 @@
-.PHONY: install clean lint test coverage docs
+.PHONY: install clean lint lint-fix test coverage fixtures docs
 
 install:
-	poetry install
-	poetry install --with dev,docs
+	uv sync --all-groups --all-extras
 
 clean:
 	bash ./scripts/clean.sh
 
-lint:
+lint: install
 	bash ./scripts/lint.sh
 
-test:
+lint-fix: install
+	bash ./scripts/lint.sh --fix
+
+test: install
 	bash ./scripts/test.sh
 
-coverage:
+coverage: install
 	bash ./scripts/coverage.sh; \
-	poetry run coverage report --show-missing; \
-	poetry run coverage html
+	uv run coverage report --show-missing; \
+	uv run coverage html
 
 
-safety:
-	poetry run safety check -i 70612 # jinja2 SSTI vuln
+safety: install
+	uv run safety scan -i 70612 # jinja2 SSTI vuln
 
-serve:
-	serve htmlcov/ -p 3000
+fixtures:
+	uv run python scripts/regenerate_fixtures.py
+
+serve-docs: install
+	uv run zensical serve

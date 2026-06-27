@@ -18,20 +18,34 @@ from typing import IO, Generator, Optional
 import httpx
 import yaml
 
-from arrest.defaults import MAX_RETRIES, OPENAPI_DIRECTORY, OPENAPI_SCHEMA_FILENAME, ROOT_RESOURCE
+from arrest.defaults import (
+    MAX_RETRIES,
+    OPENAPI_DIRECTORY,
+    OPENAPI_SCHEMA_FILENAME,
+    ROOT_RESOURCE,
+)
 from arrest.exceptions import ArrestError
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.utils import retry
 
 try:
-    from datamodel_code_generator import DataModelType, InputFileType, OpenAPIScope, generate
+    from datamodel_code_generator import (
+        InputFileType,
+        OpenAPIScope,
+        generate,
+    )
+    from datamodel_code_generator.enums import DataModelType
 except ImportError:  # pragma: no cover
     sys.exit(1)
 
 from arrest.openapi._config import Format
 from arrest.openapi.init_template import InitTemplate
-from arrest.openapi.resource_template import HandlerSchema, ResourceSchema, ResourceTemplate
+from arrest.openapi.resource_template import (
+    HandlerSchema,
+    ResourceSchema,
+    ResourceTemplate,
+)
 from arrest.openapi.service_template import ServiceSchema, ServiceTemplate
 from arrest.openapi.spec import OpenAPI, Operation, PathItem, Reference, Server
 from arrest.openapi.utils import convert_to_pascal, get_ref_schema
@@ -45,7 +59,6 @@ class OpenAPIGenerator:
         url: str,
         output_path: str,
         dir_name: Optional[str] = None,
-        use_pydantic_v2: Optional[bool] = False,
     ) -> None:
         """
         class for generating Arrest services, resources and schema
@@ -64,18 +77,20 @@ class OpenAPIGenerator:
                 path where the generated files will be saved
             dir_name:
                 (optional) specify the folder name containing the files
-            use_pydantic_v2:
-                (optional) use pydantic v2 (default: False)
 
         """
         self.url: str = url
         self.output_path: str = output_path
-        self.dir_name: str = dir_name
-        self.use_pydantic_v2 = use_pydantic_v2
+        self.dir_name = dir_name
 
     @retry(
         n_retries=MAX_RETRIES,
-        exceptions=(httpx.HTTPError, httpx.TimeoutException, httpx.RequestError, Exception),
+        exceptions=(
+            httpx.HTTPError,
+            httpx.TimeoutException,
+            httpx.RequestError,
+            Exception,
+        ),
     )
     def download_openapi_spec(self) -> bytes:
         if self.url.startswith("http"):
@@ -87,7 +102,7 @@ class OpenAPIGenerator:
             with open(self.url, "rb") as file:
                 return file.read()
 
-    def generate_schema(self, fmt: Optional[Format] = None):
+    def generate_schema(self, fmt: Optional[Format] = None, silent: bool = False):
         """Generates the boilerplate files against an OpenAPI Spec
 
         Parameters:
@@ -97,7 +112,7 @@ class OpenAPIGenerator:
             ArrestError: if the output path does not exist
         """
         openapi_bytes = self.download_openapi_spec()
-        fmt = fmt if fmt else self.url.split(".")[-1]
+        fmt = fmt if fmt else Format(self.url.split(".")[-1])
         openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
 
         output_path = Path(self.output_path)
@@ -110,24 +125,38 @@ class OpenAPIGenerator:
 
         Path.mkdir(output_path, exist_ok=True)
 
-        self.generate_component_schema(input_bytes=openapi_bytes, schema_path=schema_path)
-        resources = self.generate_resource_file(
-            openapi=openapi, schema_path=schema_path, resource_path=output_path
+        self.generate_component_schema(
+            input_bytes=openapi_bytes, schema_path=schema_path, silent=silent
         )
-        self.generate_service_file(openapi=openapi, service_path=output_path, resources=resources)
+        resources = self.generate_resource_file(
+            openapi=openapi,
+            schema_path=schema_path,
+            resource_path=output_path,
+            silent=silent,
+        )
+        self.generate_service_file(
+            openapi=openapi,
+            service_path=output_path,
+            resources=resources,
+            silent=silent,
+        )
         InitTemplate(destination_path=output_path).render_and_save()
 
-    def generate_component_schema(self, input_bytes: bytes, schema_path: Path | str) -> None:
+    def generate_component_schema(
+        self, input_bytes: bytes, schema_path: Path, silent: bool = False
+    ) -> None:
         generate(
             input_=input_bytes.decode("utf-8"),
             input_file_type=InputFileType.OpenAPI,
             openapi_scopes=[OpenAPIScope.Schemas],
             output=schema_path,
-            output_model_type=(
-                DataModelType.PydanticV2BaseModel if self.use_pydantic_v2 else DataModelType.PydanticBaseModel
-            ),
+            output_model_type=DataModelType.PydanticV2BaseModel,
         )
-        logger.info(f"generated pydantic models from schema definitions in : {schema_path}")
+
+        if not silent:
+            logger.info(
+                f"generated pydantic models from schema definitions in : {schema_path}"
+            )
 
     def generate_service_file(
         self,
@@ -136,20 +165,33 @@ class OpenAPIGenerator:
         service_name: Optional[str] = None,
         service_path: Path | str,
         resources: list[ResourceSchema],
+        silent: bool = False,
     ):
         services = list(
-            self._build_arrest_service(openapi=openapi, service_name=service_name, resources=resources)
+            self._build_arrest_service(
+                openapi=openapi, service_name=service_name, resources=resources
+            )
         )
 
-        ServiceTemplate(services=services, destination_path=service_path).render_and_save()
-        logger.info(f"generated arrest services in : {service_path}/services.py")
+        ServiceTemplate(
+            services=services, destination_path=service_path
+        ).render_and_save()
 
-    def get_service_name(self, openapi: OpenAPI, service_name: Optional[str] = None) -> str:
+        if not silent:
+            logger.info(f"generated arrest services in : {service_path}/services.py")
+
+    def get_service_name(
+        self, openapi: OpenAPI, service_name: Optional[str] = None
+    ) -> str:
         name = service_name or openapi.info.title or OPENAPI_DIRECTORY
         return sanitize_name(name)
 
     def generate_resource_file(
-        self, openapi: OpenAPI, schema_path: Path | str, resource_path: Path | str
+        self,
+        openapi: OpenAPI,
+        schema_path: Path | str,
+        resource_path: Path | str,
+        silent: bool = False,
     ) -> list[ResourceSchema]:
         resources = list(self._build_arrest_resources(openapi=openapi))
         path, _ = os.path.splitext(schema_path)
@@ -158,14 +200,20 @@ class OpenAPIGenerator:
         ResourceTemplate(
             schema_module=module, resources=resources, destination_path=resource_path
         ).render_and_save()
-        logger.info(f"generated arrest resources in : {resource_path}/resources.py")
+
+        if not silent:
+            logger.info(f"generated arrest resources in : {resource_path}/resources.py")
         return resources
 
     def _build_arrest_service(
-        self, openapi: OpenAPI, service_name: Optional[str] = None, resources: list[ResourceSchema] = None
+        self,
+        openapi: OpenAPI,
+        service_name: Optional[str] = None,
+        resources: list[ResourceSchema] | None = None,
     ) -> Generator[ServiceSchema, None, None]:
         name = service_name or self.get_service_name(openapi)
 
+        resources = resources or []
         resource_names = [res.name for res in resources]
         for idx, server in enumerate(openapi.servers):
             for idxx, url in enumerate(self._extract_url(server)):
@@ -194,7 +242,9 @@ class OpenAPIGenerator:
                 kwargs = {k: v for k, v in zip(variables.keys(), values)}
                 yield url.format(**kwargs)
 
-    def _build_arrest_resources(self, openapi: OpenAPI) -> Generator[ResourceSchema, None, None]:
+    def _build_arrest_resources(
+        self, openapi: OpenAPI
+    ) -> Generator[ResourceSchema, None, None]:
         def prefix(path: str) -> str:
             """
             ("/base/xyz/123") -> "base"
@@ -211,14 +261,21 @@ class OpenAPIGenerator:
                     route = route.removeprefix(f"/{key}")
                 handlers.extend(self._build_handlers(route=route, path_item=path_item))
             if key:
-                yield ResourceSchema(name=sanitize_name(key), route=f"/{key}", handlers=handlers)
+                yield ResourceSchema(
+                    name=sanitize_name(key), route=f"/{key}", handlers=handlers
+                )
             else:
                 yield ResourceSchema(name=ROOT_RESOURCE, route=key, handlers=handlers)
 
-    def _build_handlers(self, route: str, path_item: PathItem) -> list[HandlerSchema]:
+    def _build_handlers(
+        self, route: str, path_item: PathItem | None
+    ) -> list[HandlerSchema]:
         handlers = []
+        if not path_item:
+            return handlers
+
         for method in list(Methods):
-            operation: Operation
+            operation: Operation | None
             if operation := getattr(path_item, str(method).lower(), None):
                 request_class = self.get_request_schema(operation)
                 response_class = self.get_response_schema(operation)
@@ -227,7 +284,10 @@ class OpenAPIGenerator:
                 response_to_pascal = convert_to_pascal(response_class)
                 handlers.append(
                     HandlerSchema(
-                        route=route, method=method, request=request_to_pascal, response=response_to_pascal
+                        route=route,
+                        method=method,
+                        request=request_to_pascal,
+                        response=response_to_pascal,
                     )
                 )
 
@@ -253,7 +313,9 @@ class OpenAPIGenerator:
         if isinstance(success_response, Reference):
             return get_ref_schema(success_response)
 
-        if success_response.content and (media := success_response.content.get("application/json", None)):
+        if success_response.content and (
+            media := success_response.content.get("application/json", None)
+        ):
             return get_ref_schema(media.media_type_schema)
 
     @classmethod
@@ -262,8 +324,6 @@ class OpenAPIGenerator:
             return json.load(data)
         elif fmt in (Format.yaml, Format.yml):
             return yaml.load(data, yaml.SafeLoader)
-        else:
-            raise NotImplementedError
 
     @classmethod
     def parse_openapi(cls, fmt: Format, data: IO) -> OpenAPI:

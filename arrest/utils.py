@@ -11,22 +11,13 @@ from typing import Any, Optional, TypeVar
 
 import orjson
 import tenacity
-from pydantic import BaseModel
+from httpx import Headers, QueryParams
+from httpx._types import FileTypes
+from pydantic import BaseModel, TypeAdapter
 
-try:
-    from pydantic import TypeAdapter
-except ImportError:
-    pass
-
-from arrest._config import PYDANTIC_V2
 from arrest.logging import logger
-from arrest.types import ExceptionHandler, ExceptionHandlers
-
-if not PYDANTIC_V2:  # pragma: no cover
-    try:
-        from pydantic import parse_obj_as
-    except ImportError:
-        pass
+from arrest.params import Params, ParamTypes, _File, _Param
+from arrest.types import ExceptionHandler, ExceptionHandlers, UploadFile
 
 T = TypeVar("T")
 
@@ -36,7 +27,7 @@ def sanitize_name(name: str) -> str:
     return re.sub("[^A-Za-z0-9]+", "_", name)
 
 
-def join_url(base_url: str, *urls: list[str]) -> str:
+def join_url(base_url: str, *urls: str) -> str:
     path = posixpath.join(base_url, *[url.lstrip("/") for url in urls])
     if not urls[-1].endswith("/"):
         path = path.rstrip("/")
@@ -53,17 +44,14 @@ def extract_resource_and_suffix(path: str) -> tuple[str, str]:
     return resource, suffix
 
 
-def extract_model_field(model: BaseModel, field: str) -> dict:
+def extract_model_field(model: BaseModel, field: str) -> dict[Any, Any]:
     """
     reuse pydantic's own deserializer to extract single field
     as a json parsed dict
     """
-    default = {}
+    default: dict[Any, Any] = {}
 
-    if PYDANTIC_V2:
-        value = model.model_dump_json(include={field}, by_alias=True)
-    else:
-        value = model.json(include={field}, by_alias=True)
+    value = model.model_dump_json(include={field}, by_alias=True)
     value = orjson.loads(value)
     if not value:
         return default
@@ -85,16 +73,13 @@ def validate_model(type_: T, obj: Any) -> T:  # pragma: no cover
     Returns:
         T: type converted python object
     """
-    if PYDANTIC_V2:
-        type_adapter = TypeAdapter(type_)
-        return type_adapter.validate_python(obj)
-
-    return parse_obj_as(type_, obj)
+    type_adapter = TypeAdapter(type_)
+    return type_adapter.validate_python(obj)
 
 
 def is_rootmodel(obj: Any):
-    """checks whether a pydantic object is a rootmodel instance (v1 & v2)"""
-    return hasattr(obj, "__root__") or hasattr(obj, "root")  # pydantic v2
+    """checks whether a pydantic object is a rootmodel instance"""
+    return hasattr(obj, "root")
 
 
 def jsonable_encoder(obj: Any) -> Any:
@@ -115,18 +100,11 @@ def jsonable_encoder(obj: Any) -> Any:
         Any: json-serialized object
     """
     if isinstance(obj, BaseModel):
-        if PYDANTIC_V2:
-            obj_dict = obj.model_dump()
-        else:
-            obj_dict = obj.dict()
-
-        if "__root__" in obj_dict:
-            obj_dict = obj_dict["__root__"]
-
+        obj_dict = obj.model_dump()
         return jsonable_encoder(obj_dict)
 
     if dataclasses.is_dataclass(obj):
-        return jsonable_encoder(dataclasses.asdict(obj))
+        return jsonable_encoder(dataclasses.asdict(obj))  # type: ignore[arg-type]
 
     if isinstance(obj, enum.Enum):
         return obj.value
@@ -168,7 +146,7 @@ def jsonable_encoder(obj: Any) -> Any:
     return jsonable_encoder(data)
 
 
-def retry(*, n_retries: int, exceptions: tuple[Exception]):
+def retry(*, n_retries: int, exceptions: tuple[type[Exception], ...]):
     def wrapper(func):
         @wraps(func)
         def sync_wrapped(*args, **kwargs):
@@ -206,8 +184,42 @@ def retry(*, n_retries: int, exceptions: tuple[Exception]):
     return wrapper
 
 
+def extract_file_params(model: BaseModel, field: str):
+    """
+    Extracts file parameters from a Pydantic model field.
+
+    Args:
+        model (BaseModel): The Pydantic model instance.
+        field (str): The name of the field to extract.
+
+    Returns:
+        dict: A dictionary containing the extracted file parameters.
+    """
+    default: dict[str, FileTypes] = {}
+
+    field_info = model.__class__.model_fields.get(field, None)
+    if not isinstance(field_info, _File):
+        raise ValueError(f"Field '{field}' is not a file field")
+
+    data = getattr(model, field, None)
+
+    if isinstance(data, bytes):
+        default[field] = data
+
+    elif isinstance(data, UploadFile):
+        if data.file is None:
+            raise ValueError(f"UploadFile for field '{field}' has no file provided")
+
+        default[field] = (data.filename, data.file, data.content_type)
+
+    elif isinstance(data, str):
+        default[field] = data.encode()
+
+    return default
+
+
 def lookup_exception_handler(
-    exc_handlers: Optional[ExceptionHandlers], exc: Exception
+    exc_handlers: ExceptionHandlers, exc: Exception
 ) -> Optional[ExceptionHandler]:
     if not exc_handlers:
         return None
@@ -215,3 +227,108 @@ def lookup_exception_handler(
     for cls in type(exc).__mro__:
         if cls in exc_handlers:
             return exc_handlers[cls]
+
+
+def extract_request_params(
+    request_type: Any,
+    request_data: Any,
+    headers: dict[str, str] | None = None,
+    query: dict[str, Any] | None = None,
+) -> Params:
+    header_params: dict[str, str] = headers or {}
+    query_params: dict[str, Any] = query or {}
+    body_params: dict[str, Any] = {}
+    file_params: dict[str, FileTypes] = {}
+
+    if request_type:
+        # perform type validation on `request_data`
+        request_data = validate_model(type_=request_type, obj=request_data)
+
+    if is_rootmodel(request_data):
+        return Params(
+            header=Headers(header_params),
+            query=QueryParams(query_params),
+            body=jsonable_encoder(request_data),
+            content_type="application/json",
+        )
+
+    if isinstance(request_data, BaseModel):
+        model_fields = request_data.__class__.model_fields
+        is_json_body = False
+        is_form_body = False
+
+        for field_name, field_info in model_fields.items():
+            if not isinstance(field_info, _Param):
+                body_params |= extract_model_field(request_data, field_name)
+                is_json_body = True
+            else:
+                match field_info._param_type:
+                    case ParamTypes.query:
+                        query_params |= extract_model_field(request_data, field_name)
+                    case ParamTypes.header:
+                        header_params |= extract_model_field(request_data, field_name)
+                    case ParamTypes.body:
+                        body_params |= extract_model_field(request_data, field_name)
+                        is_json_body = True
+                    case ParamTypes.form:
+                        is_form_body = True
+                        body_params |= extract_model_field(request_data, field_name)
+                    case ParamTypes.file:
+                        is_form_body = True
+                        file_params |= extract_file_params(request_data, field_name)
+
+        if is_json_body and is_form_body:
+            raise ValueError(
+                "Cannot mix JSON body fields (annotated with Body() or unannotated)"
+                " with form fields (annotated with Form() or File()) in the same request model"
+            )
+
+        if is_form_body:
+            if file_params:
+                return Params(
+                    header=Headers(header_params),
+                    query=QueryParams(query_params),
+                    body=body_params if body_params else None,
+                    files=file_params if file_params else None,
+                    content_type="multipart/form-data",
+                )
+            return Params(
+                header=Headers(header_params),
+                query=QueryParams(query_params),
+                body=body_params if body_params else None,
+                files=file_params if file_params else None,
+                content_type="application/x-www-form-urlencoded",
+            )
+
+        return Params(
+            header=Headers(header_params),
+            query=QueryParams(query_params),
+            body=jsonable_encoder(body_params) if body_params else None,
+            files=file_params if file_params else None,
+            content_type="application/json" if body_params else None,
+        )
+
+    body_params = request_data
+
+    return Params(
+        header=Headers(header_params),
+        query=QueryParams(query_params),
+        body=jsonable_encoder(body_params) if body_params else None,
+        files=file_params if file_params else None,
+        content_type="application/json" if body_params else None,
+    )
+
+
+def build_body_kwargs(
+    body: Any,
+    files: Any,
+    content_type: str | None,
+) -> dict[str, Any]:
+    """Map a content-type signal to the appropriate httpx body kwargs."""
+    if not body and not files:
+        return {}
+    if content_type == "multipart/form-data":
+        return {"data": body, "files": files}
+    if content_type == "application/x-www-form-urlencoded":
+        return {"data": body}
+    return {"json": body} if body else {}

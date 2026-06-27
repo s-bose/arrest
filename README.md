@@ -60,14 +60,14 @@ Arrest lets you define your RESTful APIs in a simple encapsulation that takes ca
 pip install arrest
 ```
 
-### Using poetry
-```bash
-poetry add arrest
-```
-
 ### Using uv
 ```bash
 uv add arrest
+```
+
+### Using pip
+```bash
+pip install arrest
 ```
 
 ## Getting Started

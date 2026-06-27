@@ -108,7 +108,9 @@ def test_converters_convert_and_replace_params(
     add_converter(DatetimeConverter(), "datetime")
 
     with exception:
-        ret, _ = replace_params(path=path, path_params=path_params, param_types=param_types)
+        ret, _ = replace_params(
+            path=path, path_params=path_params, param_types=param_types
+        )
         assert ret == returned_path
 
 
@@ -140,3 +142,26 @@ def test_converters_convert_and_replace_params(
 def test_converters_type_error(path, path_params, param_types):
     with pytest.raises(ConversionError):
         replace_params(path=path, path_params=path_params, param_types=param_types)
+
+
+@pytest.mark.parametrize(
+    "value, converter, expected_exc",
+    [
+        (-1, IntegerConverter(), AssertionError),  # negative int
+        (-1.0, FloatConverter(), AssertionError),  # negative float
+        (float("nan"), FloatConverter(), AssertionError),  # NaN
+        (float("inf"), FloatConverter(), AssertionError),  # inf
+        ("a/b", StrConverter(), AssertionError),  # path separator
+        ("", StrConverter(), AssertionError),  # empty string
+    ],
+)
+def test_converter_to_str_edge_cases(value, converter, expected_exc):
+    with pytest.raises(expected_exc):
+        converter.to_str(value)
+
+
+def test_compile_path_invalid_converter():
+    from arrest.converters import compile_path
+
+    with pytest.raises(AssertionError):
+        compile_path("/users/{id:unknown}")

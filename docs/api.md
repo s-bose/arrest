@@ -47,17 +47,17 @@ two-tuple of (certificate file, key file), or a three-tuple of (certificate
 file, key file, password).
 * **http2** - *(optional)* A boolean indicating if HTTP/2 support should be
 enabled. Defaults to `False`.
-* **proxies** - *(optional)* A dictionary mapping HTTP protocols to proxy
-URLs (*deprecated*).
+* **proxy** - *(optional)* A dictionary mapping HTTP protocols to proxy
+URLs
 * **mounts** - *(optional)* A dictionary mapping HTTP protocols to proxy
 URLs
 * **timeout** - *(optional)* The timeout configuration to use when sending
 requests.
-* **follow_redirects** - *(optional)* A boolean indicating whether to follow redirects. [See more](https://www.python-httpx.org/quickstart/#redirection-and-history)
+* **follow_redirects** - *(optional)* A boolean indicating whether to follow redirects. [See more](https://www.python-httpx.org/quickstart#redirection-and-history)
 * **limits** - *(optional)* The limits configuration to use.
 * **max_redirects** - *(optional)* The maximum number of redirect responses
 that should be followed.
-* **event_hooks** - *(optional)* - A dictionary to set event hook callbacks for request and response events. [See more](https://www.python-httpx.org/advanced/#event-hooks)
+* **event_hooks** - *(optional)* - A dictionary to set event hook callbacks for request and response events. [See more](https://www.python-httpx.org/advanced#event-hooks)
 * **transport** - *(optional)* A transport class to use for sending requests
 over the network.
 * **trust_env** - *(optional)* Enables or disables usage of environment
@@ -70,7 +70,6 @@ header. Set to a callable for automatic character set detection. Default: "utf-8
 **Parameters not included**
 
 * **base_url** - Already used internally in `Resource`, therefore no need to set it from kwargs
-* **app** - Not required currently as Arrest is primarily built to make external http requests
 
 ## `ResourceHandler`
 

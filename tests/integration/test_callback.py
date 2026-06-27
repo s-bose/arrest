@@ -16,7 +16,9 @@ class ResponseType(BaseModel):
     c: str
 
 
-@pytest.mark.parametrize("response_type, expected_type", [(ResponseType, ResponseType), (None, dict)])
+@pytest.mark.parametrize(
+    "response_type, expected_type", [(ResponseType, ResponseType), (None, dict)]
+)
 @pytest.mark.asyncio
 async def test_request_callback(
     service,
@@ -49,7 +51,9 @@ async def test_request_callback(
     assert isinstance(response, expected_type)
 
 
-@pytest.mark.parametrize("response_type, expected_type", [(ResponseType, ResponseType), (None, dict)])
+@pytest.mark.parametrize(
+    "response_type, expected_type", [(ResponseType, ResponseType), (None, dict)]
+)
 @pytest.mark.asyncio
 async def test_request_callback_async(
     service,

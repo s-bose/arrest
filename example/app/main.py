@@ -8,7 +8,9 @@ from example.app.data import tasks, users
 from example.app.routes.tasks import task_routes
 from example.app.routes.users import user_routes
 
-app = FastAPI(title="Example FastAPI REST application", routes=[*user_routes, *task_routes])
+app = FastAPI(
+    title="Example FastAPI REST application", routes=[*user_routes, *task_routes]
+)
 
 
 @app.middleware("http")

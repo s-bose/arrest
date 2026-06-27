@@ -46,7 +46,7 @@ async def test_request_with_arrest_retry(mock_httpx):
         resources=[
             Resource(route="/user"),
         ],
-        retry=3,
+        max_retries=3,
     )
 
     with pytest.raises(ArrestHTTPException):

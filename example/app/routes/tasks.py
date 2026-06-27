@@ -20,7 +20,9 @@ class __TaskRoutes:
         return Task(**tasks[rand_index])
 
     @staticmethod
-    async def get_all_tasks(request: Request, limit: int = Query(default=None)) -> list[Task]:
+    async def get_all_tasks(
+        request: Request, limit: int = Query(default=None)
+    ) -> list[Task]:
         tasks: list[Task] = request.state.store.get("tasks")
 
         if limit:
@@ -55,7 +57,9 @@ class __TaskRoutes:
 
         for i, task in enumerate(tasks):
             if task["id"] == task_id:
-                task_updated = Task(**{**task["id"], **task.model_dump(), "created_at": datetime.now()})
+                task_updated = Task(
+                    **{**task["id"], **task.model_dump(), "created_at": datetime.now()}
+                )
                 tasks[i] = task_updated.model_dump()
                 return task_updated
 

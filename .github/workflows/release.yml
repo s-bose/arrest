@@ -9,31 +9,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10']
-        poetry-version: ['1.4.2']
-        os: ['ubuntu-latest']
+        python-version: ["3.10"]
+        os: ["ubuntu-latest"]
 
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install poetry
-      uses:  abatilo/actions-poetry@v2
-      with:
-          poetry-version: ${{ matrix.poetry-version }}
-    - name: Build
-      run: poetry build
-    - name: Publish
-      env:
-        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        poetry config pypi-token.pypi $PYPI_TOKEN
-        poetry publish
-    - name: Install dependencies
-      run: poetry install --with docs
-    - name: Build docs
-      run: poetry run mkdocs build
-    - name: Publish Docs
-      run: poetry run mkdocs gh-deploy --force
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@b17378828233a8d43dbf67c40f72f2ae5d669916
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Build
+        run: uv build
+
+      - name: Publish
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: uv publish

@@ -5,7 +5,7 @@ https://github.com/encode/starlette/blob/master/starlette/routing.py
 import math
 import re
 import uuid
-from typing import Any, ClassVar, Generic, Mapping, Pattern, TypeVar
+from typing import Any, ClassVar, Generic, Pattern, TypeVar
 from uuid import UUID
 
 from arrest.exceptions import ConversionError
@@ -29,7 +29,8 @@ class IntegerConverter(Converter[int]):
     def to_str(self, value: Any | int) -> str:
         value = int(value)
 
-        assert value >= 0, "Negative integers are not supported"
+        if value < 0:
+            raise AssertionError("Negative integers are not supported")
         return str(value)
 
 
@@ -39,9 +40,12 @@ class FloatConverter(Converter[float]):
     def to_str(self, value: Any | float) -> str:
         value = float(value)
 
-        assert value >= 0.0, "Negative floats are not supported"
-        assert not math.isnan(value), "NaN values are not supported"
-        assert not math.isinf(value), "Infinite values are not supported"
+        if value < 0.0:
+            raise AssertionError("Negative floats are not supported")
+        if math.isnan(value):
+            raise AssertionError("NaN values are not supported")
+        if math.isinf(value):
+            raise AssertionError("Infinite values are not supported")
         return ("%0.20f" % value).rstrip("0").rstrip(".")
 
 
@@ -51,8 +55,10 @@ class StrConverter(Converter[str]):
     def to_str(self, value: Any | str) -> str:
         value = str(value)
 
-        assert "/" not in value, "May not contain path separators"
-        assert value, "Must not be empty"
+        if "/" in value:
+            raise AssertionError("May not contain path separators")
+        if not value:
+            raise AssertionError("Must not be empty")
         return value
 
 
@@ -64,7 +70,7 @@ class UUIDConverter(Converter[uuid.UUID]):
         return str(value)
 
 
-CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
+CONVERTER_REGEX: dict[str, Converter[Any]] = {
     "str": StrConverter(),
     "int": IntegerConverter(),
     "float": FloatConverter(),
@@ -72,7 +78,7 @@ CONVERTER_REGEX: Mapping[str, Converter[Any]] = {
 }
 
 
-def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
+def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, Converter[Any]]]:
     """
     Given a path string, like: "/{username:str}",
 
@@ -92,15 +98,16 @@ def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, type]]:
     path_format = ""
 
     idx = 0
-    parsed_path_params: dict[str, type] = {}
+    parsed_path_params: dict[str, Converter[Any]] = {}
 
     for match in PARAM_REGEX.finditer(path):
         param_name, converter_type = match.groups("str")
         converter_type = converter_type.lstrip(":").casefold()
 
-        assert (
-            converter_type in CONVERTER_REGEX
-        ), f"Invalid converter specified, available converters {CONVERTER_REGEX.keys()}"
+        if converter_type not in CONVERTER_REGEX:
+            raise AssertionError(
+                f"Invalid converter specified, available converters {CONVERTER_REGEX.keys()}"
+            )
 
         converter = CONVERTER_REGEX[converter_type]
 

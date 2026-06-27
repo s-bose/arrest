@@ -17,14 +17,15 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "-o", "--output", default=None, help="output directory for generated files (default: ./api)"
+    "-o",
+    "--output",
+    default=None,
+    help="output directory for generated files (default: ./api)",
 )
 
 arg_parser.add_argument(
-    "--pydantic",
-    choices=["v1", "v2"],
-    default="v1",
-    help="pydantic version to generate the schema definitions",
+    "-u", "--url", default=None, help="HTTP or file url for the openapi schema"
 )
-arg_parser.add_argument("-u", "--url", default=None, help="HTTP or file url for the openapi schema")
-arg_parser.add_argument("-d", "--dir", default=None, help="Directory containing the files")
+arg_parser.add_argument(
+    "-d", "--dir", default=None, help="Directory containing the files"
+)

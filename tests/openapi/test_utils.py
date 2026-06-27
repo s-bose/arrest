@@ -21,7 +21,8 @@ def test_get_ref_schema(ref: Any, expected_name: str):
 
 
 @pytest.mark.parametrize(
-    "name, sanitized", [("Swagger Petstore - OpenAPI 3.0", "swagger_petstore_openapi_3_0")]
+    "name, sanitized",
+    [("Swagger Petstore - OpenAPI 3.0", "swagger_petstore_openapi_3_0")],
 )
 def test_sanitize_name(name: str, sanitized: str):
     assert sanitize_name(name) == sanitized

@@ -18,7 +18,7 @@ It comes with a set of test files which test compatibility with 3 different type
 
 ## Installation
 
-To run the example FastAPI application, simply go to the example directory at the project root, and run `bash run.sh`, and you shoule be able to access the Swagger docs at [http://localhost:8080/docs]()
+To run the example FastAPI application, simply go to the example directory at the project root, and run `bash run.sh`, and you should be able to access the Swagger docs at [http://localhost:8080/docs]()
 
 Alternatively, you can set up your own virtualenv, and install the `requirements.example.txt` and run `uvicorn app.main:app`.
 

@@ -53,7 +53,9 @@ class __UserRoutes:
 
         for i, u in enumerate(users):
             if u["id"] == user_id:
-                user_updated = Users(**{**users[i], **user.model_dump(), "created_at": datetime.now()})
+                user_updated = Users(
+                    **{**users[i], **user.model_dump(), "created_at": datetime.now()}
+                )
                 users[i] = user_updated.model_dump()
                 return user_updated
 

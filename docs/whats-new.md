@@ -1,4 +1,6 @@
-## Added support for decorating custom handlers for your resource.
+# What's New?
+
+## Added support for decorating custom handlers for your resource
 
 Earlier in v0.1.9 the decorator could only be used with a resource under its parent service's scope:
 
@@ -44,7 +46,7 @@ await myservice.user.upload_user_profile_pic(...)
 !!! Note
     Connecting your resource to a service is still mandatory if you want to use the complete url. If you just call the method from your resource instance directly, since its still not bound to a service (thus a `base_url`), it would try to make an api call to `/user/upload-pic`, instead of `http://example.com/user/upload-pic`
 
-## Standardized the names of resource and services from parsing the OpenAPI Specification.
+## Standardized the names of resource and services from parsing the OpenAPI Specification
 
 Certain names for resources and services had whitespaces and special characters, which resulted in the generated code having illegal variable names (such as `OpenAPI service: 2.1 = Service(...)`)
 
@@ -54,7 +56,7 @@ v0.1.10 standardizes all variable names of the generated service and resource to
 
 You can now define root-level resources (i.e., having base routes of either `""` or `"/"`) There can be only one root-level resource, for obvious reasons. You can set them up as normal `Resource` instances with `route=""` or `route="/`" and a corresponding handler `(<Method>, "")` (e.g. `www.example.com`) or `(<Method>, "/")` (e.g. `www.example.com/`)
 
-In order to make the call to the root-resource, you simply invoke the http methods on the service directly, without specifying a resource.
+In order to make the call to the root-resource, you simply invoke the http methods on the service directly, without specifying a resource
 
 ```python
 await my_service.get("") # or my_service.get("/")

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-poetry run black --check .
-poetry run flake8 .
-isort --check-only --diff tests
+if [[ "${1:-}" == "--fix" ]]; then
+    uv run ruff check --fix .
+    uv run ruff format .
+else
+    uv run ruff check .
+    uv run ruff format --check
+fi

@@ -6,7 +6,6 @@ from jinja2 import FileSystemLoader, Template
 from jinja2.sandbox import SandboxedEnvironment
 from pydantic import BaseModel
 
-from arrest._config import PYDANTIC_V2
 from arrest.openapi._config import TEMPLATE_DIR
 
 
@@ -20,7 +19,11 @@ def get_template(template_filepath: Path) -> Template:
 
 class TemplateBase:
     def __init__(
-        self, *, source: str, params: Optional[BaseModel] = None, destination_path: Path | str
+        self,
+        *,
+        source: str,
+        params: Optional[BaseModel] = None,
+        destination_path: Path | str,
     ) -> None:
         self.source = Path(source)
         self.params = params
@@ -32,7 +35,7 @@ class TemplateBase:
 
     def render(self) -> str:
         if self.params:
-            kwargs: dict = self.params.model_dump() if PYDANTIC_V2 else self.params.dict()
+            kwargs = self.params.model_dump()
             return self.template.render(**kwargs)
         else:
             return self.template.render()
@@ -40,5 +43,7 @@ class TemplateBase:
     def render_and_save(self) -> None:
         content = self.render()
         output_filename = f"{self.source.stem}.py"
-        with open(Path(self.destination_path / output_filename), "w", encoding="utf-8") as file:
+        with open(
+            Path(self.destination_path) / output_filename, "w", encoding="utf-8"
+        ) as file:
             file.write(content)

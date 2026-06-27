@@ -64,7 +64,9 @@ root = Resource(
     ],
 )
 
-custom = Resource(name="custom", route="/custom", handlers=[("POST", "", CustomRequest, dict)])
+custom = Resource(
+    name="custom", route="/custom", handlers=[("POST", "", CustomRequest, dict)]
+)
 
 svc = Service(
     name="svc without types",
@@ -261,7 +263,9 @@ async def test_delete_task_by_id(path_param_style: str):
     ],
 )
 @pytest.mark.asyncio
-async def test_custom_request_with_header_query_body(req: CustomRequest, error: Exception | None):
+async def test_custom_request_with_header_query_body(
+    req: CustomRequest, error: Exception | None
+):
     if not error:
         response = await svc.custom.post("", request=req)
         assert isinstance(response, dict)

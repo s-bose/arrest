@@ -21,9 +21,15 @@ class FileNames(StrEnum):
 
 
 def validate_file_contents(src_dir: str, dst_dir: str, filename: FileNames) -> bool:
-    with open(os.path.join(src_dir, filename)) as f1, open(os.path.join(dst_dir, filename)) as f2:
+    with (
+        open(os.path.join(src_dir, filename)) as f1,
+        open(os.path.join(dst_dir, filename)) as f2,
+    ):
         for line1, line2 in zip(f1, f2):
-            line1, line2 = line1.strip().replace("'", '"'), line2.strip().replace("'", '"')
+            line1, line2 = (
+                line1.strip().replace("'", '"'),
+                line2.strip().replace("'", '"'),
+            )
             if line1.startswith("#") and line2.startswith("#"):
                 continue
             if line1 != line2:
@@ -52,18 +58,24 @@ async def test_openapi_generate_from_file(fixture_dir, fixture_file):
         openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
-        assert set(list(FileNames)) == set(generated_files)
+        if set(list(FileNames)) != set(generated_files):
+            raise AssertionError(
+                f"Generated files mismatch: expected {set(FileNames)}, got {set(generated_files)}"
+            )
 
-        fixture_dir = os.path.join(FIXTURE_PATH, "generated", fixture_dir)
+        fixture_dst_dir = os.path.join(FIXTURE_PATH, "generated", fixture_dir)
         for filename in list(FileNames):
-            assert validate_file_contents(src_dir=dir_name, dst_dir=fixture_dir, filename=filename)
+            if not validate_file_contents(
+                src_dir=dir_name, dst_dir=fixture_dst_dir, filename=filename
+            ):
+                raise AssertionError(f"File content mismatch: {fixture_dir}/{filename}")
 
 
 @pytest.mark.asyncio
 async def test_openapi_generate_from_file_invalid_extension():
     filepath = os.path.join(FIXTURE_PATH, "openapi_petstore.toml")
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         with TemporaryDirectory() as tempdir:
             openapi = OpenAPIGenerator(url=filepath, output_path=tempdir)
             openapi.generate_schema()
@@ -79,21 +91,35 @@ async def test_openapi_generate_from_file_invalid_extension():
     ],
 )
 @pytest.mark.asyncio
-async def test_openapi_generate_from_http(openapi_version, url_stub, fixture_file, mock_httpx):
+async def test_openapi_generate_from_http(
+    openapi_version, url_stub, fixture_file, mock_httpx
+):
     filepath = os.path.join(FIXTURE_PATH, fixture_file)
     with open(filepath, "rb") as file:
-        mock_httpx.get(url=url_stub).mock(return_value=Response(200, content=file.read()))
+        mock_httpx.get(url=url_stub).mock(
+            return_value=Response(200, content=file.read())
+        )
 
     with TemporaryDirectory() as tempdir:
-        openapi = OpenAPIGenerator(url=f"{TEST_DEFAULT_SERVICE_URL}/{url_stub}", output_path=tempdir)
+        openapi = OpenAPIGenerator(
+            url=f"{TEST_DEFAULT_SERVICE_URL}/{url_stub}", output_path=tempdir
+        )
         openapi.generate_schema()
 
         dir_name, _, generated_files = list(os.walk(tempdir))[-1]
-        assert set(list(FileNames)) == set(generated_files)
+        if set(list(FileNames)) != set(generated_files):
+            raise AssertionError(
+                f"Generated files mismatch: expected {set(FileNames)}, got {set(generated_files)}"
+            )
 
-        fixture_dir = os.path.join(FIXTURE_PATH, "generated", openapi_version)
+        fixture_dst_dir = os.path.join(FIXTURE_PATH, "generated", openapi_version)
         for filename in list(FileNames):
-            assert validate_file_contents(src_dir=dir_name, dst_dir=fixture_dir, filename=filename)
+            if not validate_file_contents(
+                src_dir=dir_name, dst_dir=fixture_dst_dir, filename=filename
+            ):
+                raise AssertionError(
+                    f"File content mismatch: {openapi_version}/{filename}"
+                )
 
 
 @pytest.mark.asyncio
