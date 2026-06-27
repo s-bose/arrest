@@ -42,8 +42,8 @@ async def test_response_type(service, mock_httpx):
     )
 
     response = await service.user.get("/")
-    assert isinstance(response, UserResponse)
-    assert response == UserResponse(**mock_response)
+    assert isinstance(response.data, UserResponse)
+    assert response.data == UserResponse(**mock_response)
 
 
 @pytest.mark.asyncio
@@ -75,9 +75,9 @@ async def test_list_response_type(service, mock_httpx):
     )
 
     response = await service.user.get("/")
-    assert isinstance(response, list)
-    assert response[0] == UserResponse(**res_1)
-    assert response[1] == UserResponse(**res_2)
+    assert isinstance(response.data, list)
+    assert response.data[0] == UserResponse(**res_1)
+    assert response.data[1] == UserResponse(**res_2)
 
 
 @pytest.mark.asyncio
@@ -111,7 +111,7 @@ async def test_no_response_type(service, mock_httpx):
     )
 
     response = await service.user.get("/")
-    assert response == mock_response
+    assert response.data == mock_response
 
 
 @pytest.mark.asyncio
@@ -123,7 +123,7 @@ async def test_empty_response_returns_none(service, mock_httpx):
     service.add_resource(Resource(route="/user", handlers=[(Methods.GET, "/")]))
 
     response = await service.user.get("/")
-    assert response is None
+    assert response.data is None
 
 
 @pytest.mark.asyncio

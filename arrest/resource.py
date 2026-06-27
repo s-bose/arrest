@@ -19,6 +19,7 @@ from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import Params
+from arrest.response import Response
 from arrest.types import ExceptionHandlers
 from arrest.utils import (
     build_body_kwargs,
@@ -191,7 +192,7 @@ class Resource:
         timeout: Optional[float] = None,
         follow_redirects: Optional[bool] = None,
         **kwargs,
-    ) -> Any | None:
+    ) -> Response[Any]:
         """
         Makes an HTTP request against a handler route
 
@@ -227,9 +228,9 @@ class Resource:
 
         Returns:
             Response:
-                A JSON response in form of a list or dict
-                `or`, Deserialized into the response pydantic model
-                `or`, Return value of the callback fn
+                A ``Response[T]`` wrapping the parsed data, status code,
+                headers, and raw ``httpx.Response``.
+                Callbacks receive and may return ``Response[Any]``.
         """
 
         path_query_params, path = self._extract_query_params(path)
@@ -267,7 +268,8 @@ class Resource:
 
         fn_make_request = (
             arrest_retry(
-                n_retries=retry_count, exceptions=(ArrestHTTPException, Exception)
+                n_retries=retry_count,
+                exceptions=(httpx.TimeoutException, httpx.RequestError),
             )(self.make_request)
             if retry_count
             else self.make_request
@@ -281,6 +283,18 @@ class Resource:
                 response_type=response_type,
                 config=final_config,
             )
+
+        except (httpx.TimeoutException, httpx.RequestError) as exc:
+            # transport errors: retries exhausted or no retry configured
+            if isinstance(exc, httpx.TimeoutException):
+                raise ArrestHTTPException(
+                    status_code=httpx.codes.REQUEST_TIMEOUT,
+                    data="request timed out",
+                ) from exc
+            raise ArrestHTTPException(
+                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
+                data="error occurred while making request",
+            ) from exc
 
         # custom exception handling
         except Exception as exc:
@@ -464,7 +478,7 @@ class Resource:
         params: Params,
         response_type: Any,
         config: ArrestConfig | None = None,
-    ) -> Any:
+    ) -> Response[Any]:
         """
         (private) prepares and makes a http request,
         parses the response and raises appropriate exceptions
@@ -475,79 +489,82 @@ class Resource:
             method:
                 one of the available http methods
             params:
-                dict containing `header`, `query` and `body` params
+                dict containing ``header``, ``query`` and ``body`` params
             response_type:
                 a python type to deserialize the json response to
             config:
                 merged ArrestConfig for this request
 
         Returns:
-            Any:
-                the returned json object or a parsed instance of `response_type`
+            Response[Any]:
+                a ``Response[T]`` wrapping parsed data, status code,
+                and the raw ``httpx.Response``.
         """
         cfg = config or ArrestConfig()
 
-        try:
-            if self._client:
-                response = await self.__make_request(
-                    client=self._client,
+        if self._client:
+            raw = await self.__make_request(
+                client=self._client,
+                url=url,
+                method=method,
+                params=params,
+                config=cfg,
+            )
+        else:
+            async with httpx.AsyncClient(
+                base_url=self.base_url,
+                **self._transport_kwargs,
+            ) as client:
+                raw = await self.__make_request(
+                    client=client,
                     url=url,
                     method=method,
                     params=params,
                     config=cfg,
                 )
-            else:
-                async with httpx.AsyncClient(
-                    base_url=self.base_url,
-                    **self._transport_kwargs,
-                ) as client:
-                    response = await self.__make_request(
-                        client=client,
-                        url=url,
-                        method=method,
-                        params=params,
-                        config=cfg,
-                    )
 
-            status_code = response.status_code
-            logger.info(f"{method!s} {url} returned with status code {status_code!s}")
-            response.raise_for_status()
-            if not response.content:
-                return None
+        status_code = raw.status_code
+        logger.info(f"{method!s} {url} returned with status code {status_code!s}")
+
+        if not raw.content:
+            # elapsed may not be set on empty-body responses (204, etc.)
             try:
-                response_body = response.json()
-            except json.JSONDecodeError:
-                try:
-                    response_body = response.read().decode("utf-8", errors="strict")
-                except UnicodeDecodeError:
-                    raise ResponseError("Could not parse HTTP response")
-
-            parsed_response = response_body
-            if response_type:
-                parsed_response = validate_model(response_type, response_body)
-
-            return parsed_response
-
-        except httpx.HTTPStatusError as exc:
-            try:
-                err_response_body = exc.response.json()
-            except json.JSONDecodeError:
-                err_response_body = exc.response.read().decode("utf-8", errors="strict")
-            raise ArrestHTTPException(
-                status_code=exc.response.status_code, data=err_response_body
-            ) from exc
-
-        except httpx.TimeoutException:
-            raise ArrestHTTPException(
-                status_code=httpx.codes.REQUEST_TIMEOUT,
-                data="request timed out",
+                elapsed = raw.elapsed
+            except RuntimeError:
+                elapsed = None
+            return Response(
+                data=None,
+                status_code=status_code,
+                url=raw.url,
+                elapsed=elapsed,
+                raw=raw,
+                request=raw.request,
             )
 
-        except httpx.RequestError:
-            raise ArrestHTTPException(
-                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
-                data="error occured while making request",
-            )
+        try:
+            body = raw.json()
+        except json.JSONDecodeError:
+            try:
+                body = raw.content.decode("utf-8", errors="strict")
+            except UnicodeDecodeError:
+                raise ResponseError("Could not parse HTTP response")
+
+        data = validate_model(response_type, body) if response_type else body
+
+        # elapsed is only available after the response body is consumed.
+        try:
+            elapsed = raw.elapsed
+        except RuntimeError:
+            elapsed = None
+
+        return Response(
+            data=data,
+            status_code=status_code,
+            url=raw.url,
+            elapsed=elapsed,
+            raw=raw,
+            request=raw.request,
+        )
 
     async def __make_request(
         self,

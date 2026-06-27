@@ -10,6 +10,7 @@ from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import ResourceNotFound
 from arrest.http import Methods
 from arrest.resource import Resource
+from arrest.response import Response
 from arrest.types import ExceptionHandlers
 from arrest.utils import extract_resource_and_suffix
 
@@ -144,7 +145,7 @@ class Service:
         self.resources[resource.name] = resource
         setattr(self, resource.name, resource)
 
-    async def request(self, path: str, method: Methods, **kwargs):
+    async def request(self, path: str, method: Methods, **kwargs) -> Response[Any]:
         """
         Helper function to make a request directly
         from the service level

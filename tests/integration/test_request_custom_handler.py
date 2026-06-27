@@ -36,7 +36,7 @@ async def test_decorate_custom_handler_within_service_scope(service, mock_httpx)
 
     resp1 = await service.user.get("/")
     resp2 = await service.user.post("/")
-    assert resp1 == resp2 == {"status": "OK"}
+    assert resp1.data == resp2.data == {"status": "OK"}
 
     resp3 = await service.user.get_posts(post_id=123)
     resp4 = await get_posts(post_id=456)
@@ -75,7 +75,7 @@ async def test_decorate_custom_handler_outside_service_scope(service, mock_httpx
     # predefined handler routes
     resp1 = await service.user.get("/")
     resp2 = await service.user.post("/")
-    assert resp1 == resp2 == {"status": "OK"}
+    assert resp1.data == resp2.data == {"status": "OK"}
 
     # using the custom handler func
     resp3 = await service.user.get_posts(post_id=123)

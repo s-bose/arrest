@@ -48,7 +48,7 @@ async def test_request_callback(
     )
 
     response = await service.user.get("/")
-    assert isinstance(response, expected_type)
+    assert isinstance(response.data, expected_type)
 
 
 @pytest.mark.parametrize(
@@ -84,7 +84,7 @@ async def test_request_callback_async(
     )
 
     response = await service.user.get("/")
-    assert isinstance(response, expected_type)
+    assert isinstance(response.data, expected_type)
 
 
 @pytest.mark.asyncio

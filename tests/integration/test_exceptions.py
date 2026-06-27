@@ -25,6 +25,7 @@ class HTTPException(Exception):
 
 @pytest.mark.asyncio
 async def test_http_exception(service, mock_httpx):
+    """4xx responses are returned as Response[T], not raised as exceptions."""
     mock_httpx.post(url__regex="/user/*", name="http_request").mock(
         return_value=httpx.Response(400, json={"msg": "unauthenticated"})
     )
@@ -38,14 +39,15 @@ async def test_http_exception(service, mock_httpx):
         )
     )
 
-    with pytest.raises(ArrestHTTPException) as exc:
-        await service.user.post("/profile")
-        assert exc.value.status_code == 400
-        assert exc.value.data == {"msg": "unauthenticated"}
+    response = await service.user.post("/profile")
+    assert response.is_client_error
+    assert response.status_code == 400
+    assert response.data == {"msg": "unauthenticated"}
 
 
 @pytest.mark.asyncio
 async def test_non_json_http_exception(service, mock_httpx):
+    """Non-JSON 4xx body is returned as raw string in Response.data."""
     mock_httpx.post(url__regex="/user/*", name="http_request").mock(
         side_effect=httpx.Response(
             status_code=400,
@@ -63,10 +65,10 @@ async def test_non_json_http_exception(service, mock_httpx):
         )
     )
 
-    with pytest.raises(ArrestHTTPException) as exc:
-        await service.user.post("/profile")
-        assert exc.value.status_code == 400
-        assert exc.value.data == "<xml>helloworld</xml>"
+    response = await service.user.post("/profile")
+    assert response.is_client_error
+    assert response.status_code == 400
+    assert response.data == "<xml>helloworld</xml>"
 
 
 @pytest.mark.asyncio
@@ -89,7 +91,7 @@ async def test_non_json_response_exception(service, mock_httpx):
     )
 
     response = await service.user.post("/profile")
-    assert response == "<xml>helloworld</xml>"
+    assert response.data == "<xml>helloworld</xml>"
 
 
 @pytest.mark.asyncio

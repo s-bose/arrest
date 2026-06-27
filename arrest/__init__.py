@@ -2,6 +2,7 @@
 from .handler import H
 from .http import Methods
 from .resource import Resource
+from .response import Response
 from .service import Service
 
 __version__ = "0.1.10"
@@ -18,6 +19,7 @@ __all__ = [
     "H",
     "Methods",
     "Resource",
+    "Response",
     "Service",
     "GET",
     "POST",
