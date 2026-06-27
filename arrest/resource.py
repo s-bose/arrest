@@ -3,11 +3,11 @@ import functools
 import inspect
 import json
 from functools import cached_property
-from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union, cast
+from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from httpx import Headers, QueryParams
+from httpx import QueryParams
 from pydantic import BaseModel, ValidationError
 from typing_extensions import Unpack
 
@@ -18,14 +18,13 @@ from arrest.exceptions import ArrestHTTPException, HandlerNotFound, ResponseErro
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
-from arrest.params import Param, Params, ParamTypes
+from arrest.params import Params
 from arrest.types import ExceptionHandlers
 from arrest.utils import (
-    extract_model_field,
+    build_body_kwargs,
+    extract_request_params,
     extract_resource_and_suffix,
-    is_rootmodel,
     join_url,
-    jsonable_encoder,
     lookup_exception_handler,
     validate_model,
 )
@@ -242,27 +241,21 @@ class Resource:
         handler, url = match
 
         # Merge per-call config with resource config.
-        # Config defaults go UNDER the model-extracted values.
         final_config = self.config.merge(
             ArrestConfig(
                 headers=dict(headers or {}),
                 cookies=cookies or {},
+                params={**path_query_params, **dict(query or {})},
                 timeout=timeout,
                 follow_redirects=follow_redirects,
             )
         )
 
-        # Pass config defaults as the base headers/query; extract_request_params
-        # will |= the model-extracted values on top.
-        params = self.extract_request_params(
+        params = extract_request_params(
             request_type=handler.request,
             request_data=request,
-            headers={**final_config.headers, **(dict(headers or {}))},
-            query={
-                **(dict(query or {})),
-                **path_query_params,
-                **final_config.params,
-            },
+            headers=final_config.headers,
+            query=final_config.params,
         )
 
         response_type = handler.response or self.response_model or None
@@ -461,69 +454,6 @@ class Resource:
             **kwargs,
         )
 
-    def extract_request_params(
-        self,
-        request_type: Any,
-        request_data: Any,
-        headers: dict[str, str] | None = None,
-        query: dict[str, Any] | None = None,
-    ) -> Params:
-        """
-        extracts `header`, `body` and `query` params from the pydantic request model
-
-        Parameters:
-            request_type:
-                a python type for the request data
-            request_data:
-                instance of the above type containing the request data
-            headers:
-                optional dictionary containing additional header key-value pairs
-            query:
-                optional dictionary containing additional query key-value pairs
-        Returns:
-            a `Params` object containing `header`, `body`, `query` fields
-        """
-
-        header_params = headers or {}
-        query_params: dict[str, Any] = query or {}
-        body_params: dict[Any, Any] = {}
-
-        if request_type:
-            # perform type validation on `request_data`
-            request_data = validate_model(type_=request_type, obj=request_data)
-
-        if is_rootmodel(request_data):
-            return Params(
-                header=Headers(header_params),
-                query=QueryParams(query_params),
-                body=jsonable_encoder(request_data),
-            )
-
-        if isinstance(request_data, BaseModel):
-            # extract pydantic fields into `Query`, `Body` and `Header`
-            model_fields = request_data.__class__.model_fields
-
-            for field_name, field in model_fields.items():
-                field_info = field
-                field_info = cast(Param, field_info)
-                if not hasattr(field_info, "_param_type"):
-                    body_params |= extract_model_field(request_data, field_name)
-                elif field_info._param_type == ParamTypes.query:
-                    query_params |= extract_model_field(request_data, field_name)
-                elif field_info._param_type == ParamTypes.header:
-                    header_params |= extract_model_field(request_data, field_name)
-                elif field_info._param_type == ParamTypes.body:
-                    body_params |= extract_model_field(request_data, field_name)
-
-        else:
-            body_params = request_data
-
-        return Params(
-            header=Headers(header_params),
-            query=QueryParams(query_params),
-            body=jsonable_encoder(body_params),
-        )
-
     async def make_request(
         self,
         url: str,
@@ -637,16 +567,23 @@ class Resource:
             httpx.Response
         """
 
-        header_params, query_params, body_params = (
+        header_params, query_params, body_params, file_params, content_type = (
             params.header,
             params.query,
             params.body,
+            params.files,
+            params.content_type,
         )
 
         # Build final kwargs for httpx — config defaults go under model-extracted values
+        merged_headers = header_params.copy()
+        for key, value in config.headers.items():
+            if key not in merged_headers:
+                merged_headers[key] = value
+
         request_kwargs: dict[str, Any] = dict(
             url=url,
-            headers=Headers({**config.headers, **dict(header_params)}),
+            headers=merged_headers,
             params=query_params,
             cookies=config.cookies or None,
             timeout=config.timeout,
@@ -656,15 +593,17 @@ class Resource:
         if config.auth is not None:
             request_kwargs["auth"] = config.auth
 
+        body_kwargs = build_body_kwargs(body_params, file_params, content_type)
+
         match method:
             case Methods.GET:
                 response = await client.get(**request_kwargs)
             case Methods.POST:
-                response = await client.post(**request_kwargs, json=body_params)
+                response = await client.post(**request_kwargs, **body_kwargs)
             case Methods.PUT:
-                response = await client.put(**request_kwargs, json=body_params)
+                response = await client.put(**request_kwargs, **body_kwargs)
             case Methods.PATCH:
-                response = await client.patch(**request_kwargs, json=body_params)
+                response = await client.patch(**request_kwargs, **body_kwargs)
             case Methods.DELETE:
                 response = await client.delete(**request_kwargs)
             case Methods.HEAD:

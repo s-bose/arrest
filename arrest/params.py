@@ -50,7 +50,7 @@ class _Form(_Param):
 
 
 class _File(_Param):
-    _param_type = ParamTypes.form
+    _param_type = ParamTypes.file
 
     def __init__(self, default: Any = None, **kwargs: Any) -> None:
         super().__init__(default, **kwargs)
@@ -63,12 +63,14 @@ class Params:
         header: httpx.Headers,
         query: httpx.QueryParams,
         body: Any,
-        encoding: str,
+        files: Any | None = None,
+        content_type: str | None = None,
     ) -> None:
         self.header = header
         self.query = query
         self.body = body
-        self.encoding = encoding
+        self.files = files
+        self.content_type = content_type
 
 
 # Public API

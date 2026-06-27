@@ -28,4 +28,4 @@ fixtures:
 	uv run python scripts/regenerate_fixtures.py
 
 serve-docs: install
-	serve htmlcov/ -p 3000
+	uv run zensical serve
