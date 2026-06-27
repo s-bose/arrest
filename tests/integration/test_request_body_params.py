@@ -367,7 +367,67 @@ def test_extract_file_params_string_and_errors():
         extract_file_params(file_model, "avatar")
 
 
-# Resource-level content-type override
+# Handler-level content-type override
+
+
+@pytest.mark.parametrize(
+    "handler_headers, call_headers, expected_ct",
+    [
+        pytest.param(
+            {"Content-Type": "multipart/form-data"},
+            None,
+            "multipart/form-data",
+            id="handler overrides annotation-derived",
+        ),
+        pytest.param(
+            {"Content-Type": "multipart/form-data"},
+            {"Content-Type": "application/x-custom"},
+            "application/x-custom",
+            id="runtime overrides handler",
+        ),
+        pytest.param(
+            None,
+            None,
+            "application/x-www-form-urlencoded",
+            id="no override: annotation-derived wins",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_body_request_handler_level_content_type_override(
+    service, mock_httpx, handler_headers, call_headers, expected_ct
+):
+    """Handler-level Content-Type (via H(headers={...})) takes effect
+    for form-data requests, and runtime headers still win."""
+    from arrest.handler import H
+
+    patterns = [M(url__regex="/user/*", method__in=["POST"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                H(
+                    Methods.POST,
+                    "/form",
+                    FormOnlyRequest,
+                    headers=handler_headers,
+                )
+            ],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "OK"})
+    )
+    await service.user.post(
+        "/form",
+        request={"name": "frank", "email": "frank@example.com"},
+        headers=call_headers,
+    )
+
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert req.headers["content-type"] == expected_ct
 
 
 @pytest.mark.asyncio

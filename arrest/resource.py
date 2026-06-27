@@ -240,8 +240,11 @@ class Resource:
 
         handler, url = match
 
-        # Merge per-call config with resource config.
-        final_config = self.config.merge(
+        # Merge: resource config → handler headers → per-call config
+        config_with_handler = self.config.merge(
+            ArrestConfig(headers=handler.headers or {})
+        )
+        final_config = config_with_handler.merge(
             ArrestConfig(
                 headers=dict(headers or {}),
                 cookies=cookies or {},
@@ -634,11 +637,11 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
-        handler.path_regex, handler.path_format, handler.param_types = compile_path(
+        handler._path_regex, handler._path_format, handler._param_types = compile_path(
             handler.route
         )
 
-        self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
+        self.routes[HandlerKey(*(handler.method, handler._path_format))] = handler
 
     def _extract_query_params(self, url: str) -> tuple[QueryParams, str]:
         url_parsed = urlparse(url)

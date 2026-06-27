@@ -1,4 +1,5 @@
 # flake8: noqa
+from .handler import H
 from .http import Methods
 from .resource import Resource
 from .service import Service
@@ -14,6 +15,7 @@ HEAD = Methods.HEAD
 OPTIONS = Methods.OPTIONS
 
 __all__ = [
+    "H",
     "Methods",
     "Resource",
     "Service",
