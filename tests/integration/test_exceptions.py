@@ -40,8 +40,8 @@ async def test_http_exception(service, mock_httpx):
 
     with pytest.raises(ArrestHTTPException) as exc:
         await service.user.post("/profile")
-        assert exc.status_code == 400
-        assert exc.data == {"msg": "unauthenticated"}
+        assert exc.value.status_code == 400
+        assert exc.value.data == {"msg": "unauthenticated"}
 
 
 @pytest.mark.asyncio
@@ -65,8 +65,8 @@ async def test_non_json_http_exception(service, mock_httpx):
 
     with pytest.raises(ArrestHTTPException) as exc:
         await service.user.post("/profile")
-        assert exc.status_code == 400
-        assert exc.data == "<xml>helloworld</xml>"
+        assert exc.value.status_code == 400
+        assert exc.value.data == "<xml>helloworld</xml>"
 
 
 @pytest.mark.asyncio
@@ -109,8 +109,8 @@ async def test_timeout_exception(service, mock_httpx):
 
     with pytest.raises(ArrestHTTPException) as exc:
         await service.user.post("/profile")
-        assert exc.status_code == 500
-        assert exc.data == "connection timed out"
+        assert exc.value.status_code == 500
+        assert exc.value.data == "connection timed out"
 
 
 @pytest.mark.asyncio
@@ -130,8 +130,8 @@ async def test_base_request_error(service, mock_httpx):
 
     with pytest.raises(ArrestHTTPException) as exc:
         await service.user.post("/profile")
-        assert exc.status_code == 500
-        assert exc.data == "something went wrong"
+        assert exc.value.status_code == 500
+        assert exc.value.data == "something went wrong"
 
 
 @pytest.mark.asyncio

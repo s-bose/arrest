@@ -5,9 +5,8 @@ from datetime import datetime
 
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from pydantic import ValidationError as PydanticValidationError
-from pydantic import RootModel
 from respx.patterns import M
 
 from arrest.http import Methods
@@ -17,7 +16,7 @@ from arrest.resource import Resource
 
 class UserRequest(BaseModel):
     id: int
-    name: str = Body(...)
+    name: str = Body(...)  # type: ignore
     email: str
     dob: typing.Optional[datetime] = None
 
@@ -133,7 +132,7 @@ class UserRequestRoot(RootModel):
         ),
         (
             UserRequestRoot(
-                root=[{"id": 0, "name": "username", "email": "user@email.com"}]
+                root=[{"id": 0, "name": "username", "email": "user@email.com"}]  # type: ignore
             ),
             UserRequestRoot,
             [{"id": 0, "name": "username", "email": "user@email.com", "dob": None}],

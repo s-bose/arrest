@@ -19,8 +19,8 @@ async def test_request_query_params(service, mock_httpx):
     )
 
     class UserRequest(BaseModel):
-        limit: int = Query()
-        q: str = Query()
+        limit: int = Query()  # type: ignore
+        q: str = Query()  # type: ignore
 
     service.add_resource(
         Resource(
@@ -45,8 +45,8 @@ async def test_request_query_params(service, mock_httpx):
 @pytest.mark.asyncio
 async def test_request_query_params_invalid_type(service, mocker, mock_httpx):
     class UserRequest(BaseModel):
-        limit: int = Query()
-        q: str = Query()
+        limit: int = Query()  # type: ignore
+        q: str = Query()  # type: ignore
 
     class FooModel(BaseModel):
         bar: int
@@ -74,8 +74,8 @@ async def test_request_query_params_invalid_type(service, mocker, mock_httpx):
 @pytest.mark.asyncio
 async def test_request_query_params_validation_error(service, mock_httpx):
     class UserRequest(BaseModel):
-        limit: int = Query(gt=10)
-        q: str = Query(default="default")
+        limit: int = Query(gt=10)  # type: ignore
+        q: str = Query(default="default")  # type: ignore
 
     service.add_resource(
         Resource(
@@ -90,7 +90,7 @@ async def test_request_query_params_validation_error(service, mock_httpx):
         await service.user.post("/profile", request=UserRequest(limit=10, q="abc"))
 
     with pytest.raises(ValidationError):
-        await service.user.post("/profile", request=UserRequest(limit=15, q=123.0))
+        await service.user.post("/profile", request=UserRequest(limit=15, q=123.0))  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -153,7 +153,7 @@ async def test_query_params_in_both_request_model_and_arguments(
     )
 
     class UserRequest(BaseModel):
-        limit: int = Query(...)
+        limit: int = Query(...)  # type: ignore
         name: str
         email: str
         password: str

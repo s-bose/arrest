@@ -125,7 +125,7 @@ class Resource:
             follow_redirects=follow_redirects,
         )
 
-        self._exception_handlers: ExceptionHandlers = None
+        self._exception_handlers = None
 
         # initialize default GET handler
         self._bind_handler(
@@ -288,7 +288,7 @@ class Resource:
 
         # custom exception handling
         except Exception as exc:
-            exc_handler = lookup_exception_handler(self.exception_handlers, exc)
+            exc_handler = lookup_exception_handler(self.exception_handlers or {}, exc)
             if not exc_handler:
                 raise exc
 

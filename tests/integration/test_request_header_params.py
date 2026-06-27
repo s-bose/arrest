@@ -55,8 +55,8 @@ async def test_request_header_params(
 
     class UserRequest(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
-        x_max_age: str = Header(serialization_alias="x-max-age")
-        x_user_agent: str = Header(serialization_alias="x-user-agent")
+        x_max_age: str = Header(serialization_alias="x-max-age")  # type: ignore
+        x_user_agent: str = Header(serialization_alias="x-user-agent")  # type: ignore
 
         name: str = Body(...)
         email: str
@@ -125,7 +125,7 @@ async def test_header_params_in_both_request_model_and_arguments(service, mock_h
 
     class UserRequest(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
-        x_user_agent: str = Header(serialization_alias="x-user-agent")
+        x_user_agent: str = Header(serialization_alias="x-user-agent")  # type: ignore
 
         name: str
         email: str

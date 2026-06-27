@@ -4,13 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import pytest
-from pydantic import BaseModel
-
-try:
-    from pydantic import RootModel
-except ImportError:
-    pass
-
+from pydantic import BaseModel, RootModel
 
 from arrest.utils import (
     extract_model_field,

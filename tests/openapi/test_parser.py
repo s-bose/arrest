@@ -200,3 +200,10 @@ def test_generate_resources(responses, request_body, parsed_request, parsed_resp
     assert handler.route == "/items"
     assert handler.request == parsed_request
     assert handler.response == parsed_response
+
+
+def test_build_handlers_none_path_item():
+    """_build_handlers returns empty list when path_item is None."""
+    gen = OpenAPIGenerator(url="https://example.com/openapi.json", output_path="/tmp")
+    result = gen._build_handlers(route="/users", path_item=None)
+    assert result == []

@@ -75,7 +75,7 @@ async def test_openapi_generate_from_file(fixture_dir, fixture_file):
 async def test_openapi_generate_from_file_invalid_extension():
     filepath = os.path.join(FIXTURE_PATH, "openapi_petstore.toml")
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         with TemporaryDirectory() as tempdir:
             openapi = OpenAPIGenerator(url=filepath, output_path=tempdir)
             openapi.generate_schema()

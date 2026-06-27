@@ -81,7 +81,7 @@ class OpenAPIGenerator:
         """
         self.url: str = url
         self.output_path: str = output_path
-        self.dir_name: str = dir_name
+        self.dir_name = dir_name
 
     @retry(
         n_retries=MAX_RETRIES,
@@ -112,7 +112,7 @@ class OpenAPIGenerator:
             ArrestError: if the output path does not exist
         """
         openapi_bytes = self.download_openapi_spec()
-        fmt = fmt if fmt else self.url.split(".")[-1]
+        fmt = fmt if fmt else Format(self.url.split(".")[-1])
         openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
 
         output_path = Path(self.output_path)
@@ -143,7 +143,7 @@ class OpenAPIGenerator:
         InitTemplate(destination_path=output_path).render_and_save()
 
     def generate_component_schema(
-        self, input_bytes: bytes, schema_path: Path | str, silent: bool = False
+        self, input_bytes: bytes, schema_path: Path, silent: bool = False
     ) -> None:
         generate(
             input_=input_bytes.decode("utf-8"),
@@ -209,10 +209,11 @@ class OpenAPIGenerator:
         self,
         openapi: OpenAPI,
         service_name: Optional[str] = None,
-        resources: list[ResourceSchema] = None,
+        resources: list[ResourceSchema] | None = None,
     ) -> Generator[ServiceSchema, None, None]:
         name = service_name or self.get_service_name(openapi)
 
+        resources = resources or []
         resource_names = [res.name for res in resources]
         for idx, server in enumerate(openapi.servers):
             for idxx, url in enumerate(self._extract_url(server)):
@@ -266,10 +267,15 @@ class OpenAPIGenerator:
             else:
                 yield ResourceSchema(name=ROOT_RESOURCE, route=key, handlers=handlers)
 
-    def _build_handlers(self, route: str, path_item: PathItem) -> list[HandlerSchema]:
+    def _build_handlers(
+        self, route: str, path_item: PathItem | None
+    ) -> list[HandlerSchema]:
         handlers = []
+        if not path_item:
+            return handlers
+
         for method in list(Methods):
-            operation: Operation
+            operation: Operation | None
             if operation := getattr(path_item, str(method).lower(), None):
                 request_class = self.get_request_schema(operation)
                 response_class = self.get_response_schema(operation)
@@ -318,8 +324,6 @@ class OpenAPIGenerator:
             return json.load(data)
         elif fmt in (Format.yaml, Format.yml):
             return yaml.load(data, yaml.SafeLoader)
-        else:
-            raise NotImplementedError
 
     @classmethod
     def parse_openapi(cls, fmt: Format, data: IO) -> OpenAPI:
