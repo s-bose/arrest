@@ -9,6 +9,10 @@
 - Added `H()` helper for type-safe `ResourceHandler` definitions with keyword-argument
   clarity and full IDE autocomplete. Available as `from arrest import H`.
 
+- Added XML request and response support via `pydantic-xml`'s `BaseXmlModel`. When
+  request or response types subclass `BaseXmlModel`, Arrest handles XML serialization
+  and deserialization automatically with `Content-Type: application/xml`.
+
 ### Changed
 
 - **Breaking:** Unified `Response[T]` now wraps every HTTP status code — success and

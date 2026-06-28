@@ -227,6 +227,48 @@ body with the filename and content type.
     | `content_type` | `str` | MIME type (default: `application/octet-stream`) |
     | `file` | `IO[bytes] \| None` | File-like object with `read()` |
 
+### XML
+
+Arrest supports XML request and response bodies via `pydantic-xml`'s `BaseXmlModel`.
+When your request type is a `BaseXmlModel` subclass, Arrest serializes it to XML
+and sets `Content-Type: application/xml`. When your response type is a `BaseXmlModel`
+subclass, Arrest parses the raw XML response into a model instance.
+
+!!! example "XML request and response"
+
+    ```python
+    from pydantic_xml import BaseXmlModel, attr, element
+    from arrest import Resource
+
+    class UserRequest(BaseXmlModel, tag="user"):
+        name: str = element()
+        email: str = element()
+
+    class UserResponse(BaseXmlModel, tag="user"):
+        id: int = attr()
+        name: str = element()
+        email: str = element()
+
+    user = Resource(
+        route="/users",
+        handlers=[
+            ("POST", "/xml", UserRequest, UserResponse),
+        ],
+    )
+
+    # Request is serialized to XML with Content-Type: application/xml
+    resp = await svc.users.post(
+        "/xml",
+        request=UserRequest(name="Alice", email="alice@example.com"),
+    )
+    # resp.data is a UserResponse instance parsed from the XML response
+    ```
+
+!!! note "Field annotations required"
+    `pydantic-xml` requires explicit annotations on fields: use `element()` for
+    child elements, `attr()` for attributes. Plain `str` or `int` annotations
+    without these may not serialize correctly.
+
 ### Additional Configuration
 Arrest also allows providing other http parameters such as cookies, auth, transport, etc, or even your own instance of `httpx.AsyncClient` (or other classes subclassing it), if you choose to do so.
 If you want to customize the httpx client and specify more parameters either at resource-level or at service-level, you can check out [Resources & Services](resources-services.md#resources).

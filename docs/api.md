@@ -91,7 +91,7 @@ raised for transport-level failures (timeout, DNS errors, connection refused).
 raised for non-2xx HTTP responses when `raise_for_status=True` is set.
 
 * `.status_code` — **int** HTTP status code
-* `.data` — **dict | str | None** response body
+* `.data` — **Any** response body (JSON dict, XML model, string, etc.)
 
 ### NotFoundException
 ::: arrest.exceptions.NotFoundException

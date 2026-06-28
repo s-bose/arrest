@@ -223,6 +223,40 @@ dependency groups (`[dependency-groups]`) for organizing optional dependencies.
 
 ---
 
+## 6. XML request and response support via `pydantic-xml`
+
+Arrest now supports XML bodies using `pydantic-xml`'s `BaseXmlModel`. When your
+request or response type subclasses `BaseXmlModel`, Arrest handles serialization
+and deserialization automatically:
+
+```python
+from pydantic_xml import BaseXmlModel, attr, element
+
+class XmlRequest(BaseXmlModel, tag="user"):
+    name: str = element()
+    email: str = element()
+
+class XmlResponse(BaseXmlModel, tag="user"):
+    id: int = attr()
+    name: str = element()
+    email: str = element()
+
+res = Resource(
+    route="/users",
+    handlers=[("POST", "/xml", XmlRequest, XmlResponse)],
+)
+
+resp = await svc.users.post("/xml", request=XmlRequest(name="Alice", email="a@b.com"))
+# Content-Type: application/xml
+# resp.data is XmlResponse(id=42, name="Alice", email="a@b.com")
+```
+
+!!! note
+    Fields must use `element()` or `attr()` annotations. `pydantic-xml` is a
+    required dependency (bundled with Arrest).
+
+---
+
 ## See also
 
 - [Getting Started](getting-started.md) — detailed walkthrough of `H()`, `Response[T]`, and `Form`/`File`
