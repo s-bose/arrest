@@ -32,11 +32,6 @@ class HandlerNotFound(NotFoundException):
         super().__init__(message)
 
 
-class ResourceNotFound(NotFoundException):
-    def __init__(self, message: str):
-        super().__init__(message)
-
-
 class ConversionError(ArrestError):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)

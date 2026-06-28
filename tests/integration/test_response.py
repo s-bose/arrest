@@ -143,3 +143,31 @@ async def test_response_undecodable_body(service, mock_httpx):
 
     with pytest.raises(ResponseError):
         await service.user.get("/")
+
+
+@pytest.mark.parametrize(
+    "status_code, success, redirect, client_err, server_err",
+    [
+        (200, True, False, False, False),
+        (301, False, True, False, False),
+        (404, False, False, True, False),
+        (500, False, False, False, True),
+    ],
+)
+def test_response_status_properties(
+    status_code, success, redirect, client_err, server_err
+):
+    from arrest.response import Response
+
+    resp = Response(
+        data=None,
+        status_code=status_code,
+        url=httpx.URL("http://x"),
+        elapsed=None,
+        raw=httpx.Response(status_code),
+        request=None,
+    )
+    assert resp.is_success == success
+    assert resp.is_redirect == redirect
+    assert resp.is_client_error == client_err
+    assert resp.is_server_error == server_err

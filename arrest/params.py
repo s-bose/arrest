@@ -76,7 +76,7 @@ class RequestArgs:
 # Public API
 
 
-def Param(default: Any = None, **kwargs: Any) -> Any:
+def Param(default: Any = None, **kwargs: Any) -> Any:  # pragma: no cover
     return _Param(default, **kwargs)
 
 

@@ -153,3 +153,23 @@ async def test_header_params_in_both_request_model_and_arguments(service, mock_h
     request_headers = httpx.Headers(request.headers)
     assert request_headers["x-header"] == "123"
     assert request_headers["x-user-agent"] == "mozila"
+
+
+@pytest.mark.asyncio
+async def test_config_headers_merged_when_not_in_model(service, mock_httpx):
+    """Config-level headers that don't overlap with model headers get added."""
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[(Methods.GET, "/", None, None)],
+            headers={"x-default": "config-val"},
+        )
+    )
+    mock_httpx.get(url__regex="/user/*", name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "OK"})
+    )
+    await service.user.get("/", headers={"x-call": "call-val"})
+
+    request = mock_httpx["http_request"].calls[0].request
+    assert request.headers["x-default"] == "config-val"
+    assert request.headers["x-call"] == "call-val"

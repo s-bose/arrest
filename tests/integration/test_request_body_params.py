@@ -430,6 +430,52 @@ async def test_body_request_handler_level_content_type_override(
     assert req.headers["content-type"] == expected_ct
 
 
+# UploadFile tests
+
+
+def test_upload_file_read_without_file_raises():
+    uf = UploadFile(filename="test.txt")
+    with pytest.raises(ValueError, match="No file provided"):
+        uf.read()
+
+
+def test_upload_file_pydantic_validation_from_file_like():
+    """UploadFile schema validates a file-like object with .read() and .name."""
+    from pydantic import TypeAdapter
+
+    adapter = TypeAdapter(UploadFile)
+
+    class FakeFile:
+        filename = "data.csv"
+
+        def read(self, size=-1):
+            return b"col1,col2"
+
+    result = adapter.validate_python(FakeFile())
+    assert isinstance(result, UploadFile)
+    assert result.filename == "data.csv"
+    assert result.read() == b"col1,col2"
+
+
+def test_upload_file_pydantic_validation_passes_through_existing():
+    """UploadFile schema passes through an existing UploadFile instance."""
+    from pydantic import TypeAdapter
+
+    adapter = TypeAdapter(UploadFile)
+    existing = UploadFile(filename="x.csv", file=None)
+    result = adapter.validate_python(existing)
+    assert result is existing
+
+
+def test_upload_file_pydantic_validation_rejects_non_file():
+    """UploadFile schema rejects values without a .read() method."""
+    from pydantic import TypeAdapter
+
+    adapter = TypeAdapter(UploadFile)
+    with pytest.raises(ValueError, match="file-like object"):
+        adapter.validate_python("not a file")
+
+
 @pytest.mark.asyncio
 async def test_body_request_resource_level_content_type_override(service, mock_httpx):
     """When Content-Type is set at resource definition,

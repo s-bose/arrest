@@ -97,9 +97,6 @@ raised when no matching handler is found for the requested path
 
 * `.message` - **str**
 
-### ResourceNotFound
-::: arrest.exceptions.ResourceNotFound
-raised when no matching resource is found for the service
 
 * `.message` - **str**
 

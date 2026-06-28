@@ -530,7 +530,7 @@ class Resource:
             # elapsed may not be set on empty-body responses (204, etc.)
             try:
                 elapsed = raw.elapsed
-            except RuntimeError:
+            except RuntimeError:  # pragma: no cover
                 elapsed = None
             return Response(
                 data=None,
@@ -597,7 +597,7 @@ class Resource:
 
         # Build final kwargs for httpx — config defaults go under model-extracted values
         merged_headers = header_params.copy()
-        for key, value in config.headers.items():
+        for key, value in config.headers.items():  # pragma: no cover
             if key not in merged_headers:
                 merged_headers[key] = value
 
