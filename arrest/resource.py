@@ -14,7 +14,12 @@ from typing_extensions import Unpack
 from arrest._config import ArrestConfig, HttpxClientInputs
 from arrest.converters import compile_path
 from arrest.defaults import ROOT_RESOURCE
-from arrest.exceptions import ArrestHTTPException, HandlerNotFound, ResponseError
+from arrest.exceptions import (
+    ArrestHTTPException,
+    HandlerNotFound,
+    RequestError,
+    ResponseError,
+)
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
@@ -191,6 +196,7 @@ class Resource:
         cookies: Optional[dict[str, str]] = None,
         timeout: Optional[float] = None,
         follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -223,6 +229,9 @@ class Resource:
                 Override the default timeout for this call.
             follow_redirects:
                 Override redirect-following for this call.
+            raise_for_status:
+                If True, non-2xx responses raise ``ArrestHTTPException``
+                instead of returning a ``Response`` (legacy behaviour).
             **kwargs:
                 Keyword-arguments matching the path params, if any
 
@@ -252,6 +261,7 @@ class Resource:
                 params={**path_query_params, **dict(query or {})},
                 timeout=timeout,
                 follow_redirects=follow_redirects,
+                raise_for_status=raise_for_status,
             )
         )
 
@@ -287,14 +297,8 @@ class Resource:
         except (httpx.TimeoutException, httpx.RequestError) as exc:
             # transport errors: retries exhausted or no retry configured
             if isinstance(exc, httpx.TimeoutException):
-                raise ArrestHTTPException(
-                    status_code=httpx.codes.REQUEST_TIMEOUT,
-                    data="request timed out",
-                ) from exc
-            raise ArrestHTTPException(
-                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
-                data="error occurred while making request",
-            ) from exc
+                raise RequestError("request timed out") from exc
+            raise RequestError("error occurred while making request") from exc
 
         # custom exception handling
         except Exception as exc:
@@ -532,7 +536,7 @@ class Resource:
                 elapsed = raw.elapsed
             except RuntimeError:  # pragma: no cover
                 elapsed = None
-            return Response(
+            resp = Response(
                 data=None,
                 status_code=status_code,
                 url=raw.url,
@@ -540,6 +544,12 @@ class Resource:
                 raw=raw,
                 request=raw.request,
             )
+            if cfg.raise_for_status and not resp.is_success:
+                raise ArrestHTTPException(
+                    status_code=resp.status_code,
+                    data=resp.data,
+                )
+            return resp
 
         try:
             body = raw.json()
@@ -557,7 +567,7 @@ class Resource:
         except RuntimeError:
             elapsed = None
 
-        return Response(
+        resp = Response(
             data=data,
             status_code=status_code,
             url=raw.url,
@@ -565,6 +575,14 @@ class Resource:
             raw=raw,
             request=raw.request,
         )
+
+        if cfg.raise_for_status and not resp.is_success:
+            raise ArrestHTTPException(
+                status_code=resp.status_code,
+                data=resp.data,
+            )
+
+        return resp
 
     async def __make_request(
         self,

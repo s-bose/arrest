@@ -27,6 +27,7 @@ class Service:
         max_retries: Optional[int] = None,
         auth: Any = None,
         follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         # ── transport: passed once to httpx.AsyncClient ─────────────────
         **client_kwargs: Unpack[HttpxClientInputs],
     ) -> None:
@@ -57,6 +58,9 @@ class Service:
                 Default authentication.
             follow_redirects:
                 Whether to follow redirects by default.
+            raise_for_status:
+                If True, non-2xx responses raise ``ArrestHTTPException``
+                instead of returning a ``Response``. Defaults to None (off).
             client_kwargs:
                 Transport-level httpx.AsyncClient parameters.
                 [see more](api.md#httpx-client-arguments)
@@ -74,6 +78,7 @@ class Service:
             max_retries=max_retries,
             auth=auth,
             follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
         )
 
         self._exception_handlers = (
@@ -96,6 +101,7 @@ class Service:
         max_retries: Optional[int] = None,
         auth: Any = None,
         follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **client_kwargs: Unpack[HttpxClientInputs],
     ) -> None:
         """
@@ -115,6 +121,7 @@ class Service:
                 max_retries=max_retries,
                 auth=auth,
                 follow_redirects=follow_redirects,
+                raise_for_status=raise_for_status,
             )
         )
 

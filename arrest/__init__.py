@@ -1,4 +1,5 @@
 # flake8: noqa
+from .exceptions import ArrestHTTPException, RequestError
 from .handler import H
 from .http import Methods
 from .resource import Resource
@@ -16,8 +17,10 @@ HEAD = Methods.HEAD
 OPTIONS = Methods.OPTIONS
 
 __all__ = [
+    "ArrestHTTPException",
     "H",
     "Methods",
+    "RequestError",
     "Resource",
     "Response",
     "Service",

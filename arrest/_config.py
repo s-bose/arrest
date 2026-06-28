@@ -43,6 +43,7 @@ class ArrestConfig:
     auth: Any | None = None
     follow_redirects: bool | None = None
     max_retries: int | None = field(default=None, metadata={"internal": True})
+    raise_for_status: bool | None = field(default=None)
 
     def httpx_args(self) -> dict[str, Any]:
         """Return only fields valid as ``httpx.AsyncClient`` / request kwargs.
@@ -77,5 +78,10 @@ class ArrestConfig:
                 overrides.follow_redirects
                 if overrides.follow_redirects is not None
                 else self.follow_redirects
+            ),
+            raise_for_status=(
+                overrides.raise_for_status
+                if overrides.raise_for_status is not None
+                else self.raise_for_status
             ),
         )
