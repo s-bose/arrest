@@ -208,3 +208,61 @@ def test_arrest_config_httpx_args_excludes_internal():
     assert "max_retries" not in result
     assert "client" not in result
     assert "auth" not in result
+
+
+@pytest.mark.parametrize(
+    "svc_client, res_client, expected",
+    [
+        pytest.param(
+            httpx.AsyncClient(),
+            None,
+            "svc",
+            id="service-only",
+        ),
+        pytest.param(
+            None,
+            httpx.AsyncClient(),
+            "res",
+            id="resource-only",
+        ),
+        pytest.param(
+            httpx.AsyncClient(),
+            httpx.AsyncClient(),
+            "res",
+            id="resource-overrides-service",
+        ),
+        pytest.param(
+            None,
+            None,
+            None,
+            id="no-client",
+        ),
+    ],
+)
+def test_client_instance_identity(svc_client, res_client, expected):
+    """Client instances pass through the config merge chain as the same object."""
+    from arrest._config import ArrestConfig
+
+    clients = {"svc": svc_client, "res": res_client}
+
+    svc = Service(
+        name="test",
+        url="http://example.com",
+        config=ArrestConfig(client=svc_client) if svc_client else None,
+    )
+    resource = Resource(
+        route="/items",
+        handlers=[("GET", "/")],
+        config=ArrestConfig(client=res_client) if res_client else None,
+    )
+    svc.add_resource(resource)
+
+    merged_config = svc.items.config
+    merged_client = merged_config.client if merged_config else None
+
+    if expected is None:
+        assert merged_client is None
+    else:
+        expected_client = clients[expected]
+        assert merged_client is expected_client
+        assert merged_client is expected_client  # same object, not a copy
