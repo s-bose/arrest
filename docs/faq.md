@@ -45,7 +45,9 @@ if resp.is_client_error:
 ```
 
 !!! note
-    Only **transport-level** failures (timeout, connection refused, DNS errors) raise `ArrestHTTPException`. A server responding with `500` still produces a normal `Response` object.
+    Only **transport-level** failures (timeout, connection refused, DNS errors) raise
+    `RequestError`. A server responding with `500` still produces a normal `Response` object
+    unless you set `raise_for_status=True`.
 
 ---
 

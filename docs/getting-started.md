@@ -170,6 +170,8 @@ if resp.is_client_error:
 !!! note "Migration"
     If you were catching `ArrestHTTPException` for non-2xx status codes,
     replace the `try/except` with an `if resp.is_success` check instead.
+    Alternatively, enable `raise_for_status=True` on your Service, Resource, or
+    per-call to restore the legacy behaviour.
     See [What's New](whats-new.md) for details.
 
 ---
@@ -267,21 +269,26 @@ response = await service.user.get("/")
 ---
 ## Handling exceptions
 All of Arrest's exceptions/errors subclass `ArrestError`.
-The most important one is `ArrestHTTPException` which wraps the httpx-specific errors that might occur from making a request.
-Any response that does not have a success status code (i.e. 200-299) will throw an `ArrestHTTPException` with the appropriate `status_code` and `data`.
+
+- **`RequestError`** — raised for transport-level failures (timeout, DNS errors,
+  connection refused). It carries a `message` string.
+- **`ArrestHTTPException`** — raised *only* when `raise_for_status=True` is set
+  and the server responds with a non-2xx status. Carries `status_code` and `data`.
+- **`ResponseError`** — raised when the response body cannot be parsed.
+- **`HandlerNotFound`** — raised when no matching handler is found for the request.
 
 !!! example
 
     ```python
+    from arrest.exceptions import RequestError, ArrestHTTPException
+
     try:
         response = await xyz_service.users.get("/123")
-    except ArrestHTTPException as exc:
-        logging.warning(f"{exc.status_code} {exc.data}")
-        # do something with the error response
+        if not response.is_success:
+            print(f"Error: {response.status_code}")
+    except RequestError as exc:
+        logging.warning(f"Request failed: {exc.message}")
     ```
-
-Any other error such as `TimeoutException` or `RequestError` will result in a `ArrestHTTPException` with `status_code=500`
-See [API Documentation](api.md) for further details.
 
 
 ---

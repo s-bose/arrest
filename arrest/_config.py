@@ -42,8 +42,9 @@ class ArrestConfig:
     timeout: float | None = None
     auth: Any | None = None
     follow_redirects: bool | None = None
+    raise_for_status: bool | None = None
+
     max_retries: int | None = field(default=None, metadata={"internal": True})
-    raise_for_status: bool | None = field(default=None)
 
     def httpx_args(self) -> dict[str, Any]:
         """Return only fields valid as ``httpx.AsyncClient`` / request kwargs.
