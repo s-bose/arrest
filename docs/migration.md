@@ -54,7 +54,7 @@ and `Resource` now live in an `ArrestConfig` instance passed via `config=`.
             timeout=30.0,
             max_retries=3,
             follow_redirects=True,
-            auth=("user", "pass"),
+            auth=httpx.BasicAuth(username="user", password="pass"),
             transport=httpx.AsyncHTTPTransport(retries=2),
             verify=False,
         ),

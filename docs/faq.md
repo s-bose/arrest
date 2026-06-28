@@ -188,20 +188,41 @@ You can also use [respx](https://github.com/lundberg/respx) to mock at the HTTP 
 
 ## How do I add custom headers/auth to every request?
 
-Set `headers` or `auth` at any level — they merge according to the hierarchy:
+Set `headers` or `auth` in `ArrestConfig` at any level — they merge according
+to the hierarchy:
 
 ```
 per-call kwargs  >  handler config  >  resource config  >  service config
 ```
 
 ```python
+import httpx
+from arrest._config import ArrestConfig
+
+# Basic auth
 svc = Service(
     name="api",
     url="https://example.com",
     config=ArrestConfig(
         headers={"x-api-key": "svc-level"},
-        auth=("user", "pass"),
+        auth=httpx.BasicAuth(username="user", password="pass"),
     ),
+    resources=[...],
+)
+
+# Bearer token
+class BearerAuth(httpx.Auth):
+    def __init__(self, token: str):
+        self.token = token
+
+    def auth_flow(self, request):
+        request.headers["Authorization"] = f"Bearer {self.token}"
+        yield request
+
+svc = Service(
+    name="api",
+    url="https://example.com",
+    config=ArrestConfig(auth=BearerAuth("my-token")),
     resources=[...],
 )
 
