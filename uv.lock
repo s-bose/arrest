@@ -49,7 +49,7 @@ wheels = [
 
 [[package]]
 name = "arrest"
-version = "0.1.10"
+version = "0.1.11a1"
 source = { editable = "." }
 dependencies = [
     { name = "argcomplete" },
