@@ -56,7 +56,7 @@ class _File(_Param):
         super().__init__(default, **kwargs)
 
 
-class Params:
+class RequestArgs:
     def __init__(
         self,
         *,

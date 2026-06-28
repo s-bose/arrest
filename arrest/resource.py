@@ -18,7 +18,7 @@ from arrest.exceptions import ArrestHTTPException, HandlerNotFound, ResponseErro
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
-from arrest.params import Params
+from arrest.params import RequestArgs
 from arrest.response import Response
 from arrest.types import ExceptionHandlers
 from arrest.utils import (
@@ -255,7 +255,7 @@ class Resource:
             )
         )
 
-        params = extract_request_params(
+        args = extract_request_params(
             request_type=handler.request,
             request_data=request,
             headers=final_config.headers,
@@ -279,7 +279,7 @@ class Resource:
             response = await fn_make_request(
                 url=url,
                 method=method,
-                params=params,
+                args=args,
                 response_type=response_type,
                 config=final_config,
             )
@@ -475,7 +475,7 @@ class Resource:
         self,
         url: str,
         method: Methods,
-        params: Params,
+        args: RequestArgs,
         response_type: Any,
         config: ArrestConfig | None = None,
     ) -> Response[Any]:
@@ -488,7 +488,7 @@ class Resource:
                 the complete url of the endpoint
             method:
                 one of the available http methods
-            params:
+            args:
                 dict containing ``header``, ``query`` and ``body`` params
             response_type:
                 a python type to deserialize the json response to
@@ -507,7 +507,7 @@ class Resource:
                 client=self._client,
                 url=url,
                 method=method,
-                params=params,
+                args=args,
                 config=cfg,
             )
         else:
@@ -519,7 +519,7 @@ class Resource:
                     client=client,
                     url=url,
                     method=method,
-                    params=params,
+                    args=args,
                     config=cfg,
                 )
 
@@ -571,7 +571,7 @@ class Resource:
         client: httpx.AsyncClient,
         url: str,
         method: Methods,
-        params: Params,
+        args: RequestArgs,
         config: ArrestConfig,
     ) -> httpx.Response:
         """(private) makes the actual http request using httpx
@@ -580,7 +580,7 @@ class Resource:
             client (httpx.AsyncClient)
             url (str)
             method (Methods)
-            params (Params)
+            args (RequestArgs)
             config (ArrestConfig)
 
         Returns:
@@ -588,11 +588,11 @@ class Resource:
         """
 
         header_params, query_params, body_params, file_params, content_type = (
-            params.header,
-            params.query,
-            params.body,
-            params.files,
-            params.content_type,
+            args.header,
+            args.query,
+            args.body,
+            args.files,
+            args.content_type,
         )
 
         # Build final kwargs for httpx — config defaults go under model-extracted values

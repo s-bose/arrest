@@ -16,7 +16,7 @@ from httpx._types import FileTypes
 from pydantic import BaseModel, TypeAdapter
 
 from arrest.logging import logger
-from arrest.params import Params, ParamTypes, _File, _Param
+from arrest.params import ParamTypes, RequestArgs, _File, _Param
 from arrest.types import ExceptionHandler, ExceptionHandlers, UploadFile
 
 T = TypeVar("T")
@@ -234,7 +234,7 @@ def extract_request_params(
     request_data: Any,
     headers: dict[str, str] | None = None,
     query: dict[str, Any] | None = None,
-) -> Params:
+) -> RequestArgs:
     header_params: dict[str, str] = headers or {}
     query_params: dict[str, Any] = query or {}
     body_params: dict[str, Any] = {}
@@ -245,7 +245,7 @@ def extract_request_params(
         request_data = validate_model(type_=request_type, obj=request_data)
 
     if is_rootmodel(request_data):
-        return Params(
+        return RequestArgs(
             header=Headers(header_params),
             query=QueryParams(query_params),
             body=jsonable_encoder(request_data),
@@ -285,14 +285,14 @@ def extract_request_params(
 
         if is_form_body:
             if file_params:
-                return Params(
+                return RequestArgs(
                     header=Headers(header_params),
                     query=QueryParams(query_params),
                     body=body_params if body_params else None,
                     files=file_params if file_params else None,
                     content_type="multipart/form-data",
                 )
-            return Params(
+            return RequestArgs(
                 header=Headers(header_params),
                 query=QueryParams(query_params),
                 body=body_params if body_params else None,
@@ -300,7 +300,7 @@ def extract_request_params(
                 content_type="application/x-www-form-urlencoded",
             )
 
-        return Params(
+        return RequestArgs(
             header=Headers(header_params),
             query=QueryParams(query_params),
             body=jsonable_encoder(body_params) if body_params else None,
@@ -310,7 +310,7 @@ def extract_request_params(
 
     body_params = request_data
 
-    return Params(
+    return RequestArgs(
         header=Headers(header_params),
         query=QueryParams(query_params),
         body=jsonable_encoder(body_params) if body_params else None,
