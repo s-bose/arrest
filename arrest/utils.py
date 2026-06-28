@@ -14,6 +14,7 @@ import tenacity
 from httpx import Headers, QueryParams
 from httpx._types import FileTypes
 from pydantic import BaseModel, TypeAdapter
+from pydantic_xml import BaseXmlModel
 
 from arrest.logging import logger
 from arrest.params import ParamTypes, RequestArgs, _File, _Param
@@ -244,6 +245,15 @@ def extract_request_params(
         # perform type validation on `request_data`
         request_data = validate_model(type_=request_type, obj=request_data)
 
+    if isinstance(request_data, BaseXmlModel):
+        header_params["Content-Type"] = "application/xml"
+        return RequestArgs(
+            header=Headers(header_params),
+            query=QueryParams(query_params),
+            body=request_data.to_xml(),
+            content_type="application/xml",
+        )
+
     if is_rootmodel(request_data):
         return RequestArgs(
             header=Headers(header_params),
@@ -331,4 +341,6 @@ def build_body_kwargs(
         return {"data": body, "files": files}
     if content_type == "application/x-www-form-urlencoded":
         return {"data": body}
+    if content_type == "application/xml":
+        return {"content": body}
     return {"json": body} if body else {}

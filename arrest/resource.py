@@ -9,6 +9,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from httpx import QueryParams
 from pydantic import BaseModel, ValidationError
+from pydantic_xml import BaseXmlModel
 from typing_extensions import Unpack
 
 from arrest._config import ArrestConfig, HttpxClientInputs
@@ -559,7 +560,14 @@ class Resource:
             except UnicodeDecodeError:
                 raise ResponseError("Could not parse HTTP response")
 
-        data = validate_model(response_type, body) if response_type else body
+        if (
+            response_type
+            and isinstance(response_type, type)
+            and issubclass(response_type, BaseXmlModel)
+        ):
+            data = response_type.from_xml(raw.content)
+        else:
+            data = validate_model(response_type, body) if response_type else body
 
         # elapsed is only available after the response body is consumed.
         try:

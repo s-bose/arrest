@@ -7,6 +7,7 @@ import httpx
 import pytest
 from pydantic import BaseModel, RootModel
 from pydantic import ValidationError as PydanticValidationError
+from pydantic_xml import BaseXmlModel, attr, element
 from respx.patterns import M
 
 from arrest.http import Methods
@@ -528,3 +529,103 @@ async def test_body_request_runtime_level_content_type_override(service, mock_ht
 
     req: httpx.Request = mock_httpx["http_request"].calls[0].request
     assert req.headers["content-type"] == "multipart/form-data"
+
+
+# XML request / response tests
+
+
+class XmlUserRequest(BaseXmlModel, tag="user"):
+    name: str = element()
+    email: str = element()
+
+
+class XmlUserResponse(BaseXmlModel, tag="user"):
+    id: int = attr()
+    name: str = element()
+    email: str = element()
+
+
+@pytest.mark.asyncio
+async def test_xml_request_body(service, mock_httpx):
+    """BaseXmlModel request is serialized to XML with correct content-type."""
+    patterns = [M(url__regex="/user/*", method__in=["POST"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[(Methods.POST, "/xml", XmlUserRequest)],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"<user id='1'><name>Alice</name><email>alice@test.com</email></user>",
+        )
+    )
+
+    resp = await service.user.post(
+        "/xml",
+        request=XmlUserRequest(name="Alice", email="alice@test.com"),
+    )
+
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert req.headers["content-type"] == "application/xml"
+    assert "<user>" in req.content.decode()
+    assert "<name>Alice</name>" in req.content.decode()
+    assert resp.is_success
+
+
+@pytest.mark.asyncio
+async def test_xml_response_parsing(service, mock_httpx):
+    """BaseXmlModel response_type parses XML response into model instance."""
+    patterns = [M(url__regex="/user/*", method__in=["GET"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                (Methods.GET, "/{user_id}", None, XmlUserResponse),
+            ],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"<user id='42'><name>Bob</name><email>bob@test.com</email></user>",
+        )
+    )
+
+    resp = await service.user.get("/42")
+    assert resp.is_success
+    assert isinstance(resp.data, XmlUserResponse)
+    assert resp.data.id == 42
+    assert resp.data.name == "Bob"
+    assert resp.data.email == "bob@test.com"
+
+
+@pytest.mark.asyncio
+async def test_xml_request_no_response_type(service, mock_httpx):
+    """BaseXmlModel request with no response type still works."""
+    patterns = [M(url__regex="/user/*", method__in=["POST"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[(Methods.POST, "/xml", XmlUserRequest)],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "created"})
+    )
+
+    resp = await service.user.post(
+        "/xml",
+        request=XmlUserRequest(name="Carol", email="carol@test.com"),
+    )
+
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert req.headers["content-type"] == "application/xml"
+    assert resp.data == {"status": "created"}

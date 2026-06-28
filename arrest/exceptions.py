@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class BaseException(Exception):
     """base exception class"""
 
@@ -10,7 +13,7 @@ class ArrestError(BaseException):
 
 
 class ArrestHTTPException(ArrestError):
-    def __init__(self, status_code: int, data: dict | str | None) -> None:
+    def __init__(self, status_code: int, data: Any) -> None:
         self.status_code = status_code
         self.data = data
         super().__init__(str(data))
