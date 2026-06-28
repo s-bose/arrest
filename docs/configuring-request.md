@@ -43,7 +43,7 @@ This is useful when you want to group together all the components of your reques
         x_max_age: str = Header(...)
         x_cookie: str = Header(...)
 
-    await service.user.get("/posts", request=HeaderRequest(x_max_age="20", "x_cookie": "xyz"))
+    await service.user.get("/posts", request=HeaderRequest(x_max_age="20", x_cookie="xyz"))
     ```
 
 !!! warning

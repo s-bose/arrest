@@ -109,7 +109,7 @@ class UserRequest(BaseModel):
     role: str
 
 Resource(
-    route="/abc,
+    route="/abc",
     handlers=[
         ("POST", "/", UserRequest) # or ResourceHandler(method="POST", route="/", request=UserRequest)
                                    # or {"method": "POST", "route": "/", "request": UserRequest}
