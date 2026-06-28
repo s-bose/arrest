@@ -8,9 +8,9 @@ ordered by priority and impact.
 ## 1. Unified `Response[T]` — a single response type for success and error paths
 
 **Breaking change** — Arrest now returns a `Response[T]` for **every** HTTP status code,
-not just 2xx. Transport-level failures (timeouts, connection errors) still raise
-`ArrestHTTPException`, but a server returning `404`, `500`, or any other status
-now produces a normal `Response` object you can inspect.
+not just 2xx. Transport-level failures (timeouts, connection errors) raise the new
+`RequestError` (no `status_code`), while a server returning `404`, `500`, or any
+other status now produces a normal `Response` object you can inspect.
 
 Previously you had to `try/except ArrestHTTPException` for non-2xx responses.
 Now you check properties on the response itself:
@@ -65,6 +65,32 @@ if resp.is_success:
 else:
     print(f"Error: {resp.status_code} — {resp.data}")
 ```
+
+**Legacy compatibility mode:**
+
+If you prefer the old behaviour, enable `raise_for_status` at the Service,
+Resource, or per-call level. When enabled, non-2xx responses raise
+`ArrestHTTPException` (with `status_code` and `data`) just like in v0.1.x.
+Default is `False` (new behaviour).
+
+```python
+# Service-level: all resources inherit
+svc = Service(name="api", url="https://example.com", raise_for_status=True, ...)
+
+# Resource-level (via add_resource)
+svc.add_resource(user_resource, raise_for_status=True)
+
+# Per-call (via request())
+await svc.users.request(method="POST", path="/", raise_for_status=True)
+```
+
+**Exception summary:**
+
+| Scenario | Default (`False`) | `raise_for_status=True` |
+|---|---|---|
+| Transport failure (timeout, DNS, etc.) | `RequestError` | `RequestError` |
+| Server responds 4xx / 5xx | `Response` with `is_client_error`/`is_server_error` | `ArrestHTTPException` |
+| Server responds 2xx | `Response` with `is_success` | `Response` with `is_success` |
 
 ---
 

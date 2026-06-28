@@ -80,12 +80,18 @@ header. Set to a callable for automatic character set detection. Default: "utf-8
 ::: arrest.exceptions.ArrestError
 base class for all Exception. Used in situations that are not one of the following
 
+### RequestError
+::: arrest.exceptions.RequestError
+raised for transport-level failures (timeout, DNS errors, connection refused).
+
+* `.message` — **str** description of the error
+
 ### ArrestHTTPException
 ::: arrest.exceptions.ArrestHTTPException
-used for exceptions during HTTP calls
+raised for non-2xx HTTP responses when `raise_for_status=True` is set.
 
-* `.status_code` - **str** status code of the exception, 500 for internal server error
-* `.data` - **str** json response for the exception
+* `.status_code` — **int** HTTP status code
+* `.data` — **dict | str | None** response body
 
 ### NotFoundException
 ::: arrest.exceptions.NotFoundException
