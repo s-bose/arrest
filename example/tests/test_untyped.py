@@ -49,18 +49,18 @@ svc = Service(
 async def test_get_random_user():
     response = await svc.users.get("")
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
 
 @pytest.mark.asyncio
 async def test_get_all_users():
     response = await svc.users.get("/all")
 
-    assert response
-    assert isinstance(response, list)
+    assert response.data
+    assert isinstance(response.data, list)
 
-    assert isinstance(response[0], dict)
+    assert isinstance(response.data[0], dict)
 
 
 @pytest.mark.asyncio
@@ -69,10 +69,10 @@ async def test_create_user():
 
     response = await svc.users.post("/", request=request)
 
-    assert response
-    assert isinstance(response, dict)
-    assert response["name"] == "john doe"
-    assert response["email"] == "john_doe@email.com"
+    assert response.data
+    assert isinstance(response.data, dict)
+    assert response.data["name"] == "john doe"
+    assert response.data["email"] == "john_doe@email.com"
 
 
 @pytest.mark.asyncio
@@ -80,22 +80,36 @@ async def test_delete_user_by_id():
     user_id = uuid.UUID(int=3)
     response = await svc.users.delete(f"/{user_id}")
 
-    assert response is True
+    assert response.data is True
 
 
 @pytest.mark.asyncio
 async def test_get_random_task():
     response = await svc.tasks.get("")
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
 
 @pytest.mark.asyncio
 async def test_create_task():
-    pass
+    request = {
+        "user_id": str(uuid.UUID(int=1)),
+        "title": "New Task",
+        "priority": "HIGH",
+    }
+
+    response = await svc.tasks.post("/", request=request)
+
+    assert response.data
+    assert isinstance(response.data, dict)
+    assert response.data["title"] == "New Task"
+    assert response.data["priority"] == "HIGH"
 
 
 @pytest.mark.asyncio
 async def test_delete_task_by_id():
-    pass
+    task_id = uuid.UUID(int=101)
+    response = await svc.tasks.delete(f"/{task_id}")
+
+    assert response.data is True
