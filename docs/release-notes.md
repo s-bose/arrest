@@ -25,8 +25,6 @@
 - Fixed improper imports of pydantic schemas from the OpenAPI generation. Certain schema names in the generated OpenAPI spec caused some import issues, which was fixed.
 
 
-For more information, check out [What's New](whats-new.md)
-
 ## 0.1.9
 
 Feb 14, 2024

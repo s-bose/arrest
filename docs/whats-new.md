@@ -56,22 +56,23 @@ v0.1.10 standardizes all variable names of the generated service and resource to
 
 You can now define root-level resources (i.e., having base routes of either `""` or `"/"`) There can be only one root-level resource, for obvious reasons. You can set them up as normal `Resource` instances with `route=""` or `route="/`" and a corresponding handler `(<Method>, "")` (e.g. `www.example.com`) or `(<Method>, "/")` (e.g. `www.example.com/`)
 
-In order to make the call to the root-resource, you simply invoke the http methods on the service directly, without specifying a resource
+In order to make the call to the root-resource, you call the http methods on the `.root` resource of the service.
 
 ```python
-await my_service.get("") # or my_service.get("/")
+await my_service.root.get("") # or my_service.root.get("/")
 ```
 
 !!! Note
-    This is only applicable if you have a path with no suffix at the root level. i.e. `www.example.com/`. If you want to access `www.example.com/path`, then the following won't work.
+    This is only applicable if you have a path with no suffix at the root level. i.e. `www.example.com/`. If you want to access `www.example.com/path`, while you could define it as a handler on the root resource, it's cleaner to define a separate resource:
 
 ```python
 Resource(route="/", handlers=[("GET", "/path")])
 
-await service.get("/path") # throws ResourceNotFound
+# This works, but is less idiomatic:
+await service.root.get("/path")
 ```
 
-Because `/path` constitutes a resource on its own, not a subpath for a root-resource `/`, hence the following would need to be written
+Because `/path` constitutes a resource on its own, the recommended approach is to define it separately:
 
 ```python
 Resource(route="/path", handlers=[("GET", "")])
@@ -272,8 +273,8 @@ assert isinstance(response, UserSchema) # True
 
 
 This also works similarly for root-level resources for the service.
-If your root-level resource is at `"/"`, you can call `service.get("/")` or `service.root.get("/")`,
-but if the root-level resource is at `""`, you have to call `service.get("")` or `service.root.get("")`.
+If your root-level resource is at `"/"`, you can call `service.root.get("/")`,
+but if the root-level resource is at `""`, you have to call `service.root.get("")`.
 
 
 You can overwrite the default handler by rewriting it in the handlers list.

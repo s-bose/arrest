@@ -7,7 +7,6 @@
         members:
             - __init__
             - add_resource
-            - request
 
 ## `Resource`
 ::: arrest.resource.Resource

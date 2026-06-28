@@ -129,7 +129,7 @@ await example_svc.users.post("/", request=NewUserRequest(email="abc@email.com", 
 await example_svc.users.patch("/", request=UpdateUserRequest(password="hopefullyhashedagain"))
 ```
 
-You might also have noticed that a custom request DTOs can be provided such as `NewUserRequest` and `UpdateUserRequest`. With this you can enable data validation and structure to your request data. Although, for now, these have to be pydantic classes.
+You might also have noticed that custom request DTOs can be provided such as `NewUserRequest` and `UpdateUserRequest`. With this you can enable data validation and structure to your request data. Arrest supports **pydantic models, Python dataclasses, plain dictionaries, and lists** as request/response types (since v0.1.10).
 
 ## Caveats and Future
 

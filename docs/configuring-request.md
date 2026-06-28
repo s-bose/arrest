@@ -206,8 +206,8 @@ service.abc.get(f"/user/{user_id}/comments", comment_id=comment_id)
         ],
     )
 
-    user.post("/profile", id=123, comments=456) # wont work
-    user.post("/profile/123/comments/", comments=456) # will work
+    user.post("/profile", id=123, comment_id=456) # wont work
+    user.post("/profile/123/comments/", comment_id=456) # will work
     ```
 
 !!! note "About url paths"

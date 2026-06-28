@@ -103,15 +103,10 @@ import httpx
 
 my_client = httpx.AsyncClient(...)
 
-user = Resource(
-    route="/users",
-    handlers=[
-        ("GET", "/"),
-        ("POST", "/"),
-        ("PUT", "/{user_id:int}"),
-        ("DELETE", "/{user_id:int}"),
-    ],
-    response_model=UserResponse,
+myservice = Service(
+    name="myservice",
+    url="http://example.com/api/v1",
+    resources=[user],
     client=my_client
 )
 ```
@@ -167,8 +162,7 @@ service = Service(
     )
     ```
 
-To call the endpoints of root resource, you call the HTTP method on the service directly, only specifying the path.
-Alternatively, you can use `.root` to explicitly specify the root resource and call its handlers by path and method.
+To call the endpoints of root resource, you call the HTTP method on the `.root` resource of the service, only specifying the path.
 
 !!! Example
 
@@ -190,9 +184,7 @@ Alternatively, you can use `.root` to explicitly specify the root resource and c
         resources=[root_resource]
     )
 
-    await myservice.get("")        # calls #1
-    await myservice.get("/")       # calls #2
-    await myservice.get("/health") # calls #3
-
-    await myservice.root.get("/")  # also works
+    await myservice.root.get("")        # calls #1
+    await myservice.root.get("/")       # calls #2
+    await myservice.root.get("/health") # calls #3
     ```
