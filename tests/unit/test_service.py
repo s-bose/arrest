@@ -1,7 +1,6 @@
 import httpx
 import pytest
 
-from arrest.http import Methods
 from arrest.resource import Resource
 from arrest.service import Service
 from tests import TEST_DEFAULT_SERVICE_URL
@@ -35,9 +34,8 @@ async def test_make_request_from_service(service, mock_httpx):
         return_value=httpx.Response(200, json={"status": "OK"})
     )
 
-    response = await service.request("/user/posts", method="GET")
     resource_response = await service.user.get("/posts")
-    assert response.data == resource_response.data == {"status": "OK"}
+    assert resource_response.data == {"status": "OK"}
 
 
 @pytest.mark.asyncio
@@ -58,15 +56,15 @@ async def test_make_request_to_root_resource(mock_httpx, mocker):
     root__get = mocker.spy(root_resource, "request")
     user__get = mocker.spy(user_resource, "request")
 
-    resp1 = await service.request(method=Methods.GET, path="")
+    resp1 = await service.root.get("")
 
     assert root__get.call_count == 1
 
-    resp2 = await service.request(method=Methods.GET, path="/users")
+    resp2 = await service.users.get("")
 
     assert user__get.call_count == 1
 
-    resp3 = await service.request(method=Methods.GET, path="/")
+    resp3 = await service.root.get("/")
 
     assert root__get.call_count == 2
 

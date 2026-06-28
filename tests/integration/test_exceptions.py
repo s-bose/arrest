@@ -8,7 +8,6 @@ from arrest.exceptions import (
     ArrestError,
     ArrestHTTPException,
     HandlerNotFound,
-    ResourceNotFound,
 )
 from arrest.http import Methods
 from arrest.resource import Resource
@@ -149,21 +148,6 @@ async def test_handler_not_found(service):
 
     with pytest.raises(HandlerNotFound):
         await service.user.post("/dashboard")
-
-
-@pytest.mark.asyncio
-async def test_resource_not_found(service):
-    service.add_resource(
-        Resource(
-            route="/user",
-            handlers=[
-                (Methods.POST, "/profile"),
-            ],
-        )
-    )
-
-    with pytest.raises(ResourceNotFound):
-        await service.request("/dashboard/profile", method=Methods.POST)
 
 
 @pytest.mark.parametrize(
