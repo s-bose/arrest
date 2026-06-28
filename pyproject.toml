@@ -59,6 +59,7 @@ dev = [
     "safety>=3.8.1",
 ]
 docs = [
+    "mkdocstrings-python>=2.0.5",
     "zensical>=0.0.46",
 ]
 
