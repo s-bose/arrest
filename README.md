@@ -99,7 +99,7 @@ resp = await svc.users.post("/", request=NewUserRequest(name="Alice", email="a@b
 
 ---
 
-## Highlight: XML, Form, and File uploads
+## XML, Form, and File uploads
 
 ```python
 from pydantic_xml import BaseXmlModel, element
