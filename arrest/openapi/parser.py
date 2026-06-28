@@ -84,7 +84,7 @@ class OpenAPIGenerator:
         self.dir_name = dir_name
 
     @retry(
-        n_retries=MAX_RETRIES,
+        max_retries=MAX_RETRIES,
         exceptions=(
             httpx.HTTPError,
             httpx.TimeoutException,

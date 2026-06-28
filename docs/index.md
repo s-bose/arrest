@@ -129,13 +129,22 @@ await example_svc.users.post("/", request=NewUserRequest(email="abc@email.com", 
 await example_svc.users.patch("/", request=UpdateUserRequest(password="hopefullyhashedagain"))
 ```
 
-You might also have noticed that a custom request DTOs can be provided such as `NewUserRequest` and `UpdateUserRequest`. With this you can enable data validation and structure to your request data. Although, for now, these have to be pydantic classes.
+You might also have noticed that custom request DTOs can be provided such as `NewUserRequest` and `UpdateUserRequest`. With this you can enable data validation and structure to your request data. Arrest supports **pydantic models, Python dataclasses, plain dictionaries, and lists** as request/response types (since v0.1.10).
+
+## What's New
+
+Check out the [What's New](whats-new.md) page for a detailed overview of the latest features:
+
+- **Unified `Response[T]`** — one response type for success and error paths
+- **`H()` helper** — type-safe handler definitions with IDE autocomplete
+- **Form and File primitives** — support for `multipart/form-data` and `application/x-www-form-urlencoded`
+- **Documentation migrated to Zensical** — faster, modern doc generator
+- **Package manager moved to uv** — faster dependency resolution
 
 ## Caveats and Future
 
 Arrest is still in its infancy. There are a lot of new features we would love to integrate in the future. But there are certain caveats and assumptions that Arrest makes which are important to know.
 
-1. It currently only supports JSON for both requests and responses. So if your service does not deal with JSON then you probably have to do it the old way.
-2. It follows the resource-oriented REST api design. If your service does not have clear distinction for different resources and CRUD methods to access them then it might be a bit wonky to integrate it properly within Arrest.
+1. It follows the resource-oriented REST api design. If your service does not have clear distinction for different resources and CRUD methods to access them then it might be a bit wonky to integrate it properly within Arrest.
 
 All things considered, it is still a work in progress, and we would greatly appreciate it if you find any bugs and notify us in the issue tracker.

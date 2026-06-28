@@ -34,7 +34,7 @@ async def test_request_http_methods(method: Methods, service, mock_httpx):
 
     response = await service.test.request(method, f"/{route}")
 
-    assert response == {"status": "OK"}
+    assert response.data == {"status": "OK"}
     assert mock_httpx["http_request"].called
     assert mock_httpx["http_request"].calls.call_count == 1
 
@@ -81,4 +81,4 @@ async def test_request_http_methods_helpers(service, mock_httpx, method):
         case Methods.OPTIONS:
             response = await service.test.options("/")
 
-    assert response == {"status": "OK"}
+    assert response.data == {"status": "OK"}

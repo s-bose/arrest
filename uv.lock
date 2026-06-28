@@ -49,13 +49,14 @@ wheels = [
 
 [[package]]
 name = "arrest"
-version = "0.1.10"
+version = "0.1.11a1"
 source = { editable = "." }
 dependencies = [
     { name = "argcomplete" },
     { name = "httpx" },
     { name = "orjson" },
     { name = "pydantic" },
+    { name = "pydantic-xml" },
     { name = "pyyaml" },
     { name = "tenacity" },
 ]
@@ -95,6 +96,7 @@ requires-dist = [
     { name = "jinja2", marker = "extra == 'openapi'", specifier = ">=3.1.3" },
     { name = "orjson", specifier = ">=3.9.10" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
+    { name = "pydantic-xml", specifier = ">=2.21.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "tenacity", specifier = ">=8.5.0" },
 ]
@@ -1426,6 +1428,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ac/ad/5565071e937d8e752842ac241463944c9eb14c87e2d269f2658a5bd05e98/pydantic_core-2.46.4-pp311-pypy311_pp73-musllinux_1_1_armv7l.whl", hash = "sha256:d396ec2b979760aaf3218e76c24e65bd0aca24983298653b3a9d7a45f9e47b30", size = 2310000, upload-time = "2026-05-06T13:37:56.694Z" },
     { url = "https://files.pythonhosted.org/packages/4f/c3/66883a5cec183e7fba4d024b4cbbe61851a63750ef606b0afecc46d1f2bf/pydantic_core-2.46.4-pp311-pypy311_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:86e1a4418c6cd97d60c95c71164158eaf7324fae7b0923264016baa993eba6fc", size = 2361286, upload-time = "2026-05-06T13:40:05.667Z" },
     { url = "https://files.pythonhosted.org/packages/4b/2d/69abac8f838090bbecd5df894befb2c2619e7996a98ddb949db9f3b93225/pydantic_core-2.46.4-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:d51026d73fcfd93610abc7b27789c26b313920fcfb20e27462d74a7f8b06e983", size = 2193071, upload-time = "2026-05-06T13:38:08.682Z" },
+]
+
+[[package]]
+name = "pydantic-xml"
+version = "2.21.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/87/085533e0873b2f80bdeb12156ffe5dddae7ee55573e2057ad574d73e3b6a/pydantic_xml-2.21.0.tar.gz", hash = "sha256:678ba9149c24e190ad94d6e3ce47f94cbb1409fd88d7df65d3d26939ff669ed0", size = 26825, upload-time = "2026-05-17T15:24:19.534Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/b1/278da37b539595b2cb6bb4fb3da1d69ff084c7bf5cc143f0a444550dc41a/pydantic_xml-2.21.0-py3-none-any.whl", hash = "sha256:966b8990746528304ebb96c97db7603ee3faf38f06266247b1fa444dbc16f8d6", size = 43449, upload-time = "2026-05-17T15:24:21.182Z" },
 ]
 
 [[package]]

@@ -187,7 +187,7 @@ def test_resource_multiple_handler_same_signature():
     key, handler = list(res.routes.items())[-1]
 
     assert key.method, key.route == ("GET", "/audit/{audit_id}")
-    assert isinstance(handler.param_types["audit_id"], UUIDConverter)
+    assert isinstance(handler._param_types["audit_id"], UUIDConverter)
 
 
 @pytest.mark.asyncio
@@ -282,3 +282,177 @@ def test_resource_default_handler(resource: Resource, default_handler: ResourceH
     assert _default_handler.method == default_handler.method
     assert _default_handler.route == default_handler.route
     assert _default_handler.request == default_handler.request
+
+
+def _identity_cb(x):
+    return x
+
+
+@pytest.mark.parametrize(
+    "args,kw,expected",
+    [
+        pytest.param(
+            (Methods.GET, "/"),
+            {},
+            dict(
+                method=Methods.GET,
+                route="/",
+                request=None,
+                response=None,
+                callback=None,
+                headers=None,
+            ),
+            id="2 positional",
+        ),
+        pytest.param(
+            (Methods.POST, "/items"),
+            {"headers": {"X-Key": "val"}},
+            dict(
+                method=Methods.POST,
+                route="/items",
+                request=None,
+                response=None,
+                callback=None,
+                headers={"X-Key": "val"},
+            ),
+            id="2 positional + headers",
+        ),
+        pytest.param(
+            (Methods.PUT, "/users", UserCreate),
+            {},
+            dict(
+                method=Methods.PUT,
+                route="/users",
+                request=UserCreate,
+                response=None,
+                callback=None,
+                headers=None,
+            ),
+            id="3 positional",
+        ),
+        pytest.param(
+            (Methods.PATCH, "/users/{user_id}", PaymentRequest),
+            {"headers": {"Accept": "application/json"}},
+            dict(
+                method=Methods.PATCH,
+                route="/users/{user_id}",
+                request=PaymentRequest,
+                response=None,
+                callback=None,
+                headers={"Accept": "application/json"},
+            ),
+            id="3 positional + headers",
+        ),
+        pytest.param(
+            (Methods.POST, "/users", UserCreate, PaymentRequest),
+            {},
+            dict(
+                method=Methods.POST,
+                route="/users",
+                request=UserCreate,
+                response=PaymentRequest,
+                callback=None,
+                headers=None,
+            ),
+            id="4 positional",
+        ),
+        pytest.param(
+            (Methods.GET, "/export", None, PaymentRequest),
+            {"headers": {"Content-Type": "text/csv"}},
+            dict(
+                method=Methods.GET,
+                route="/export",
+                request=None,
+                response=PaymentRequest,
+                callback=None,
+                headers={"Content-Type": "text/csv"},
+            ),
+            id="4 positional + headers",
+        ),
+        pytest.param(
+            (Methods.DELETE, "/users/{user_id}", None, None, _identity_cb),
+            {},
+            dict(
+                method=Methods.DELETE,
+                route="/users/{user_id}",
+                request=None,
+                response=None,
+                callback=_identity_cb,
+                headers=None,
+            ),
+            id="5 positional",
+        ),
+        pytest.param(
+            (Methods.HEAD, "/ping", None, None, _identity_cb),
+            {"headers": {"X-Trace": "abc123"}},
+            dict(
+                method=Methods.HEAD,
+                route="/ping",
+                request=None,
+                response=None,
+                callback=_identity_cb,
+                headers={"X-Trace": "abc123"},
+            ),
+            id="5 positional + headers",
+        ),
+        pytest.param(
+            (Methods.GET, "/health"),
+            {"headers": None},
+            dict(
+                method=Methods.GET,
+                route="/health",
+                request=None,
+                response=None,
+                callback=None,
+                headers=None,
+            ),
+            id="headers=None",
+        ),
+    ],
+)
+def test_h_all_combinations(args, kw, expected):
+    """Every valid H() call returns a correctly-populated ResourceHandler."""
+    from arrest.handler import H
+
+    result = H(*args, **kw)
+
+    assert isinstance(result, ResourceHandler)
+    for attr, want in expected.items():
+        actual = getattr(result, attr)
+        assert actual == want, f"{attr}: {actual!r} != {want!r}"
+
+    # internal fields must stay at defaults (not settable by users)
+    assert result._path_format is None
+    assert result._path_regex is None
+    assert result._param_types is None
+
+
+@pytest.mark.parametrize(
+    "args,kw",
+    [
+        pytest.param(
+            (Methods.GET, "/"),
+            {"path_format": "/hijacked"},
+            id="rejects PrivateAttr name",
+        ),
+        pytest.param(
+            (Methods.GET, "/"),
+            {"foo": "bar"},
+            id="rejects unknown field",
+        ),
+    ],
+)
+def test_h_rejects_internal_and_unknown_fields(args, kw):
+    """H() rejects unknown kwargs (TypeError) — ResourceHandler rejects them
+    via extra='forbid' (ValidationError). Both paths are tested."""
+    from pydantic import ValidationError
+
+    from arrest.handler import H
+
+    # H() itself rejects unknown kwargs before they reach Pydantic
+    with pytest.raises(TypeError):
+        H(*args, **kw)
+
+    # Direct ResourceHandler construction also rejects them
+    with pytest.raises(ValidationError):
+        ResourceHandler(method=args[0], route=args[1], **kw)

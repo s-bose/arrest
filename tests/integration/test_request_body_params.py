@@ -7,6 +7,7 @@ import httpx
 import pytest
 from pydantic import BaseModel, RootModel
 from pydantic import ValidationError as PydanticValidationError
+from pydantic_xml import BaseXmlModel, attr, element
 from respx.patterns import M
 
 from arrest.http import Methods
@@ -168,7 +169,7 @@ async def test_body_request_json(
     )
 
     if exception:
-        with pytest.raises(exception):
+        with pytest.raises(exception):  # type: ignore
             await service.user.post("/profile", request=request_body)
     else:
         mock_httpx.route(*patterns, name="http_request").mock(
@@ -367,20 +368,127 @@ def test_extract_file_params_string_and_errors():
         extract_file_params(file_model, "avatar")
 
 
-# Resource-level content-type override
+# Handler-level content-type override
+
+
+@pytest.mark.parametrize(
+    "handler_headers, call_headers, expected_ct",
+    [
+        pytest.param(
+            {"Content-Type": "multipart/form-data"},
+            None,
+            "multipart/form-data",
+            id="handler overrides annotation-derived",
+        ),
+        pytest.param(
+            {"Content-Type": "multipart/form-data"},
+            {"Content-Type": "application/x-custom"},
+            "application/x-custom",
+            id="runtime overrides handler",
+        ),
+        pytest.param(
+            None,
+            None,
+            "application/x-www-form-urlencoded",
+            id="no override: annotation-derived wins",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_body_request_handler_level_content_type_override(
+    service, mock_httpx, handler_headers, call_headers, expected_ct
+):
+    """Handler-level Content-Type (via H(headers={...})) takes effect
+    for form-data requests, and runtime headers still win."""
+    from arrest.handler import H
+
+    patterns = [M(url__regex="/user/*", method__in=["POST"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                H(
+                    Methods.POST,
+                    "/form",
+                    FormOnlyRequest,
+                    headers=handler_headers,
+                )
+            ],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "OK"})
+    )
+    await service.user.post(
+        "/form",
+        request={"name": "frank", "email": "frank@example.com"},
+        headers=call_headers,
+    )
+
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert req.headers["content-type"] == expected_ct
+
+
+# UploadFile tests
+
+
+def test_upload_file_read_without_file_raises():
+    uf = UploadFile(filename="test.txt")
+    with pytest.raises(ValueError, match="No file provided"):
+        uf.read()
+
+
+def test_upload_file_pydantic_validation_from_file_like():
+    """UploadFile schema validates a file-like object with .read() and .name."""
+    from pydantic import TypeAdapter
+
+    adapter = TypeAdapter(UploadFile)
+
+    class FakeFile:
+        filename = "data.csv"
+
+        def read(self, size=-1):
+            return b"col1,col2"
+
+    result = adapter.validate_python(FakeFile())
+    assert isinstance(result, UploadFile)
+    assert result.filename == "data.csv"
+    assert result.read() == b"col1,col2"
+
+
+def test_upload_file_pydantic_validation_passes_through_existing():
+    """UploadFile schema passes through an existing UploadFile instance."""
+    from pydantic import TypeAdapter
+
+    adapter = TypeAdapter(UploadFile)
+    existing = UploadFile(filename="x.csv", file=None)
+    result = adapter.validate_python(existing)
+    assert result is existing
+
+
+def test_upload_file_pydantic_validation_rejects_non_file():
+    """UploadFile schema rejects values without a .read() method."""
+    from pydantic import TypeAdapter
+
+    adapter = TypeAdapter(UploadFile)
+    with pytest.raises(ValueError, match="file-like object"):
+        adapter.validate_python("not a file")
 
 
 @pytest.mark.asyncio
 async def test_body_request_resource_level_content_type_override(service, mock_httpx):
-    """When Content-Type is set at resource definition,
-    it overrides the annotation-derived content-type."""
+    """When Content-Type is set at resource config, it overrides annotation-derived."""
+    from arrest._config import ArrestConfig
+
     patterns = [M(url__regex="/user/*", method__in=["POST"])]
 
     service.add_resource(
         Resource(
             route="/user",
             handlers=[(Methods.POST, "/form", FormOnlyRequest)],
-            headers={"Content-Type": "multipart/form-data"},
+            config=ArrestConfig(headers={"Content-Type": "multipart/form-data"}),
         )
     )
 
@@ -422,3 +530,103 @@ async def test_body_request_runtime_level_content_type_override(service, mock_ht
 
     req: httpx.Request = mock_httpx["http_request"].calls[0].request
     assert req.headers["content-type"] == "multipart/form-data"
+
+
+# XML request / response tests
+
+
+class XmlUserRequest(BaseXmlModel, tag="user"):
+    name: str = element()
+    email: str = element()
+
+
+class XmlUserResponse(BaseXmlModel, tag="user"):
+    id: int = attr()
+    name: str = element()
+    email: str = element()
+
+
+@pytest.mark.asyncio
+async def test_xml_request_body(service, mock_httpx):
+    """BaseXmlModel request is serialized to XML with correct content-type."""
+    patterns = [M(url__regex="/user/*", method__in=["POST"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[(Methods.POST, "/xml", XmlUserRequest)],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"<user id='1'><name>Alice</name><email>alice@test.com</email></user>",
+        )
+    )
+
+    resp = await service.user.post(
+        "/xml",
+        request=XmlUserRequest(name="Alice", email="alice@test.com"),
+    )
+
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert req.headers["content-type"] == "application/xml"
+    assert "<user>" in req.content.decode()
+    assert "<name>Alice</name>" in req.content.decode()
+    assert resp.is_success
+
+
+@pytest.mark.asyncio
+async def test_xml_response_parsing(service, mock_httpx):
+    """BaseXmlModel response_type parses XML response into model instance."""
+    patterns = [M(url__regex="/user/*", method__in=["GET"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                (Methods.GET, "/{user_id}", None, XmlUserResponse),
+            ],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(
+            200,
+            content=b"<user id='42'><name>Bob</name><email>bob@test.com</email></user>",
+        )
+    )
+
+    resp = await service.user.get("/42")
+    assert resp.is_success
+    assert isinstance(resp.data, XmlUserResponse)
+    assert resp.data.id == 42
+    assert resp.data.name == "Bob"
+    assert resp.data.email == "bob@test.com"
+
+
+@pytest.mark.asyncio
+async def test_xml_request_no_response_type(service, mock_httpx):
+    """BaseXmlModel request with no response type still works."""
+    patterns = [M(url__regex="/user/*", method__in=["POST"])]
+
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[(Methods.POST, "/xml", XmlUserRequest)],
+        )
+    )
+
+    mock_httpx.route(*patterns, name="http_request").mock(
+        return_value=httpx.Response(200, json={"status": "created"})
+    )
+
+    resp = await service.user.post(
+        "/xml",
+        request=XmlUserRequest(name="Carol", email="carol@test.com"),
+    )
+
+    req: httpx.Request = mock_httpx["http_request"].calls[0].request
+    assert req.headers["content-type"] == "application/xml"
+    assert resp.data == {"status": "created"}

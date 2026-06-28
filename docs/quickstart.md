@@ -25,20 +25,22 @@ Now that our service is defined, we can proceed to use it elsewhere.
 await example_svc.user.get("/")
 ```
 
-If we want to enable exception handling, simply import `ArrestHTTPException`, or more generic `ArrestError`
+If we want to enable exception handling, import `RequestError` for transport failures
+or `ArrestHTTPException` for non-2xx responses when `raise_for_status=True` is set.
 
 ```python
-from arrest.exceptions import ArrestHTTPException
+from arrest.exceptions import RequestError
 
 try:
     resp = await example_svc.user.get("/")
-except ArrestHTTPException as exc:
-    print(f"{exc.status_code} {exc.data}")
-
-return resp
+    if not resp.is_success:
+        print(f"Error: {resp.status_code} {resp.data}")
+except RequestError as exc:
+    print(f"Request failed: {exc.message}")
 ```
 
 ---
+
 ## Using Methods
 We have the following HTTP Methods available. They can be found in `arrest.http.Methods` enum.
 
@@ -60,14 +62,14 @@ Or you can directly make use of `.request()` and supply the method in it.
 There are no retries built into Arrest. However they can be configured in many different ways.
 You can use the retry mechanism from httpx transport (e.g. `httpx.AsyncHTTPTransport(retries=3)`), or use the `max_retries` field in `Service` or `Resource` specific setting and provide the number of retries. Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retries.
 
-If you want to learn more, please refer to [this](whats-new.md#standardized-retry-mechanism-with-more-flexibility)
+If you want to learn more, please refer to [the FAQ](faq.md#how-do-retries-work)
 
 
 
 ---
 ## Timeouts
 Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
-If you want to provide a custom timeout, you can set it at the service level or at the resource level with the `timeout` argument.
+If you want to provide a custom timeout, you can set it at the service level or at the resource level via the `config` argument.
 Alternatively, if you want to disable timeouts, you can do so by setting `timeout=httpx.Timeout(None)`.
 
 The `timeout` can take either an integer value for the number of seconds, or an instance of `httpx.Timeout`.
@@ -77,6 +79,7 @@ If you set `timeout=None`, this is equivalent to `timeout=httpx.Timeout(None)`, 
 
 ```python
 from arrest import Service, Resource
+from arrest._config import ArrestConfig
 
 
 example_svc = Service(
@@ -91,9 +94,88 @@ example_svc = Service(
             ]
         )
     ],
-    timeout=240 # 4 minutes
+    config=ArrestConfig(timeout=240)  # 4 minutes
 )
 ```
+
+---
+## Using the `H()` helper for type-safe handler definitions
+
+Instead of writing raw tuples `("GET", "/", Request, Response)`, you can use
+the `H()` helper for keyword-argument clarity and full IDE autocomplete:
+
+```python
+from arrest import H, Resource, GET, POST
+
+user_resource = Resource(
+    name="users",
+    route="/users",
+    handlers=[
+        H(GET, "/"),
+        H(POST, "/", request=NewUserRequest, response=UserResponse),
+        H(GET, "/{user_id:str}", response=UserResponse),
+        H(PATCH, "/{user_id:str}", request=UpdateUserRequest),
+        H(GET, "/{user_id:str}/posts", response=List[PostResponse], headers={"x-custom": "value"}),
+    ],
+)
+```
+
+`H()` returns a `ResourceHandler` and accepts all the same arguments:
+
+| Argument | Type | Description |
+|---|---|---|
+| `method` | `Methods` | HTTP method (required) |
+| `route` | `str` | Handler path relative to the resource (required) |
+| `request` | `Any` | Python type to validate request body |
+| `response` | `Any` | Python type to deserialize the response |
+| `callback` | `Callable` | A sync or async callback executed with the response |
+| `headers` | `dict[str, str]` | Default headers for this handler (keyword-only) |
+
+The old tuple syntax `("GET", "/", ...)` and dict syntax still work, so existing
+code continues to function.
+
+---
+## Understanding `Response[T]`
+
+Every call to a resource handler returns a `Response[T]` — a unified wrapper
+that bundles the parsed payload together with transport-level metadata.
+
+```python
+resp = await svc.users.get("/")
+
+# Inspect the outcome
+resp.is_success        # True if 200–299
+resp.is_client_error   # True if 400–499
+resp.is_server_error   # True if 500–599
+resp.status_code       # int
+
+# Access the parsed body (type-safe if you specified a response model)
+user: UserResponse = resp.data
+
+# Access transport-level details
+print(resp.url)         # httpx.URL
+print(resp.elapsed)     # timedelta | None
+print(resp.raw.headers) # raw httpx.Response headers
+```
+
+Unlike earlier versions, non-2xx responses **do not** raise `ArrestHTTPException`.
+Only transport-level failures (timeout, DNS errors, connection refused) do.
+A `404` or `500` response from the server now produces a normal `Response` object
+with `is_client_error` or `is_server_error` set to `True`.
+
+```python
+resp = await svc.users.get("/999")
+if resp.is_client_error:
+    print(f"Not found: {resp.status_code}")
+    print(resp.data)  # the error body, if any
+```
+
+!!! note "Migration"
+    If you were catching `ArrestHTTPException` for non-2xx status codes,
+    replace the `try/except` with an `if resp.is_success` check instead.
+    Alternatively, enable `raise_for_status=True` on your Service, Resource, or
+    per-call to restore the legacy behaviour.
+    See [What's New](whats-new.md) for details.
 
 ---
 ## Using a Pydantic model for request
@@ -109,7 +191,7 @@ class UserRequest(BaseModel):
     role: str
 
 Resource(
-    route="/abc,
+    route="/abc",
     handlers=[
         ("POST", "/", UserRequest) # or ResourceHandler(method="POST", route="/", request=UserRequest)
                                    # or {"method": "POST", "route": "/", "request": UserRequest}
@@ -122,7 +204,9 @@ Notice how we only supplied `route` for our resource? Arrest automatically infer
 Now that our handler is initialized with a request, we can make a request with instances of type `UserRequest`
 
 !!! note "Important"
-    All fields in the pydantic model by default will be sent as the JSON body payload. If you want to send other params such as `headers` or `query`, see below.
+    All fields in the pydantic model by default will be sent as the JSON body payload.
+    If you want to send other params such as `headers`, `query`, or use `Form` / `File`
+    for form-encoded requests, see [Configuring your request](configuring-request.md).
 
 ---
 ## Using a pydantic model for response
@@ -188,21 +272,26 @@ response = await service.user.get("/")
 ---
 ## Handling exceptions
 All of Arrest's exceptions/errors subclass `ArrestError`.
-The most important one is `ArrestHTTPException` which wraps the httpx-specific errors that might occur from making a request.
-Any response that does not have a success status code (i.e. 200-299) will throw an `ArrestHTTPException` with the appropriate `status_code` and `data`.
+
+- **`RequestError`** — raised for transport-level failures (timeout, DNS errors,
+  connection refused). It carries a `message` string.
+- **`ArrestHTTPException`** — raised *only* when `raise_for_status=True` is set
+  and the server responds with a non-2xx status. Carries `status_code` and `data`.
+- **`ResponseError`** — raised when the response body cannot be parsed.
+- **`HandlerNotFound`** — raised when no matching handler is found for the request.
 
 !!! example
 
     ```python
+    from arrest.exceptions import RequestError, ArrestHTTPException
+
     try:
         response = await xyz_service.users.get("/123")
-    except ArrestHTTPException as exc:
-        logging.warning(f"{exc.status_code} {exc.data}")
-        # do something with the error response
+        if not response.is_success:
+            print(f"Error: {response.status_code}")
+    except RequestError as exc:
+        logging.warning(f"Request failed: {exc.message}")
     ```
-
-Any other error such as `TimeoutException` or `RequestError` will result in a `ArrestHTTPException` with `status_code=500`
-See [API Documentation](api.md) for further details.
 
 
 ---

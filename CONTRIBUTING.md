@@ -29,7 +29,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the
-[Arrest Code of Conduct](http://github.com/s-bose/arrestblob/master/CODE_OF_CONDUCT.md).
+[Arrest Code of Conduct](http://github.com/s-bose/arrest/blob/master/CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
 to <shiladitya_basu@live.com>.
 

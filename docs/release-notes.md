@@ -1,4 +1,39 @@
-## 0.1.10 (Latest)
+## 0.2.0 (Latest)
+
+### Added
+
+- Added `Form` and `File` primitives (`arrest.params.Form`, `arrest.params.File`) for
+  `multipart/form-data` and `application/x-www-form-urlencoded` requests. File uploads
+  are supported via the new `UploadFile` type (`arrest.types.UploadFile`).
+
+- Added `H()` helper for type-safe `ResourceHandler` definitions with keyword-argument
+  clarity and full IDE autocomplete. Available as `from arrest import H`.
+
+- Added XML request and response support via `pydantic-xml`'s `BaseXmlModel`. When
+  request or response types subclass `BaseXmlModel`, Arrest handles XML serialization
+  and deserialization automatically with `Content-Type: application/xml`.
+
+### Changed
+
+- **Breaking:** Unified `Response[T]` now wraps every HTTP status code — success and
+  non-success. Transport-level failures (timeout, DNS errors, connection refused) raise
+  the new `RequestError` (no `status_code`). `ArrestHTTPException` is now only raised
+  when `raise_for_status=True` is set and the server responds with a non-2xx status.
+
+- Updated documentation provider from MkDocs (Material) to [Zensical](https://github.com/s-bose/zensical).
+  Configuration is now in `zensical.toml`.
+
+- Updated package manager from Poetry to [uv](https://github.com/astral-sh/uv).
+  Dependencies are organized via PEP 735 dependency groups in `pyproject.toml`.
+
+### Fixed
+
+- Fixed the generated names of resource and services having whitespaces and special characters after parsing the OpenAPI Specification by standardizing the naming with using lower case and snake_case
+
+- Fixed improper imports of pydantic schemas from the OpenAPI generation. Certain schema names in the generated OpenAPI spec caused some import issues, which was fixed.
+
+
+## 0.1.10
 
 ### Added
 
@@ -24,8 +59,6 @@
 
 - Fixed improper imports of pydantic schemas from the OpenAPI generation. Certain schema names in the generated OpenAPI spec caused some import issues, which was fixed.
 
-
-For more information, check out [What's New](whats-new.md)
 
 ## 0.1.9
 

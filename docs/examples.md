@@ -4,11 +4,12 @@ The `example_service` contains a minimal FastAPI application for task management
 
 It uses in-memory dictionaries for data storage, so of course this is just for testing and learning purposes.
 
-It comes with a set of test files which test compatibility with 3 different types.
+It comes with a set of test files which test compatibility with 4 different types.
 
 1. Pydantic BaseModel
 2. Python dataclasses
 3. No class, rely on dicts and lists
+4. Untyped (test_untyped.py)
 
 ## Packages Used
 

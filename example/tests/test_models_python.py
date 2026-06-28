@@ -54,19 +54,19 @@ svc = Service(
 async def test_get_all_users():
     response = await svc.users.get("/all")
 
-    assert response
-    assert isinstance(response, list)
-    assert len(response) > 0
+    assert response.data
+    assert isinstance(response.data, list)
+    assert len(response.data) > 0
 
-    assert isinstance(response[0], dict)
+    assert isinstance(response.data[0], dict)
 
 
 @pytest.mark.asyncio
 async def test_get_random_user():
     response = await svc.users.get("")
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
 
 @pytest.mark.asyncio
@@ -74,10 +74,10 @@ async def test_get_user_by_id():
     user_id = uuid.UUID(int=1)
     response = await svc.users.get(f"/{user_id}")
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
-    assert response["id"] == str(user_id)
+    assert response.data["id"] == str(user_id)
 
 
 @pytest.mark.asyncio
@@ -88,11 +88,11 @@ async def test_create_user():
     }
     response = await svc.users.post("/", request=data)
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
-    assert response["name"] == "john doe"
-    assert response["email"] == "john_doe@email.com"
+    assert response.data["name"] == "john doe"
+    assert response.data["email"] == "john_doe@email.com"
 
 
 @pytest.mark.asyncio
@@ -100,8 +100,8 @@ async def test_delete_user_by_id():
     user_id = uuid.UUID(int=2)
     response = await svc.users.delete(f"/{user_id}")
 
-    assert response
-    assert response is True
+    assert response.data
+    assert response.data is True
 
 
 @pytest.mark.asyncio
@@ -109,29 +109,29 @@ async def test_get_user_tasks():
     user_id = uuid.UUID(int=1)
     response = await svc.users.get(f"/{user_id}/tasks")
 
-    assert response
-    assert isinstance(response, list)
+    assert response.data
+    assert isinstance(response.data, list)
 
-    assert len(response) > 0
-    assert isinstance(response[0], dict)
+    assert len(response.data) > 0
+    assert isinstance(response.data[0], dict)
 
 
 @pytest.mark.asyncio
 async def test_get_random_task():
     response = await svc.tasks.get("")
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
 
 @pytest.mark.asyncio
 async def test_get_all_tasks():
     response = await svc.tasks.get("/all")
 
-    assert response
-    assert isinstance(response, list)
+    assert response.data
+    assert isinstance(response.data, list)
 
-    assert isinstance(response[0], dict)
+    assert isinstance(response.data[0], dict)
 
 
 @pytest.mark.asyncio
@@ -139,10 +139,10 @@ async def test_get_task_by_id():
     task_id = uuid.UUID(int=102)
     response = await svc.tasks.get(f"/{task_id}")
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
-    assert response["id"] == str(task_id)
+    assert response.data["id"] == str(task_id)
 
 
 @pytest.mark.asyncio
@@ -154,12 +154,12 @@ async def test_create_task():
     }
     response = await svc.tasks.post("/", request=data)
 
-    assert response
-    assert isinstance(response, dict)
+    assert response.data
+    assert isinstance(response.data, dict)
 
-    assert response["user_id"] == str(uuid.UUID(int=1))
-    assert response["title"] == "title"
-    assert response["priority"] == "HIGH"
+    assert response.data["user_id"] == str(uuid.UUID(int=1))
+    assert response.data["title"] == "title"
+    assert response.data["priority"] == "HIGH"
 
 
 @pytest.mark.parametrize("path_param_style", ["A", "B"])
@@ -173,4 +173,4 @@ async def test_delete_task_by_id(path_param_style: str):
         task_id = uuid.UUID(int=102)
         response = await svc.tasks.delete("/", task_id=task_id)
 
-    assert response is True
+    assert response.data is True

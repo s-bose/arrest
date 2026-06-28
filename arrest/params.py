@@ -56,7 +56,7 @@ class _File(_Param):
         super().__init__(default, **kwargs)
 
 
-class Params:
+class RequestArgs:
     def __init__(
         self,
         *,
@@ -76,7 +76,7 @@ class Params:
 # Public API
 
 
-def Param(default: Any = None, **kwargs: Any) -> Any:
+def Param(default: Any = None, **kwargs: Any) -> Any:  # pragma: no cover
     return _Param(default, **kwargs)
 
 

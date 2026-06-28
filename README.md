@@ -73,7 +73,7 @@ pip install arrest
 ## Getting Started
 
 Assuming you already have arrest installed in your system, let us create a simple connection.
-We have a REST endpoint `htthttps://www.xyz-service.default.local.cluster/api/v1` which has a resource `/users` with method `GET`.
+We have a REST endpoint `https://www.xyz-service.default.local.cluster/api/v1` which has a resource `/users` with method `GET`.
 
 ```python
 import logging
@@ -116,7 +116,7 @@ class UserRequest(BaseModel):
     role: str
 
 Resource(
-    route="/users,
+    route="/users",
     handlers=[
         ("POST", "/", UserRequest) # or ResourceHandler(method="POST", route="/", request=UserRequest)
                                    # or {"method": "POST", "route": "/", "request": UserRequest}

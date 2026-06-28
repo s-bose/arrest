@@ -13,18 +13,22 @@ You can use the `headers` keyword-argument in the request method to directly pas
     await service.user.get("/posts", headers={"x-max-age": "20", "x-organization": "abc-123"})
     ```
 
-If you want resource-wide shared header definition, you can set it in the `Resource` definition as well. You can use both of these together as all the headers will be collected and sent as a whole.
+If you want resource-wide shared header definition, you can set it via the `config`
+argument. You can use both of these together as all the headers will be collected
+and sent as a whole.
 
-!!! example "using `Resource.headers`"
+!!! example "using `config.headers`"
 
     ```python
+    from arrest._config import ArrestConfig
+
     service.add_resource(
         Resource(
             route="/user",
             handlers=[
                 (Methods.GET, "/profile"),
             ],
-            headers={"x-organization": "abc-123"}
+            config=ArrestConfig(headers={"x-organization": "abc-123"}),
         )
     )
 
@@ -43,7 +47,7 @@ This is useful when you want to group together all the components of your reques
         x_max_age: str = Header(...)
         x_cookie: str = Header(...)
 
-    await service.user.get("/posts", request=HeaderRequest(x_max_age="20", "x_cookie": "xyz"))
+    await service.user.get("/posts", request=HeaderRequest(x_max_age="20", x_cookie="xyz"))
     ```
 
 !!! warning
@@ -126,6 +130,149 @@ You can also pass a plain dictionary or a list as request. They will be passed a
 !!! note "regarding json payloads"
     Arrest uses `orjson` for serializing the request payload. This was chosen because the stdlib `json` does not parse datetime which `orjson` does.
 
+### Form
+
+Use `arrest.params.Form` to send fields as `application/x-www-form-urlencoded`
+instead of JSON. This is useful for traditional login forms, OAuth2 token
+requests, and other form-encoded endpoints.
+
+!!! example "using `Form` class"
+
+    ```python
+    from pydantic import BaseModel
+    from arrest.params import Form
+
+    class LoginRequest(BaseModel):
+        grant_type: str = Form(...)
+        username: str = Form(...)
+        password: str = Form(...)
+        scope: str = Form(default="read")
+
+    await service.auth.post("/token", request=LoginRequest(
+        grant_type="password",
+        username="alice",
+        password="s3cret",
+    ))
+    # Content-Type: application/x-www-form-urlencoded
+    # Body: grant_type=password&username=alice&password=s3cret&scope=read
+    ```
+
+!!! warning "Cannot mix JSON and Form"
+    A single request model cannot mix `Body()` (or unannotated fields) with
+    `Form()` / `File()` fields. Arrest will raise a `ValueError`:
+
+    ```python
+    class BadRequest(BaseModel):
+        name: str               # unannotated → JSON body
+        token: str = Form(...)   # Form field        ❌ ValueError!
+    ```
+
+    Choose one encoding per request model.
+
+### File
+
+Use `arrest.params.File` along with `arrest.types.UploadFile` to send
+`multipart/form-data` requests with file uploads.
+
+!!! example "uploading a file"
+
+    ```python
+    from pydantic import BaseModel
+    from arrest.params import File, Form
+    from arrest.types import UploadFile
+
+    class ProfilePicture(BaseModel):
+        user_id: str = Form(...)
+        avatar: UploadFile = File(...)
+
+    # Upload from disk
+    with open("avatar.png", "rb") as f:
+        avatar = UploadFile(
+            filename="avatar.png",
+            content_type="image/png",
+            file=f,
+        )
+        await service.user.post(
+            "/avatar",
+            request=ProfilePicture(user_id="123", avatar=avatar),
+        )
+    ```
+
+!!! example "uploading raw bytes"
+
+    ```python
+    # You can also pass raw bytes directly
+    image_bytes = b"..."
+    await service.user.post(
+        "/avatar",
+        request=ProfilePicture(user_id="123", avatar=image_bytes),
+    )
+    ```
+
+!!! example "uploading a file path as string"
+
+    ```python
+    # Pass a file path string — Arrest encodes it as bytes
+    await service.user.post(
+        "/avatar",
+        request=ProfilePicture(user_id="123", avatar="/path/to/avatar.png"),
+    )
+    ```
+
+The `UploadFile` type validates any file-like object with a `read()` method,
+or raw `bytes`. When sent, Arrest constructs a proper `multipart/form-data`
+body with the filename and content type.
+
+!!! tip "UploadFile fields"
+
+    | Field | Type | Description |
+    |---|---|---|
+    | `filename` | `str \| None` | Name of the file |
+    | `content_type` | `str` | MIME type (default: `application/octet-stream`) |
+    | `file` | `IO[bytes] \| None` | File-like object with `read()` |
+
+### XML
+
+Arrest supports XML request and response bodies via `pydantic-xml`'s `BaseXmlModel`.
+When your request type is a `BaseXmlModel` subclass, Arrest serializes it to XML
+and sets `Content-Type: application/xml`. When your response type is a `BaseXmlModel`
+subclass, Arrest parses the raw XML response into a model instance.
+
+!!! example "XML request and response"
+
+    ```python
+    from pydantic_xml import BaseXmlModel, attr, element
+    from arrest import Resource
+
+    class UserRequest(BaseXmlModel, tag="user"):
+        name: str = element()
+        email: str = element()
+
+    class UserResponse(BaseXmlModel, tag="user"):
+        id: int = attr()
+        name: str = element()
+        email: str = element()
+
+    user = Resource(
+        route="/users",
+        handlers=[
+            ("POST", "/xml", UserRequest, UserResponse),
+        ],
+    )
+
+    # Request is serialized to XML with Content-Type: application/xml
+    resp = await svc.users.post(
+        "/xml",
+        request=UserRequest(name="Alice", email="alice@example.com"),
+    )
+    # resp.data is a UserResponse instance parsed from the XML response
+    ```
+
+!!! note "Field annotations required"
+    `pydantic-xml` requires explicit annotations on fields: use `element()` for
+    child elements, `attr()` for attributes. Plain `str` or `int` annotations
+    without these may not serialize correctly.
+
 ### Additional Configuration
 Arrest also allows providing other http parameters such as cookies, auth, transport, etc, or even your own instance of `httpx.AsyncClient` (or other classes subclassing it), if you choose to do so.
 If you want to customize the httpx client and specify more parameters either at resource-level or at service-level, you can check out [Resources & Services](resources-services.md#resources).
@@ -206,8 +353,8 @@ service.abc.get(f"/user/{user_id}/comments", comment_id=comment_id)
         ],
     )
 
-    user.post("/profile", id=123, comments=456) # wont work
-    user.post("/profile/123/comments/", comments=456) # will work
+    user.post("/profile", id=123, comment_id=456) # wont work
+    user.post("/profile/123/comments/", comment_id=456) # will work
     ```
 
 !!! note "About url paths"

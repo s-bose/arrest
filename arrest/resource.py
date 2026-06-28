@@ -3,22 +3,28 @@ import functools
 import inspect
 import json
 from functools import cached_property
-from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union
+from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union, cast
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from httpx import QueryParams
 from pydantic import BaseModel, ValidationError
-from typing_extensions import Unpack
+from pydantic_xml import BaseXmlModel
 
-from arrest._config import ArrestConfig, HttpxClientInputs
+from arrest._config import ArrestConfig
 from arrest.converters import compile_path
 from arrest.defaults import ROOT_RESOURCE
-from arrest.exceptions import ArrestHTTPException, HandlerNotFound, ResponseError
+from arrest.exceptions import (
+    ArrestHTTPException,
+    HandlerNotFound,
+    RequestError,
+    ResponseError,
+)
 from arrest.handler import HandlerKey, ResourceHandler
 from arrest.http import Methods
 from arrest.logging import logger
-from arrest.params import Params
+from arrest.params import RequestArgs
+from arrest.response import Response
 from arrest.types import ExceptionHandlers
 from arrest.utils import (
     build_body_kwargs,
@@ -59,18 +65,9 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        response_model: Optional[T] = None,
+        response_model: Optional[Any] = None,
         handlers: list[ResourceHandlerType] | None = None,
-        client: Optional[httpx.AsyncClient] = None,
-        # config: per-request defaults (merge through the chain)
-        headers: Optional[dict[str, str]] = None,
-        cookies: Optional[dict[str, Any]] = None,
-        params: Optional[dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        max_retries: Optional[int] = None,
-        auth: Any = None,
-        follow_redirects: Optional[bool] = None,
-        **client_kwargs: Unpack[HttpxClientInputs],
+        config: Optional[ArrestConfig] = None,
     ) -> None:
         """
         Parameters:
@@ -82,30 +79,9 @@ class Resource:
                 Pydantic datamodel to wrap the json response
             handlers:
                 List of handlers
-            client:
-                An httpx.AsyncClient instance
-            max_retries:
-                Maximum number of application-level retries managed
-                by tenacity. If you want to to transport-level retry,
-                check out [docs](whats-new.md#use-the-standard-retry-mechanism-from-httpx-transport)
-            headers:
-                Default request headers for this resource
-            cookies:
-                Default request cookies for this resource
-            params:
-                Default query params for this resource
-            timeout:
-                Default request timeout (seconds).
-            auth:
-                Default authentication for this resource.
-            follow_redirects:
-                Whether to follow redirects by default.
-            client_kwargs:
-                Transport-level httpx.AsyncClient parameters.
+            config:
+                An ArrestConfig instance
         """
-
-        self._client: Optional[httpx.AsyncClient] = None
-        self._transport_kwargs = client_kwargs
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route or ""
@@ -114,15 +90,7 @@ class Resource:
         self.response_model = response_model
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
-        self.config = ArrestConfig(
-            headers=headers or {},
-            cookies=cookies or {},
-            params=params or {},
-            timeout=timeout,
-            max_retries=max_retries,
-            auth=auth,
-            follow_redirects=follow_redirects,
-        )
+        self.config = config
 
         self._exception_handlers = None
 
@@ -139,20 +107,16 @@ class Resource:
         )
 
         self.initialize_handlers(handlers=handlers if handlers else [])
-        if client:
-            self._client = client
-
-    @cached_property
-    def httpx_args(self) -> dict:
-        """Transport + httpx-compatible config, ready for ``httpx.AsyncClient(**...").
-
-        Read-only.  Frozen on first access.  Use this in custom handlers.
-        """
-        return {**self._transport_kwargs, **self.config.httpx_args()}
 
     def get_resource_name(self, name: Optional[str]) -> str:
         derived_name = name if name else self.route.strip("/").split("/")[0]
         return derived_name if derived_name else ROOT_RESOURCE
+
+    @cached_property
+    def httpx_args(self) -> dict[str, Any]:
+        """Convenience accessor for custom handlers that need to
+        instantiate their own ``httpx.AsyncClient``."""
+        return self.config.httpx_args() if self.config else {}
 
     def handler(
         self,
@@ -190,8 +154,9 @@ class Resource:
         cookies: Optional[dict[str, str]] = None,
         timeout: Optional[float] = None,
         follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ) -> Any | None:
+    ) -> Response[Any]:
         """
         Makes an HTTP request against a handler route
 
@@ -222,14 +187,17 @@ class Resource:
                 Override the default timeout for this call.
             follow_redirects:
                 Override redirect-following for this call.
+            raise_for_status:
+                If True, non-2xx responses raise ``ArrestHTTPException``
+                instead of returning a ``Response`` (legacy behaviour).
             **kwargs:
                 Keyword-arguments matching the path params, if any
 
         Returns:
             Response:
-                A JSON response in form of a list or dict
-                `or`, Deserialized into the response pydantic model
-                `or`, Return value of the callback fn
+                A ``Response[Any]`` wrapping the parsed data, status code,
+                headers, and raw ``httpx.Response``.
+                Callbacks receive and may return ``Response[Any]``.
         """
 
         path_query_params, path = self._extract_query_params(path)
@@ -240,18 +208,23 @@ class Resource:
 
         handler, url = match
 
-        # Merge per-call config with resource config.
-        final_config = self.config.merge(
-            ArrestConfig(
-                headers=dict(headers or {}),
-                cookies=cookies or {},
-                params={**path_query_params, **dict(query or {})},
-                timeout=timeout,
-                follow_redirects=follow_redirects,
-            )
-        )
+        # Merge: resource config → handler headers → per-call config
+        final_headers = {}
+        final_headers.update(handler.headers or {})  # merge handler headers
+        final_headers.update(headers or {})  # merge per-call headers
 
-        params = extract_request_params(
+        final_config = ArrestConfig(
+            headers=dict(final_headers),
+            cookies=cookies or {},
+            params={**path_query_params, **dict(query or {})},
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
+        )
+        if self.config:
+            final_config = self.config.merge(final_config)
+
+        args = extract_request_params(
             request_type=handler.request,
             request_data=request,
             headers=final_config.headers,
@@ -264,7 +237,8 @@ class Resource:
 
         fn_make_request = (
             arrest_retry(
-                n_retries=retry_count, exceptions=(ArrestHTTPException, Exception)
+                max_retries=retry_count,
+                exceptions=(httpx.TimeoutException, httpx.RequestError),
             )(self.make_request)
             if retry_count
             else self.make_request
@@ -274,10 +248,16 @@ class Resource:
             response = await fn_make_request(
                 url=url,
                 method=method,
-                params=params,
+                args=args,
                 response_type=response_type,
                 config=final_config,
             )
+
+        except (httpx.TimeoutException, httpx.RequestError) as exc:
+            # transport errors: retries exhausted or no retry configured
+            if isinstance(exc, httpx.TimeoutException):
+                raise RequestError("request timed out") from exc
+            raise RequestError("error occurred while making request") from exc
 
         # custom exception handling
         except Exception as exc:
@@ -306,8 +286,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP GET` request
 
@@ -319,6 +303,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -328,8 +316,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP POST` request
 
@@ -341,6 +333,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -350,8 +346,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP PUT` request
 
@@ -363,6 +363,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -372,8 +376,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP PATCH` request
 
@@ -385,6 +393,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -394,8 +406,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP DELETE` request
 
@@ -407,6 +423,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -416,8 +436,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP HEAD` request
 
@@ -429,6 +453,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -438,8 +466,12 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP OPTIONS` request
 
@@ -451,6 +483,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -458,10 +494,10 @@ class Resource:
         self,
         url: str,
         method: Methods,
-        params: Params,
+        args: RequestArgs,
         response_type: Any,
-        config: ArrestConfig | None = None,
-    ) -> Any:
+        config: ArrestConfig,
+    ) -> Response[Any]:
         """
         (private) prepares and makes a http request,
         parses the response and raises appropriate exceptions
@@ -471,87 +507,111 @@ class Resource:
                 the complete url of the endpoint
             method:
                 one of the available http methods
-            params:
-                dict containing `header`, `query` and `body` params
+            args:
+                dict containing ``header``, ``query`` and ``body`` params
             response_type:
                 a python type to deserialize the json response to
             config:
                 merged ArrestConfig for this request
 
         Returns:
-            Any:
-                the returned json object or a parsed instance of `response_type`
+            Response[Any]:
+                a ``Response[T]`` wrapping parsed data, status code,
+                and the raw ``httpx.Response``.
         """
-        cfg = config or ArrestConfig()
+        client = config.client
 
-        try:
-            if self._client:
-                response = await self.__make_request(
-                    client=self._client,
+        if client:
+            raw = await self.__make_request(
+                client=client,
+                url=url,
+                method=method,
+                args=args,
+                config=config,
+            )
+        else:
+            async with httpx.AsyncClient(
+                base_url=self.base_url,
+                **config.httpx_args(),
+            ) as client:
+                raw = await self.__make_request(
+                    client=client,
                     url=url,
                     method=method,
-                    params=params,
-                    config=cfg,
+                    args=args,
+                    config=config,
                 )
-            else:
-                async with httpx.AsyncClient(
-                    base_url=self.base_url,
-                    **self._transport_kwargs,
-                ) as client:
-                    response = await self.__make_request(
-                        client=client,
-                        url=url,
-                        method=method,
-                        params=params,
-                        config=cfg,
-                    )
 
-            status_code = response.status_code
-            logger.info(f"{method!s} {url} returned with status code {status_code!s}")
-            response.raise_for_status()
-            if not response.content:
-                return None
+        status_code = raw.status_code
+        logger.info(f"{method!s} {url} returned with status code {status_code!s}")
+
+        if not raw.content:
+            # elapsed may not be set on empty-body responses (204, etc.)
             try:
-                response_body = response.json()
-            except json.JSONDecodeError:
-                try:
-                    response_body = response.read().decode("utf-8", errors="strict")
-                except UnicodeDecodeError:
-                    raise ResponseError("Could not parse HTTP response")
+                elapsed = raw.elapsed
+            except RuntimeError:  # pragma: no cover
+                elapsed = None
+            resp = Response(
+                data=None,
+                status_code=status_code,
+                url=raw.url,
+                elapsed=elapsed,
+                raw=raw,
+                request=raw.request,
+            )
+            if config.raise_for_status and not resp.is_success:
+                raise ArrestHTTPException(
+                    status_code=resp.status_code,
+                    data=resp.data,
+                )
+            return resp
 
-            parsed_response = response_body
-            if response_type:
-                parsed_response = validate_model(response_type, response_body)
-
-            return parsed_response
-
-        except httpx.HTTPStatusError as exc:
+        try:
+            body = raw.json()
+        except json.JSONDecodeError:
             try:
-                err_response_body = exc.response.json()
-            except json.JSONDecodeError:
-                err_response_body = exc.response.read().decode("utf-8", errors="strict")
-            raise ArrestHTTPException(
-                status_code=exc.response.status_code, data=err_response_body
-            ) from exc
+                body = raw.content.decode("utf-8", errors="strict")
+            except UnicodeDecodeError:
+                raise ResponseError("Could not parse HTTP response")
 
-        except httpx.TimeoutException:
+        if (
+            response_type
+            and isinstance(response_type, type)
+            and issubclass(response_type, BaseXmlModel)
+        ):
+            data = response_type.from_xml(raw.content)
+        else:
+            data = validate_model(response_type, body) if response_type else body
+
+        # elapsed is only available after the response body is consumed.
+        try:
+            elapsed = raw.elapsed
+        except RuntimeError:
+            elapsed = None
+
+        resp = Response(
+            data=data,
+            status_code=status_code,
+            url=raw.url,
+            elapsed=elapsed,
+            raw=raw,
+            request=raw.request,
+        )
+
+        if config.raise_for_status and not resp.is_success:
             raise ArrestHTTPException(
-                status_code=httpx.codes.REQUEST_TIMEOUT,
-                data="request timed out",
+                status_code=resp.status_code,
+                data=resp.data,
             )
 
-        except httpx.RequestError:
-            raise ArrestHTTPException(
-                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
-                data="error occured while making request",
-            )
+        return resp
 
     async def __make_request(
         self,
         client: httpx.AsyncClient,
         url: str,
         method: Methods,
-        params: Params,
+        args: RequestArgs,
         config: ArrestConfig,
     ) -> httpx.Response:
         """(private) makes the actual http request using httpx
@@ -560,7 +620,7 @@ class Resource:
             client (httpx.AsyncClient)
             url (str)
             method (Methods)
-            params (Params)
+            args (RequestArgs)
             config (ArrestConfig)
 
         Returns:
@@ -568,16 +628,16 @@ class Resource:
         """
 
         header_params, query_params, body_params, file_params, content_type = (
-            params.header,
-            params.query,
-            params.body,
-            params.files,
-            params.content_type,
+            args.header,
+            args.query,
+            args.body,
+            args.files,
+            args.content_type,
         )
 
         # Build final kwargs for httpx — config defaults go under model-extracted values
         merged_headers = header_params.copy()
-        for key, value in config.headers.items():
+        for key, value in config.headers.items():  # pragma: no cover
             if key not in merged_headers:
                 merged_headers[key] = value
 
@@ -634,11 +694,11 @@ class Resource:
         """
 
         base_url = base_url or self.base_url
-        handler.path_regex, handler.path_format, handler.param_types = compile_path(
+        handler._path_regex, handler._path_format, handler._param_types = compile_path(
             handler.route
         )
 
-        self.routes[HandlerKey(*(handler.method, handler.path_format))] = handler
+        self.routes[HandlerKey(*(handler.method, handler._path_format))] = handler
 
     def _extract_query_params(self, url: str) -> tuple[QueryParams, str]:
         url_parsed = urlparse(url)
@@ -691,8 +751,8 @@ class Resource:
                     self._bind_handler(
                         base_url=base_url,
                         handler=ResourceHandler(
-                            method=method,
-                            route=route,
+                            method=cast(Methods, method),
+                            route=cast(str, route),
                             request=len(rest) >= 1 and rest[0] or None,
                             response=len(rest) >= 2 and rest[1] or None,
                             callback=len(rest) >= 3 and rest[2] or None,

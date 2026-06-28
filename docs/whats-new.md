@@ -1,350 +1,265 @@
-# What's New?
+# What's New
 
-## Added support for decorating custom handlers for your resource
+This page highlights the most important changes in the latest release of Arrest,
+ordered by priority and impact.
 
-Earlier in v0.1.9 the decorator could only be used with a resource under its parent service's scope:
+---
+
+## 1. Unified `Response[T]` — a single response type for success and error paths
+
+**Breaking change** — Arrest now returns a `Response[T]` for **every** HTTP status code,
+not just 2xx. Transport-level failures (timeouts, connection errors) raise the new
+`RequestError` (no `status_code`), while a server returning `404`, `500`, or any
+other status now produces a normal `Response` object you can inspect.
+
+Previously you had to `try/except ArrestHTTPException` for non-2xx responses.
+Now you check properties on the response itself:
 
 ```python
-@myservice.user.handler("/path")
-async def path_handler(self, url, *args, **kwargs):
-    ...
+resp = await svc.users.get("/999")
+
+if resp.is_client_error:
+    print(f"Not found: {resp.status_code}, body: {resp.data}")
+
+if resp.is_server_error:
+    print(f"Server error: {resp.data}")
+
+if resp.is_success:
+    user: UserResponse = resp.data  # type-safe access
 ```
 
-This was not a clear separation of concern. Ideally in Arrest, we want you to be able to define everything relating to a resource within the resource, and everything relating to a service within the service, and simply interface the resources with your service, or multiple services. In v0.1.10, you can use the handler with your resource, without having to connect it to a service first and use the service's scope:
+**Convenience properties on `Response[T]`:**
+
+| Property | Range |
+|---|---|
+| `is_success` | 200–299 |
+| `is_redirect` | 300–399 |
+| `is_client_error` | 400–499 |
+| `is_server_error` | 500–599 |
+
+Every `Response[T]` also carries:
+
+| Field | Description |
+|---|---|
+| `data` | The parsed/deserialized body (`T`) |
+| `status_code` | HTTP status code (`int`) |
+| `url` | Final request URL (`httpx.URL`) |
+| `elapsed` | Time taken for the response (`timedelta \| None`) |
+| `raw` | The underlying `httpx.Response` |
+| `request` | The `httpx.Request` that was sent |
+
+**Migration guide:**
 
 ```python
-# resource.py
-from arrest import Resource
+# before (v0.1.x) — exceptions for non-2xx
+try:
+    resp = await svc.users.get("/123")
+    print(resp.data)
+except ArrestHTTPException as exc:
+    print(f"Error: {exc.status_code} — {exc.data}")
 
-user = Resource(
-    route="/user",
-    handlers=[...]
-)
-
-@user.handler("/upload-pic")
-async def upload_user_profile_pic(self, url, *arg, *kwarg):
-    ...
-...
-
-# service.py
-from .resource import user
-
-myservice = Service(
-    name="myservice",
-    url="http://example.com",
-    resources=[user]
-)
-
-...
-
-# somewhere_else.py
-from .service import myservice
-
-await myservice.user.upload_user_profile_pic(...)
+# after (latest) — Response for all status codes
+resp = await svc.users.get("/123")
+if resp.is_success:
+    print(resp.data)
+else:
+    print(f"Error: {resp.status_code} — {resp.data}")
 ```
 
-!!! Note
-    Connecting your resource to a service is still mandatory if you want to use the complete url. If you just call the method from your resource instance directly, since its still not bound to a service (thus a `base_url`), it would try to make an api call to `/user/upload-pic`, instead of `http://example.com/user/upload-pic`
+**Legacy compatibility mode:**
 
-## Standardized the names of resource and services from parsing the OpenAPI Specification
-
-Certain names for resources and services had whitespaces and special characters, which resulted in the generated code having illegal variable names (such as `OpenAPI service: 2.1 = Service(...)`)
-
-v0.1.10 standardizes all variable names of the generated service and resource to lower and snake_cased.
-
-## Add support for root-level resources.
-
-You can now define root-level resources (i.e., having base routes of either `""` or `"/"`) There can be only one root-level resource, for obvious reasons. You can set them up as normal `Resource` instances with `route=""` or `route="/`" and a corresponding handler `(<Method>, "")` (e.g. `www.example.com`) or `(<Method>, "/")` (e.g. `www.example.com/`)
-
-In order to make the call to the root-resource, you simply invoke the http methods on the service directly, without specifying a resource
+If you prefer the old behaviour, enable `raise_for_status` at the Service,
+Resource, or per-call level. When enabled, non-2xx responses raise
+`ArrestHTTPException` (with `status_code` and `data`) just like in v0.1.x.
+Default is `False` (new behaviour).
 
 ```python
-await my_service.get("") # or my_service.get("/")
+# Service-level: all resources inherit
+svc = Service(name="api", url="https://example.com", raise_for_status=True, ...)
+
+# Resource-level (via add_resource)
+svc.add_resource(user_resource, raise_for_status=True)
+
+# Per-call (via request())
+await svc.users.request(method="POST", path="/", raise_for_status=True)
 ```
 
-!!! Note
-    This is only applicable if you have a path with no suffix at the root level. i.e. `www.example.com/`. If you want to access `www.example.com/path`, then the following won't work.
+**Exception summary:**
+
+| Scenario | Default (`False`) | `raise_for_status=True` |
+|---|---|---|
+| Transport failure (timeout, DNS, etc.) | `RequestError` | `RequestError` |
+| Server responds 4xx / 5xx | `Response` with `is_client_error`/`is_server_error` | `ArrestHTTPException` |
+| Server responds 2xx | `Response` with `is_success` | `Response` with `is_success` |
+
+---
+
+## 2. `H()` helper — type-safe handler definitions
+
+Defining handlers with raw tuples `("GET", "/", Request, Response)` works but
+gives no IDE autocomplete and it's easy to forget the positional order.
+The new `H()` helper gives you keyword-argument clarity and full type-checking:
 
 ```python
-Resource(route="/", handlers=[("GET", "/path")])
+from arrest import H, Resource, GET, POST
 
-await service.get("/path") # throws ResourceNotFound
-```
-
-Because `/path` constitutes a resource on its own, not a subpath for a root-resource `/`, hence the following would need to be written
-
-```python
-Resource(route="/path", handlers=[("GET", "")])
-
-await service.path.get("") # works!
-```
-
-General rule-of-thumb is, a RESTful resource always has a path prefix, and arrest resources should preferrably be designed around that
-notion. If you have an endpoint with only the root-level being the accessible API, you might want to create a root-resource with
-a single handler.
-
-## Standardized retry mechanism with more flexibility
-
-The previous built-in retry mechanism was too restrictive and lacked configurability. In the new version, there will not be any retry by default. This is to reduce as much side-effect as possible from the HTTP calls in favour of developer expectations. If you want to enable retries there are a few different ways.
-
-### _Use the standard retry mechanism from httpx transport_
-
-```python
-from httpx import AsyncHTTPTransport
-from arrest import Resource, Service
-
-transport = AsyncHTTPTransport(retries=3)
-
-my_service = Service(
-    name="myservice",
-    url="http://example.com",
-    resources=[user],
-    transport=transport
-)
-```
-
-or, if you are running your own httpx client instance, you can also configure it there.
-
-```python
-my_service = Service(
-    name="myservice",
-    url="http://example.com",
-    resources=[user],
-    client=httpx.AsyncClient(transport=transport)
-)
-```
-
-This will retry the request in case of `httpx.ConnectError` or `httpx.ConnectTimeout`. [Read more](https://www.python-httpx.org/advanced/transports/)
-
-### _Use the retry mechanism from arrest_
-
-Arrest provides an additional keyword-argument `retry` either at service-level, or at individual resource-level. It is defaulted to `None`, should you opt for no retries (the default behaviour). However, you can set it to any valid integer resembling the number of times it should retry.
-
-Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retry process. It uses [random exponential backoff](https://tenacity.readthedocs.io/en/latest/api.html#tenacity.wait.wait_random_exponential) and in the event of any exception.
-
-```python
-my_service = Service(
-    name="myservice",
-    url="http://example.com",
-    resources=[user],
-    retry=3
-)
-```
-
-### _Use your own retry mechanism_
-
-If you want more fine-grained control over your retries, you can disable the in-built retry (`retry=None`), or keep it unset (default None) and write your own decorator that wraps around your anciliary function that calls the arrest service under the decorator. Here is an example using another popular library [backoff](https://github.com/litl/backoff)
-
-```python
-import backoff
-from arrest.exceptions import ArrestHTTPException
-
-@backoff.on_exception(
-    backoff.expo,
-    (
-        ArrestHTTPException,
-        Exception
-    ),
-    max_retries=5,
-    jitter=backoff.full_jitter
-)
-async def fn_caller():
-    return await my_service.foo.get("/bar")
-```
-
-!!! Note
-    When calling the arrest service, do remember that the original httpx exceptions are rethrown as `ArrestHTTPException` with the appropriate information. These include the following:
-
-    - `httpx.HTTPStatusError` - for capturing HTTP non-200 error codes, rethrown as `ArrestHTTPException` with the same status code and message
-    - `httpx.TimeoutException` - for capturing any request timeout, rethrown as `ArrestHTTPException` with the status code 408 (Request Timeout)
-    - `httpx.RequestError` - any other error during making the request, rethrown as `ArrestHTTPException` with the status code 500 (Internal Server Error)
-
-
-## Add support for passing any Python-type* to the request and response type definitions for handlers.
-
-With v0.1.10, you can use any python type (that is json-serializable, ofcourse) for request and response in the handler definitions.
-The following types are tested for full support:
-1. `primitive types`
-2. `pydantic.BaseModel`
-3. `dataclasses.dataclass`
-4. `pydantic.RootModel` (v2 only)
-5. `dict` and `typing.Dict`
-6. `list` and `typing.List`
-7. `typing.Optional` and `typing.Union`
-
-You can use any combination of them to define your request and response types, and the requests / responses will be parsed according to the type definitions.
-
-!!! Example
-    ```python
-    from arrest import Resource, Service
-    user = Resource(
-                name="users",
-                route="/users",
-                handlers=[
-                    ("GET", "", None, UserSchema),
-                    ("POST", "", UserCreate, UserSchema),
-                    ("GET", "/{user_id}", None, UserSchema),
-                    ("GET", "/all", None, list[UserSchema])
-                ]
-            )
-
-    my_service = Service(
-        name="myservice",
-        url="http://example.com",
-        resources=[user],
-    )
-
-    response = await my_service.user.get("/all?limit=10") # list[UserSchema]
-    ```
-
-## Add custom exception handlers
-
-If you need to enable some custom functionality for any exception during the lifetime of the HTTP request, you can now add custom exception handlers.
-Oftentimes, you would like to reraise the exception as a `fastapi.HTTPException` if you are proxying the requests to the service. A typical example use-case would look something like this:
-
-```python
-from arrest.exceptions import ArrestHTTPException, ArrestError
-
-def http_exc_handler(exc: ArrestHTTPException):
-        raise HTTPException(status_code=exc.status_code, detail=exc.data)
-
-def err_handler(_exc: ArrestError):
-    raise HTTPException(status_code=500, detail="Something went wrong")
-
-def generic_err_handler(_exc: Exception):
-    logging.warning("Something went wrong")
-
-
-my_service = Service(
-    name="myservice",
-    url="http://example.com",
-    resources=[user],
-)
-
-service.add_exception_handlers(
-    exc_handlers={
-        Exception: generic_err_handler,
-        ArrestHTTPException: http_exc_handler,
-        ArrestError: err_handler,
-    }
-)
-```
-
-This makes the service automatically call the appropriate exception handler function upon receiving the specific exception after making the request.
-
-**Note** - Arrest rethrows the `httpx` exceptions as `ArrestHTTPException`, hence you won't be able to, for example, use exception handlers for `httpx.HTTPStatusError`.
-
-
-## Add support for writing query parameters into the url string
-
-So far the query parameters had to be provided as an additional keyword-argument to the method caller as `service.get("/users", query={"limit": 10})`. This was due to the fact that the url pattern matching for the correct handler was based on the complete url parameter, including the query params (the first argument of the method caller). However, now that condition is removed, you can also write the query parameters in the url string as `?limit=10`.
-
-```python
-await service.users.get("/all?limit=10&role=admin")
-```
-
-## Add support for default GET handlers for resources
-
-Arrest now automatically adds a default GET handler to the resource route, which means, if your resource looks like this:
-
-```python
-user = Resource(
-    name="user",
-    route="/user"
-)
-```
-
-You wouldn't need to add any handler for the resource root, you can directly call `service.user.get("")` Additionally, if you specify `response_model` keyword-argument in the Resource initializer, the GET response will be automatically parsed as the `response_model`.
-
-```python
-user = Resource(
-    name="user",
-    route="/user",
-    response_model=UserSchema
-)
-
-response = await service.user.get("")
-assert isinstance(response, UserSchema) # True
-```
-
-!!! Note
-    This works by splitting the resource route into the resource's base route, and the suffix, which becomes the default GET handler route. For example, if your resource route is `"/users"`, the default handler will be `("GET", "")`, and you can call `service.users.get("")` But if your resource route is `"/users/"`, the default handler will be `("GET", "/")`, and you can call `service.users.get("/")`.
-
-
-This also works similarly for root-level resources for the service.
-If your root-level resource is at `"/"`, you can call `service.get("/")` or `service.root.get("/")`,
-but if the root-level resource is at `""`, you have to call `service.get("")` or `service.root.get("")`.
-
-
-You can overwrite the default handler by rewriting it in the handlers list.
-
-```python
-user = Resource(
-    name="user",
-    route="/user",
+user_resource = Resource(
+    name="users",
+    route="/users",
     handlers=[
-        ("GET", "", UserSchema), # overwrites default ("GET", "")
-        ("GET", "/{usder_id:str}", UserSchema)
-    ]
-)
-```
-
-## Fixed improper imports of pydantic schemas from the OpenAPI generation
-
-The OpenAPI schema that is generated by FastAPI can have weird names for the schema components. If your FastAPI endpoint does not have a predefined Pydantic model for it's request but instead you are using them as the endpoint function parameters, the generated schema name will be
-
-```python
-@app.post("/foo")
-async def post_custom_request_with_query_header_body(
-    request: Request,
-    foo: str = Body(...),
-    bar: str = Body(...),
-    x_api_key: str = Header(...),
-    x_secret: str = Header(...),
-    limit: Optional[int] = Query(10),
-    user_id: Optional[str] = Query(None),
-):
-    ...
-```
-
-The above endpoint generates the following openapi schema:
-
-```json
-"Body_post_custom_request_with_query_header_body_custom_post": {
-    "properties": {
-        "foo": {
-        "type": "string",
-        "title": "Foo"
-        },
-        "bar": {
-        "type": "string",
-        "title": "Bar"
-        }
-    },
-    "type": "object",
-    "required": [
-        "foo",
-        "bar"
+        H(GET, "/"),
+        H(POST, "/", request=NewUserRequest, response=UserResponse),
+        H(GET, "/{user_id:str}", response=UserResponse, headers={"x-custom": "value"}),
     ],
-    "title": "Body_post_custom_request_with_query_header_body_custom_post"
-    }
-```
-
-When parsing this OpenAPI schema, the generated pydantic schema uses correct pascal-casing (`class BodyPostCustomRequestWithQueryHeaderBodyCustomPost`), but when importing them in the generated `resources.py` they were incorrectly using the snake_case name from the OpenAPI specification. This has been fixed now, and both `models.py` and `resources.py` will have the correct PascalCase named imports of the schema models.
-
-## Named constants for HTTP Methods
-
-Instead of writing HTTP methods as string literals, or using `arrest.http.Methods` enum, you can also import them as constants.
-
-```python
-from arrest import GET, POST, Resource
-
-user = Resource(
-    name="user",
-    route="/user",
-    handlers=[
-        (GET, "/"),
-        (POST, "/login")
-    ]
 )
 ```
+
+`H()` accepts all the same fields as `ResourceHandler`:
+
+```python
+def H(
+    method: Methods,
+    route: str,
+    request: Any = None,
+    response: Any = None,
+    callback: Callable | None = None,
+    *,
+    headers: dict[str, str] | None = None,
+) -> ResourceHandler: ...
+```
+
+The old tuple/dict syntax still works, so existing code won't break.
+
+---
+
+## 3. Form and File primitives for `multipart/form-data` and `application/x-www-form-urlencoded`
+
+Arrest now supports form-encoded and multipart requests via two new field annotations:
+`Form(...)` and `File(...)` (imported from `arrest.params`).
+
+### Form fields (`application/x-www-form-urlencoded`)
+
+```python
+from pydantic import BaseModel
+from arrest import Resource, Service
+from arrest.params import Form
+
+class LoginRequest(BaseModel):
+    username: str = Form(...)
+    password: str = Form(...)
+
+auth_resource = Resource(
+    route="/auth",
+    handlers=[
+        ("POST", "/login", LoginRequest),
+    ],
+)
+
+await svc.auth.post("/login", request=LoginRequest(username="alice", password="s3cret"))
+# Content-Type: application/x-www-form-urlencoded
+# Body: username=alice&password=s3cret
+```
+
+### File uploads (`multipart/form-data`)
+
+```python
+from arrest.params import File, Form
+from arrest.types import UploadFile
+
+class ProfileUpdate(BaseModel):
+    display_name: str = Form(...)
+    avatar: UploadFile = File(...)
+
+# Upload from disk
+with open("avatar.png", "rb") as f:
+    avatar = UploadFile(filename="avatar.png", content_type="image/png", file=f)
+    await svc.user.post("/profile", request=ProfileUpdate(
+        display_name="Alice",
+        avatar=avatar,
+    ))
+
+# Upload raw bytes
+await svc.user.post("/profile", request=ProfileUpdate(
+    display_name="Alice",
+    avatar=b"raw image bytes...",
+))
+```
+
+!!! warning "Cannot mix JSON and Form"
+    A single request model cannot mix `Body()` (or unannotated) fields with
+    `Form()` / `File()` fields. Arrest will raise a `ValueError`.
+
+---
+
+## 4. Documentation provider: MkDocs → Zensical
+
+The documentation site has been migrated from **MkDocs** (with Material theme)
+to **[Zensical](https://github.com/s-bose/zensical)** — a modern, fast
+documentation generator written in Rust.
+
+- Faster build times
+- Built-in search, code copy, and navigation features
+- Same Material-style look with accent color and light/dark palette
+- Configuration is now in `zensical.toml` at the project root
+
+If you're contributing doc changes, use `zensical serve` instead of `mkdocs serve`.
+
+---
+
+## 5. Package manager: Poetry → uv
+
+The project now uses **[uv](https://github.com/astral-sh/uv)** as its package
+manager instead of Poetry.
+
+| Area | Before (Poetry) | After (uv) |
+|---|---|---|
+| Dependency file | `pyproject.toml` + `poetry.lock` | `pyproject.toml` + `uv.lock` |
+| Build backend | `poetry.core` | `hatchling` |
+| Install | `poetry add arrest` | `uv add arrest` |
+| Dev setup | `poetry install --with dev,test,docs` | `uv sync --group dev --group test --group docs` |
+
+The `pyproject.toml` now uses [PEP 735](https://peps.python.org/pep-0735/)
+dependency groups (`[dependency-groups]`) for organizing optional dependencies.
+
+---
+
+## 6. XML request and response support via `pydantic-xml`
+
+Arrest now supports XML bodies using `pydantic-xml`'s `BaseXmlModel`. When your
+request or response type subclasses `BaseXmlModel`, Arrest handles serialization
+and deserialization automatically:
+
+```python
+from pydantic_xml import BaseXmlModel, attr, element
+
+class XmlRequest(BaseXmlModel, tag="user"):
+    name: str = element()
+    email: str = element()
+
+class XmlResponse(BaseXmlModel, tag="user"):
+    id: int = attr()
+    name: str = element()
+    email: str = element()
+
+res = Resource(
+    route="/users",
+    handlers=[("POST", "/xml", XmlRequest, XmlResponse)],
+)
+
+resp = await svc.users.post("/xml", request=XmlRequest(name="Alice", email="a@b.com"))
+# Content-Type: application/xml
+# resp.data is XmlResponse(id=42, name="Alice", email="a@b.com")
+```
+
+!!! note
+    Fields must use `element()` or `attr()` annotations. `pydantic-xml` is a
+    required dependency (bundled with Arrest).
+
+---
+
+## See also
+
+- [Quickstart](quickstart.md) — detailed walkthrough of `H()`, `Response[T]`, and `Form`/`File`
+- [Configuring your request](configuring-request.md) — full reference for request parameters
+- [FAQ](faq.md) — common questions about using `Response[T]`
+- [Release Notes](release-notes.md) — full changelog

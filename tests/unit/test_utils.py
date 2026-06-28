@@ -237,12 +237,12 @@ def test_jsonable_encoder_object_with_no___dict__():
 @pytest.mark.asyncio
 async def test_retry_async(mocker):
     class Foo:
-        @retry(n_retries=3, exceptions=(ValueError))
+        @retry(max_retries=3, exceptions=(ValueError))
         async def fn_async(self):
             print("baz")
             raise ValueError()
 
-        @retry(n_retries=2, exceptions=(Exception))
+        @retry(max_retries=2, exceptions=(Exception))
         def fn_sync():
             print("baz sync")
             raise Exception()

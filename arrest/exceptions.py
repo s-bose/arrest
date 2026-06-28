@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class BaseException(Exception):
     """base exception class"""
 
@@ -10,10 +13,16 @@ class ArrestError(BaseException):
 
 
 class ArrestHTTPException(ArrestError):
-    def __init__(self, status_code: int, data: dict | str) -> None:
+    def __init__(self, status_code: int, data: Any) -> None:
         self.status_code = status_code
         self.data = data
         super().__init__(str(data))
+
+
+class RequestError(ArrestError):
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
 
 
 class ResponseError(ArrestError):
@@ -28,11 +37,6 @@ class NotFoundException(ArrestError):
 
 
 class HandlerNotFound(NotFoundException):
-    def __init__(self, message: str):
-        super().__init__(message)
-
-
-class ResourceNotFound(NotFoundException):
     def __init__(self, message: str):
         super().__init__(message)
 

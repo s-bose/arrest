@@ -1,6 +1,6 @@
 [project]
 name = "arrest"
-version = "0.1.10"
+version = "0.1.11a1"
 description = "Arrest is a wrapper of pydantic and httpx to make your REST api calls type-safe and structured"
 authors = [{ name = "shiladitya", email = "shiladitya_basu@live.com" }]
 license = { text = "MIT" }
@@ -22,6 +22,7 @@ dependencies = [
     "pyyaml>=6.0.1",
     "argcomplete>=3.2.2",
     "tenacity>=8.5.0",
+    "pydantic-xml>=2.21.0",
 ]
 
 [project.urls]

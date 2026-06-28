@@ -14,9 +14,10 @@ import tenacity
 from httpx import Headers, QueryParams
 from httpx._types import FileTypes
 from pydantic import BaseModel, TypeAdapter
+from pydantic_xml import BaseXmlModel
 
 from arrest.logging import logger
-from arrest.params import Params, ParamTypes, _File, _Param
+from arrest.params import ParamTypes, RequestArgs, _File, _Param
 from arrest.types import ExceptionHandler, ExceptionHandlers, UploadFile
 
 T = TypeVar("T")
@@ -146,12 +147,12 @@ def jsonable_encoder(obj: Any) -> Any:
     return jsonable_encoder(data)
 
 
-def retry(*, n_retries: int, exceptions: tuple[type[Exception], ...]):
+def retry(*, max_retries: int, exceptions: tuple[type[Exception], ...]):
     def wrapper(func):
         @wraps(func)
         def sync_wrapped(*args, **kwargs):
             __retrying = tenacity.Retrying(
-                stop=tenacity.stop_after_attempt(n_retries),
+                stop=tenacity.stop_after_attempt(max_retries),
                 wait=tenacity.wait_random_exponential(
                     multiplier=1, max=60
                 ),  # Randomly wait up to 2^x * 1 seconds between each retry
@@ -165,7 +166,7 @@ def retry(*, n_retries: int, exceptions: tuple[type[Exception], ...]):
         @wraps(func)
         async def wrapped(*args, **kwargs):
             __retrying = tenacity.AsyncRetrying(
-                stop=tenacity.stop_after_attempt(n_retries),
+                stop=tenacity.stop_after_attempt(max_retries),
                 wait=tenacity.wait_random_exponential(
                     multiplier=1, max=60
                 ),  # Randomly wait up to 2^x * 1 seconds between each retry
@@ -234,7 +235,7 @@ def extract_request_params(
     request_data: Any,
     headers: dict[str, str] | None = None,
     query: dict[str, Any] | None = None,
-) -> Params:
+) -> RequestArgs:
     header_params: dict[str, str] = headers or {}
     query_params: dict[str, Any] = query or {}
     body_params: dict[str, Any] = {}
@@ -244,8 +245,17 @@ def extract_request_params(
         # perform type validation on `request_data`
         request_data = validate_model(type_=request_type, obj=request_data)
 
+    if isinstance(request_data, BaseXmlModel):
+        header_params["Content-Type"] = "application/xml"
+        return RequestArgs(
+            header=Headers(header_params),
+            query=QueryParams(query_params),
+            body=request_data.to_xml(),
+            content_type="application/xml",
+        )
+
     if is_rootmodel(request_data):
-        return Params(
+        return RequestArgs(
             header=Headers(header_params),
             query=QueryParams(query_params),
             body=jsonable_encoder(request_data),
@@ -285,14 +295,14 @@ def extract_request_params(
 
         if is_form_body:
             if file_params:
-                return Params(
+                return RequestArgs(
                     header=Headers(header_params),
                     query=QueryParams(query_params),
                     body=body_params if body_params else None,
                     files=file_params if file_params else None,
                     content_type="multipart/form-data",
                 )
-            return Params(
+            return RequestArgs(
                 header=Headers(header_params),
                 query=QueryParams(query_params),
                 body=body_params if body_params else None,
@@ -300,7 +310,7 @@ def extract_request_params(
                 content_type="application/x-www-form-urlencoded",
             )
 
-        return Params(
+        return RequestArgs(
             header=Headers(header_params),
             query=QueryParams(query_params),
             body=jsonable_encoder(body_params) if body_params else None,
@@ -310,7 +320,7 @@ def extract_request_params(
 
     body_params = request_data
 
-    return Params(
+    return RequestArgs(
         header=Headers(header_params),
         query=QueryParams(query_params),
         body=jsonable_encoder(body_params) if body_params else None,
@@ -331,4 +341,6 @@ def build_body_kwargs(
         return {"data": body, "files": files}
     if content_type == "application/x-www-form-urlencoded":
         return {"data": body}
+    if content_type == "application/xml":
+        return {"content": body}
     return {"json": body} if body else {}

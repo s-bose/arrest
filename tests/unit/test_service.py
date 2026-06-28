@@ -34,9 +34,8 @@ async def test_make_request_from_service(service, mock_httpx):
         return_value=httpx.Response(200, json={"status": "OK"})
     )
 
-    response = await service.request("/user/posts", method="GET")
     resource_response = await service.user.get("/posts")
-    assert response == resource_response == {"status": "OK"}
+    assert resource_response.data == {"status": "OK"}
 
 
 @pytest.mark.asyncio
@@ -57,15 +56,15 @@ async def test_make_request_to_root_resource(mock_httpx, mocker):
     root__get = mocker.spy(root_resource, "request")
     user__get = mocker.spy(user_resource, "request")
 
-    resp1 = await service.get("")
+    resp1 = await service.root.get("")
 
     assert root__get.call_count == 1
 
-    resp2 = await service.get("/users")
+    resp2 = await service.users.get("")
 
     assert user__get.call_count == 1
 
-    resp3 = await service.get("/")
+    resp3 = await service.root.get("/")
 
     assert root__get.call_count == 2
 
@@ -73,4 +72,4 @@ async def test_make_request_to_root_resource(mock_httpx, mocker):
 
     assert root__get.call_count == 3
 
-    assert resp1 == resp2 == resp3 == resp4 == {"status": "OK"}
+    assert resp1.data == resp2.data == resp3.data == resp4.data == {"status": "OK"}

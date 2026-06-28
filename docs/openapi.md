@@ -92,12 +92,12 @@ This generates 3 files.
     # swagger_petstore_openapi_3_1/services.py
 
     from arrest import Service
-    from .resources import pet, store, user
+    from .resources import pets, store, user
 
     swagger_petstore_openapi_3_0 = Service(
         name="swagger_petstore_openapi_3_0",
         url="/api/v3",
-        resources=[pet, store, user]
+        resources=[pets, store, user]
     )
 
     ```
@@ -129,7 +129,7 @@ Alternatively you can specify your own custom name by providing `-d` or `--dir`
 
 ## What works and what does not
 
-1. Currently, Arrest is able to only work on singular pydantic types and not types like `list[BaseModel]` or `dict[str, BaseModel]` as request / response models.
+1. The OpenAPI **code generator** currently only generates singular pydantic types and not types like `list[BaseModel]` or `dict[str, BaseModel]` as request / response models. (Note: the Arrest **runtime** itself fully supports lists, dicts, dataclasses, and other types.)
 As a result, schema definitions in OpenAPI that are of the following types:
 ```
 {
