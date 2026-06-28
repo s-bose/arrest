@@ -169,7 +169,7 @@ async def test_body_request_json(
     )
 
     if exception:
-        with pytest.raises(exception):
+        with pytest.raises(exception):  # type: ignore
             await service.user.post("/profile", request=request_body)
     else:
         mock_httpx.route(*patterns, name="http_request").mock(

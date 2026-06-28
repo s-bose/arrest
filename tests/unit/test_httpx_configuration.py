@@ -25,6 +25,7 @@ def test_config_headers_cookies(svc_config: dict, res_config: dict):
         Resource(name="abc", route="/abc", config=ArrestConfig(**res_config))
     )
 
+    assert svc.abc.config
     assert svc.abc.config.headers == {"abc": "123"}
     assert svc.abc.config.cookies == {"x-cookie": 60}
 
@@ -48,6 +49,7 @@ async def test_custom_httpx_client():
     svc = Service(name="test", url="http://example.com")
     svc.add_resource(resource)
 
+    assert svc.abc.config
     assert svc.abc.config.client is client
 
     resp = await svc.abc.get("/")
@@ -92,6 +94,8 @@ async def test_resource_client_passed_in_init():
         handlers=[("GET", "/")],
         config=ArrestConfig(client=client),
     )
+
+    assert resource.config
     assert resource.config.client is client
     await client.aclose()
 
