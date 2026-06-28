@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 from arrest import Resource, Service
+from arrest._config import ArrestConfig
 from arrest.exceptions import RequestError
 from tests import TEST_DEFAULT_SERVICE_NAME, TEST_DEFAULT_SERVICE_URL
 
@@ -15,12 +16,12 @@ async def test_mrequest_with_retry_http_transport(mock_httpx):
     service = Service(
         name=TEST_DEFAULT_SERVICE_NAME,
         url=TEST_DEFAULT_SERVICE_URL,
+        config=ArrestConfig(transport=httpx.AsyncHTTPTransport(retries=3)),
         resources=[
             Resource(
                 route="/user",
             )
         ],
-        transport=httpx.AsyncHTTPTransport(retries=3),
     )
 
     with pytest.raises(RequestError):
@@ -46,7 +47,7 @@ async def test_request_with_arrest_retry(mock_httpx):
         resources=[
             Resource(route="/user"),
         ],
-        max_retries=3,
+        config=ArrestConfig(max_retries=3),
     )
 
     with pytest.raises(RequestError):
@@ -71,7 +72,7 @@ async def test_request_with_manual_retry(mock_httpx):
                 route="/user",
             )
         ],
-        transport=httpx.AsyncHTTPTransport(retries=3),
+        config=ArrestConfig(transport=httpx.AsyncHTTPTransport(retries=3)),
     )
 
     @retry(stop=stop_after_attempt(3), reraise=True)

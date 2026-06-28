@@ -3,16 +3,15 @@ import functools
 import inspect
 import json
 from functools import cached_property
-from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union
+from typing import Any, Mapping, Optional, TypeAlias, TypeVar, Union, cast
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from httpx import QueryParams
 from pydantic import BaseModel, ValidationError
 from pydantic_xml import BaseXmlModel
-from typing_extensions import Unpack
 
-from arrest._config import ArrestConfig, HttpxClientInputs
+from arrest._config import ArrestConfig
 from arrest.converters import compile_path
 from arrest.defaults import ROOT_RESOURCE
 from arrest.exceptions import (
@@ -66,18 +65,9 @@ class Resource:
         name: Optional[str] = None,
         *,
         route: Optional[str],
-        response_model: Optional[T] = None,
+        response_model: Optional[Any] = None,
         handlers: list[ResourceHandlerType] | None = None,
-        client: Optional[httpx.AsyncClient] = None,
-        # config: per-request defaults (merge through the chain)
-        headers: Optional[dict[str, str]] = None,
-        cookies: Optional[dict[str, Any]] = None,
-        params: Optional[dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        max_retries: Optional[int] = None,
-        auth: Any = None,
-        follow_redirects: Optional[bool] = None,
-        **client_kwargs: Unpack[HttpxClientInputs],
+        config: Optional[ArrestConfig] = None,
     ) -> None:
         """
         Parameters:
@@ -89,30 +79,9 @@ class Resource:
                 Pydantic datamodel to wrap the json response
             handlers:
                 List of handlers
-            client:
-                An httpx.AsyncClient instance
-            max_retries:
-                Maximum number of application-level retries managed
-                by tenacity. If you want to to transport-level retry,
-                check out [docs](whats-new.md#use-the-standard-retry-mechanism-from-httpx-transport)
-            headers:
-                Default request headers for this resource
-            cookies:
-                Default request cookies for this resource
-            params:
-                Default query params for this resource
-            timeout:
-                Default request timeout (seconds).
-            auth:
-                Default authentication for this resource.
-            follow_redirects:
-                Whether to follow redirects by default.
-            client_kwargs:
-                Transport-level httpx.AsyncClient parameters.
+            config:
+                An ArrestConfig instance
         """
-
-        self._client: Optional[httpx.AsyncClient] = None
-        self._transport_kwargs = client_kwargs
 
         self.base_url = "/"  # will be filled once bound to a service
         self.route = route or ""
@@ -121,15 +90,7 @@ class Resource:
         self.response_model = response_model
         self.routes: dict[HandlerKey, ResourceHandler] = {}
 
-        self.config = ArrestConfig(
-            headers=headers or {},
-            cookies=cookies or {},
-            params=params or {},
-            timeout=timeout,
-            max_retries=max_retries,
-            auth=auth,
-            follow_redirects=follow_redirects,
-        )
+        self.config = config
 
         self._exception_handlers = None
 
@@ -146,20 +107,16 @@ class Resource:
         )
 
         self.initialize_handlers(handlers=handlers if handlers else [])
-        if client:
-            self._client = client
-
-    @cached_property
-    def httpx_args(self) -> dict:
-        """Transport + httpx-compatible config, ready for ``httpx.AsyncClient(**...").
-
-        Read-only.  Frozen on first access.  Use this in custom handlers.
-        """
-        return {**self._transport_kwargs, **self.config.httpx_args()}
 
     def get_resource_name(self, name: Optional[str]) -> str:
         derived_name = name if name else self.route.strip("/").split("/")[0]
         return derived_name if derived_name else ROOT_RESOURCE
+
+    @cached_property
+    def httpx_args(self) -> dict[str, Any]:
+        """Convenience accessor for custom handlers that need to
+        instantiate their own ``httpx.AsyncClient``."""
+        return self.config.httpx_args() if self.config else {}
 
     def handler(
         self,
@@ -238,7 +195,7 @@ class Resource:
 
         Returns:
             Response:
-                A ``Response[T]`` wrapping the parsed data, status code,
+                A ``Response[Any]`` wrapping the parsed data, status code,
                 headers, and raw ``httpx.Response``.
                 Callbacks receive and may return ``Response[Any]``.
         """
@@ -252,19 +209,20 @@ class Resource:
         handler, url = match
 
         # Merge: resource config → handler headers → per-call config
-        config_with_handler = self.config.merge(
-            ArrestConfig(headers=handler.headers or {})
+        final_headers = {}
+        final_headers.update(handler.headers or {})  # merge handler headers
+        final_headers.update(headers or {})  # merge per-call headers
+
+        final_config = ArrestConfig(
+            headers=dict(final_headers),
+            cookies=cookies or {},
+            params={**path_query_params, **dict(query or {})},
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
         )
-        final_config = config_with_handler.merge(
-            ArrestConfig(
-                headers=dict(headers or {}),
-                cookies=cookies or {},
-                params={**path_query_params, **dict(query or {})},
-                timeout=timeout,
-                follow_redirects=follow_redirects,
-                raise_for_status=raise_for_status,
-            )
-        )
+        if self.config:
+            final_config = self.config.merge(final_config)
 
         args = extract_request_params(
             request_type=handler.request,
@@ -328,6 +286,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -341,6 +303,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -350,6 +316,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -363,6 +333,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -372,6 +346,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -385,6 +363,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -394,6 +376,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -407,6 +393,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -416,6 +406,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -429,6 +423,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -438,6 +436,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -451,6 +453,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -460,6 +466,10 @@ class Resource:
         request: Optional[BaseModel] = None,
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
+        cookies: Optional[dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        follow_redirects: Optional[bool] = None,
+        raise_for_status: Optional[bool] = None,
         **kwargs,
     ) -> Response[Any]:
         """
@@ -473,6 +483,10 @@ class Resource:
             request=request,
             headers=headers,
             query=query,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            raise_for_status=raise_for_status,
             **kwargs,
         )
 
@@ -482,7 +496,7 @@ class Resource:
         method: Methods,
         args: RequestArgs,
         response_type: Any,
-        config: ArrestConfig | None = None,
+        config: ArrestConfig,
     ) -> Response[Any]:
         """
         (private) prepares and makes a http request,
@@ -505,27 +519,27 @@ class Resource:
                 a ``Response[T]`` wrapping parsed data, status code,
                 and the raw ``httpx.Response``.
         """
-        cfg = config or ArrestConfig()
+        client = config.client
 
-        if self._client:
+        if client:
             raw = await self.__make_request(
-                client=self._client,
+                client=client,
                 url=url,
                 method=method,
                 args=args,
-                config=cfg,
+                config=config,
             )
         else:
             async with httpx.AsyncClient(
                 base_url=self.base_url,
-                **self._transport_kwargs,
+                **config.httpx_args(),
             ) as client:
                 raw = await self.__make_request(
                     client=client,
                     url=url,
                     method=method,
                     args=args,
-                    config=cfg,
+                    config=config,
                 )
 
         status_code = raw.status_code
@@ -545,7 +559,7 @@ class Resource:
                 raw=raw,
                 request=raw.request,
             )
-            if cfg.raise_for_status and not resp.is_success:
+            if config.raise_for_status and not resp.is_success:
                 raise ArrestHTTPException(
                     status_code=resp.status_code,
                     data=resp.data,
@@ -584,7 +598,7 @@ class Resource:
             request=raw.request,
         )
 
-        if cfg.raise_for_status and not resp.is_success:
+        if config.raise_for_status and not resp.is_success:
             raise ArrestHTTPException(
                 status_code=resp.status_code,
                 data=resp.data,
@@ -737,8 +751,8 @@ class Resource:
                     self._bind_handler(
                         base_url=base_url,
                         handler=ResourceHandler(
-                            method=method,
-                            route=route,
+                            method=cast(Methods, method),
+                            route=cast(str, route),
                             request=len(rest) >= 1 and rest[0] or None,
                             response=len(rest) >= 2 and rest[1] or None,
                             callback=len(rest) >= 3 and rest[2] or None,

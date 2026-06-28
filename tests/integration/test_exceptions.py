@@ -213,7 +213,9 @@ def test_response_error_str():
 
 @pytest.mark.asyncio
 async def test_raise_for_status_service_level(service, mock_httpx):
-    """add_resource(raise_for_status=True) raises ArrestHTTPException on non-2xx."""
+    """Resource with config(raise_for_status=True) raises ArrestHTTPException on non-2xx."""
+    from arrest._config import ArrestConfig
+
     mock_httpx.post(url__regex="/user/*", name="http_request").mock(
         return_value=httpx.Response(400, json={"msg": "bad request"})
     )
@@ -222,8 +224,8 @@ async def test_raise_for_status_service_level(service, mock_httpx):
         Resource(
             route="/user",
             handlers=[("POST", "/profile")],
+            config=ArrestConfig(raise_for_status=True),
         ),
-        raise_for_status=True,
     )
 
     with pytest.raises(ArrestHTTPException) as exc:
@@ -316,6 +318,8 @@ async def test_raise_for_status_empty_body_4xx(service, mock_httpx):
 @pytest.mark.asyncio
 async def test_raise_for_status_override_false(service, mock_httpx):
     """Per-call raise_for_status=False overrides resource-level True."""
+    from arrest._config import ArrestConfig
+
     mock_httpx.get(url__regex="/user/*", name="http_request").mock(
         return_value=httpx.Response(400, json={"msg": "bad request"})
     )
@@ -324,8 +328,8 @@ async def test_raise_for_status_override_false(service, mock_httpx):
         Resource(
             route="/user",
             handlers=[("GET", "")],
+            config=ArrestConfig(raise_for_status=True),
         ),
-        raise_for_status=True,
     )
 
     # Per-call False should override resource-level True

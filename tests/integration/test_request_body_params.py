@@ -479,15 +479,16 @@ def test_upload_file_pydantic_validation_rejects_non_file():
 
 @pytest.mark.asyncio
 async def test_body_request_resource_level_content_type_override(service, mock_httpx):
-    """When Content-Type is set at resource definition,
-    it overrides the annotation-derived content-type."""
+    """When Content-Type is set at resource config, it overrides annotation-derived."""
+    from arrest._config import ArrestConfig
+
     patterns = [M(url__regex="/user/*", method__in=["POST"])]
 
     service.add_resource(
         Resource(
             route="/user",
             handlers=[(Methods.POST, "/form", FormOnlyRequest)],
-            headers={"Content-Type": "multipart/form-data"},
+            config=ArrestConfig(headers={"Content-Type": "multipart/form-data"}),
         )
     )
 

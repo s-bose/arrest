@@ -3,6 +3,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict
 from respx.patterns import M
 
+from arrest._config import ArrestConfig
 from arrest.http import Methods
 from arrest.params import Body, Header
 from arrest.resource import Resource
@@ -68,7 +69,7 @@ async def test_request_header_params(
             handlers=[
                 (Methods.POST, "/profile", UserRequest),
             ],
-            headers=resource_header,
+            config=ArrestConfig(headers=resource_header) if resource_header else None,
         )
     )
     await service.user.post(
@@ -162,7 +163,7 @@ async def test_config_headers_merged_when_not_in_model(service, mock_httpx):
         Resource(
             route="/user",
             handlers=[(Methods.GET, "/", None, None)],
-            headers={"x-default": "config-val"},
+            config=ArrestConfig(headers={"x-default": "config-val"}),
         )
     )
     mock_httpx.get(url__regex="/user/*", name="http_request").mock(

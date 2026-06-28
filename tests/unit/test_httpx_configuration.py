@@ -6,26 +6,33 @@ from arrest import Resource, Service
 
 
 @pytest.mark.parametrize(
-    "service_args, resource_args",
+    "svc_config, res_config",
     [
         ({}, {"headers": {"abc": "123"}, "cookies": {"x-cookie": 60}}),
         ({"headers": {"abc": "123"}, "cookies": {"x-cookie": 60}}, {}),
         ({"headers": {"abc": "123"}}, {"cookies": {"x-cookie": 60}}),
     ],
 )
-def test_config_headers_cookies(
-    service: Service, service_args: dict, resource_args: dict
-):
-    service.add_resource(
-        Resource(name="abc", route="/abc", **resource_args), **service_args
+def test_config_headers_cookies(svc_config: dict, res_config: dict):
+    from arrest._config import ArrestConfig
+
+    svc = Service(
+        name="test",
+        url="http://example.com",
+        config=ArrestConfig(**svc_config),
+    )
+    svc.add_resource(
+        Resource(name="abc", route="/abc", config=ArrestConfig(**res_config))
     )
 
-    assert service.abc.config.headers == {"abc": "123"}
-    assert service.abc.config.cookies == {"x-cookie": 60}
+    assert svc.abc.config.headers == {"abc": "123"}
+    assert svc.abc.config.cookies == {"x-cookie": 60}
 
 
 @pytest.mark.asyncio
-async def test_custom_httpx_client(service: Service):
+async def test_custom_httpx_client():
+    from arrest._config import ArrestConfig
+
     router = respx.Router()
     router.get("http://example.com/abc/").mock(
         return_value=httpx.Response(status_code=200, json={"status": "OK"})
@@ -33,40 +40,78 @@ async def test_custom_httpx_client(service: Service):
 
     mock_transport = httpx.MockTransport(router.async_handler)
     client = httpx.AsyncClient(transport=mock_transport, base_url="http://example.com")
-    resource = Resource(route="/abc", handlers=[("GET", "/")])
-    service.add_resource(resource, client=client)
+    resource = Resource(
+        route="/abc",
+        handlers=[("GET", "/")],
+        config=ArrestConfig(client=client),
+    )
+    svc = Service(name="test", url="http://example.com")
+    svc.add_resource(resource)
 
-    assert resource._client
+    assert svc.abc.config.client is client
+
+    resp = await svc.abc.get("/")
+    assert resp
+    await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_service_config_client_is_used_for_requests():
+    from arrest._config import ArrestConfig
+
+    router = respx.Router()
+    router.get("http://example.com/abc/").mock(
+        return_value=httpx.Response(status_code=200, json={"status": "OK"})
+    )
+
+    client = httpx.AsyncClient(
+        transport=httpx.MockTransport(router.async_handler),
+        base_url="http://example.com",
+    )
+    service = Service(
+        name="test",
+        url="http://example.com",
+        config=ArrestConfig(client=client),
+    )
+    service.add_resource(Resource(route="/abc", handlers=[("GET", "/")]))
 
     resp = await service.abc.get("/")
+
     assert resp
     await client.aclose()
 
 
 @pytest.mark.asyncio
 async def test_resource_client_passed_in_init():
-    """Resource.__init__ with explicit client covers the self._client = client branch."""
+    """Resource with explicit config.client sets it on the merged config."""
+    from arrest._config import ArrestConfig
+
     client = httpx.AsyncClient()
-    resource = Resource(route="/abc", handlers=[("GET", "/")], client=client)
-    assert resource._client is client
+    resource = Resource(
+        route="/abc",
+        handlers=[("GET", "/")],
+        config=ArrestConfig(client=client),
+    )
+    assert resource.config.client is client
     await client.aclose()
 
 
 @pytest.mark.asyncio
 async def test_config_follow_redirects_and_auth():
     """Config with follow_redirects and auth sets request kwargs."""
+    from arrest._config import ArrestConfig
+
     url = "https://api.example.com"
     with respx.mock(base_url=url) as mock:
         svc = Service(
-            name="test", url=url, follow_redirects=False, auth=("user", "pass")
+            name="test",
+            url=url,
+            config=ArrestConfig(follow_redirects=False, auth=("user", "pass")),
         )
         mock.get(url="/items/").mock(return_value=httpx.Response(200, json={}))
         svc.add_resource(Resource(route="/items", handlers=[("GET", "/")]))
         await svc.items.get("/")
-        # just verify the call succeeded — follow_redirects and auth are internal to httpx
-        assert (
-            mock.calls[0].request.extensions.get("follow_redirects") is None
-        )  # httpx doesn't expose this, just verify no error
+        assert mock.calls[0].request.extensions.get("follow_redirects") is None
 
 
 def test_arrest_config_merge_none():
@@ -103,6 +148,48 @@ def test_arrest_config_merge_overrides():
     assert merged.follow_redirects is True
 
 
+@pytest.mark.asyncio
+async def test_arrest_config_merge_additional_fields():
+    """merge() preserves and overrides the httpx/client fields too."""
+    from arrest._config import ArrestConfig
+
+    client = httpx.AsyncClient()
+    transport = httpx.MockTransport(lambda request: httpx.Response(200))
+    cfg = ArrestConfig(
+        verify=False,
+        http2=False,
+        proxy="http://proxy.example.com",
+        mounts={"https://": transport},
+        limits=httpx.Limits(max_connections=10),
+        transport=transport,
+        trust_env=False,
+        event_hooks={"request": []},
+        default_encoding="utf-8",
+        client=client,
+    )
+    overrides = ArrestConfig(
+        verify=True,
+        http2=True,
+        trust_env=True,
+        default_encoding="latin-1",
+    )
+
+    merged = cfg.merge(overrides)
+
+    assert merged.verify is True
+    assert merged.http2 is True
+    assert merged.proxy == "http://proxy.example.com"
+    assert merged.mounts == {"https://": transport}
+    assert merged.limits == httpx.Limits(max_connections=10)
+    assert merged.transport is transport
+    assert merged.trust_env is True
+    assert merged.event_hooks == {"request": []}
+    assert merged.default_encoding == "latin-1"
+    assert merged.client is client
+
+    await client.aclose()
+
+
 def test_arrest_config_httpx_args_excludes_internal():
     """httpx_args() returns only httpx-compatible fields, strips None values."""
     from arrest._config import ArrestConfig
@@ -119,4 +206,5 @@ def test_arrest_config_httpx_args_excludes_internal():
     assert result["timeout"] == 30.0
     assert result["follow_redirects"] is False
     assert "max_retries" not in result
+    assert "client" not in result
     assert "auth" not in result
