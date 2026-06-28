@@ -259,7 +259,7 @@ resp = await svc.users.post("/xml", request=XmlRequest(name="Alice", email="a@b.
 
 ## See also
 
-- [Getting Started](getting-started.md) — detailed walkthrough of `H()`, `Response[T]`, and `Form`/`File`
+- [Quickstart](quickstart.md) — detailed walkthrough of `H()`, `Response[T]`, and `Form`/`File`
 - [Configuring your request](configuring-request.md) — full reference for request parameters
 - [FAQ](faq.md) — common questions about using `Response[T]`
 - [Release Notes](release-notes.md) — full changelog

@@ -13,18 +13,22 @@ You can use the `headers` keyword-argument in the request method to directly pas
     await service.user.get("/posts", headers={"x-max-age": "20", "x-organization": "abc-123"})
     ```
 
-If you want resource-wide shared header definition, you can set it in the `Resource` definition as well. You can use both of these together as all the headers will be collected and sent as a whole.
+If you want resource-wide shared header definition, you can set it via the `config`
+argument. You can use both of these together as all the headers will be collected
+and sent as a whole.
 
-!!! example "using `Resource.headers`"
+!!! example "using `config.headers`"
 
     ```python
+    from arrest._config import ArrestConfig
+
     service.add_resource(
         Resource(
             route="/user",
             handlers=[
                 (Methods.GET, "/profile"),
             ],
-            headers={"x-organization": "abc-123"}
+            config=ArrestConfig(headers={"x-organization": "abc-123"}),
         )
     )
 

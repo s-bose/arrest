@@ -25,20 +25,22 @@ Now that our service is defined, we can proceed to use it elsewhere.
 await example_svc.user.get("/")
 ```
 
-If we want to enable exception handling, simply import `ArrestHTTPException`, or more generic `ArrestError`
+If we want to enable exception handling, import `RequestError` for transport failures
+or `ArrestHTTPException` for non-2xx responses when `raise_for_status=True` is set.
 
 ```python
-from arrest.exceptions import ArrestHTTPException
+from arrest.exceptions import RequestError
 
 try:
     resp = await example_svc.user.get("/")
-except ArrestHTTPException as exc:
-    print(f"{exc.status_code} {exc.data}")
-
-return resp
+    if not resp.is_success:
+        print(f"Error: {resp.status_code} {resp.data}")
+except RequestError as exc:
+    print(f"Request failed: {exc.message}")
 ```
 
 ---
+
 ## Using Methods
 We have the following HTTP Methods available. They can be found in `arrest.http.Methods` enum.
 
@@ -67,7 +69,7 @@ If you want to learn more, please refer to [the FAQ](faq.md#how-do-retries-work)
 ---
 ## Timeouts
 Arrest also provides a default timeout of 120 seconds (2 minutes) in all its http requests.
-If you want to provide a custom timeout, you can set it at the service level or at the resource level with the `timeout` argument.
+If you want to provide a custom timeout, you can set it at the service level or at the resource level via the `config` argument.
 Alternatively, if you want to disable timeouts, you can do so by setting `timeout=httpx.Timeout(None)`.
 
 The `timeout` can take either an integer value for the number of seconds, or an instance of `httpx.Timeout`.
@@ -77,6 +79,7 @@ If you set `timeout=None`, this is equivalent to `timeout=httpx.Timeout(None)`, 
 
 ```python
 from arrest import Service, Resource
+from arrest._config import ArrestConfig
 
 
 example_svc = Service(
@@ -91,7 +94,7 @@ example_svc = Service(
             ]
         )
     ],
-    timeout=240 # 4 minutes
+    config=ArrestConfig(timeout=240)  # 4 minutes
 )
 ```
 

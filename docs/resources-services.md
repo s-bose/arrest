@@ -48,11 +48,13 @@ user = Resource(
 ---
 ### Using a client directly
 
-You can choose to run with your own `httpx.AsyncClient` instance. Simply set the `client` field to your resource.
+You can choose to run with your own `httpx.AsyncClient` instance. Pass it via the
+`config` argument:
 
 ```python
 ...
 import httpx
+from arrest._config import ArrestConfig
 
 my_client = httpx.AsyncClient(...)
 
@@ -65,7 +67,7 @@ user = Resource(
         ("DELETE", "/{user_id:int}"),
     ],
     response_model=UserResponse,
-    client=my_client
+    config=ArrestConfig(client=my_client),
 )
 ```
 
@@ -74,13 +76,30 @@ You can also use any instance that is a subclass of `httpx.AsyncClient` (e.g. [A
 The caveat is that you have to manually close the client after you are done. Usually by `await client.aclose()` or something else.
 
 !!! Note
-    There is also a `client` field in `Services`. You can also use it to set a service-wide shared client instance
+    There is also a `client` field in the `ArrestConfig` passed to `Service`. You can
+    use it to set a service-wide shared client instance.
 
 ---
 ### Using httpx arguments
-You can directly pass most of the httpx client arguments as kwargs for the Resource instance. This allows you to have a more fine-grained control on configuring the httpx client.
+You can pass most httpx client arguments via the `config` argument on `Resource`.
+This gives you fine-grained control over the underlying httpx client.
 
-For the full list of available arguments, please check [here](api.md#httpx-client-arguments)
+```python
+from arrest._config import ArrestConfig
+
+user = Resource(
+    route="/users",
+    handlers=[...],
+    config=ArrestConfig(
+        timeout=60,
+        follow_redirects=True,
+        verify=False,
+        http2=True,
+    ),
+)
+```
+
+For the full list of available fields, see [`ArrestConfig`](api.md#arrestconfig).
 
 ## Services
 Services are the main entrypoint to your API calls. A service is a single url endpoint of a server whose REST APIs you are going to interface.
@@ -89,17 +108,18 @@ A service has the following core fields.
 - *name* - name of the service
 - *url* - URL of the service (without any trailing slashes)
 - *resources* - a list of resources for this service
+- *config* - an optional `ArrestConfig` for default settings
 
 ---
 ### Using a client directly
 
-You can choose to run with your own `httpx.AsyncClient` instance. Simply set the `client` field to your service.
-
-This client will override any client set by any resource, and will be shared across all the http calls.
+You can choose to run with your own `httpx.AsyncClient` instance. Pass it via the
+`config` argument:
 
 ```python
 ...
 import httpx
+from arrest._config import ArrestConfig
 
 my_client = httpx.AsyncClient(...)
 
@@ -107,7 +127,7 @@ myservice = Service(
     name="myservice",
     url="http://example.com/api/v1",
     resources=[user],
-    client=my_client
+    config=ArrestConfig(client=my_client),
 )
 ```
 
@@ -115,11 +135,22 @@ As stated previously, you are in charge of closing the client.
 
 ---
 ### Using httpx arguments
-You can directly pass most of the httpx client arguments as kwargs for the Service instance.
+You can pass most httpx client arguments via the `config` argument on `Service`.
 
 This will override these fields if also set from any resource under this service.
 
-For the full list of available arguments, please check [here](api.md#httpx-client-arguments)
+```python
+from arrest._config import ArrestConfig
+
+myservice = Service(
+    name="myservice",
+    url="http://example.com/api/v1",
+    resources=[user],
+    config=ArrestConfig(timeout=120, verify=False),
+)
+```
+
+For the full list of available fields, see [`ArrestConfig`](api.md#arrestconfig).
 
 
 ## Root resources

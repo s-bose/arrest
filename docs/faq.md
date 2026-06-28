@@ -98,14 +98,17 @@ See [Configuring Requests](configuring-request.md#path-parameters) for full deta
 
 ## How do retries work?
 
-Set `max_retries=N` on your `Service` or `Resource`. Arrest uses [tenacity](https://github.com/jd/tenacity) with **randomized exponential backoff** (up to 60 seconds between attempts) and retries on `httpx.TimeoutException` and `httpx.RequestError`:
+Set `max_retries` in your `ArrestConfig`. Arrest uses [tenacity](https://github.com/jd/tenacity) with **randomized exponential backoff** (up to 60 seconds between attempts) and retries on `httpx.TimeoutException` and `httpx.RequestError`:
 
 ```python
+from arrest import Service, Resource
+from arrest._config import ArrestConfig
+
 svc = Service(
     name="api",
     url="https://example.com",
     resources=[...],
-    max_retries=3,
+    config=ArrestConfig(max_retries=3),
 )
 ```
 
@@ -131,7 +134,7 @@ await svc.users.post("/", request={"name": "Alice"})
 await svc.users.post("/", request=["a", "b", "c"])
 ```
 
-See [Getting Started](getting-started.md) for more examples.
+See [Quickstart](quickstart.md) for more examples.
 
 ---
 
@@ -159,6 +162,7 @@ Use `httpx.ASGITransport` to route requests through a local ASGI app (like FastA
 import httpx
 import pytest
 from arrest import Service, Resource
+from arrest._config import ArrestConfig
 
 @pytest.fixture
 async def client():
@@ -168,7 +172,12 @@ async def client():
         yield c
 
 async def test_get_user(client):
-    svc = Service(name="test", url="http://test", resources=[...], client=client)
+    svc = Service(
+        name="test",
+        url="http://test",
+        resources=[...],
+        config=ArrestConfig(client=client),
+    )
     resp = await svc.users.get("/1")
     assert resp.is_success
 ```
@@ -189,8 +198,10 @@ per-call kwargs  >  handler config  >  resource config  >  service config
 svc = Service(
     name="api",
     url="https://example.com",
-    headers={"x-api-key": "svc-level"},
-    auth=("user", "pass"),
+    config=ArrestConfig(
+        headers={"x-api-key": "svc-level"},
+        auth=("user", "pass"),
+    ),
     resources=[...],
 )
 
