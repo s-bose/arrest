@@ -268,7 +268,7 @@ class Resource:
 
         fn_make_request = (
             arrest_retry(
-                n_retries=retry_count,
+                max_retries=retry_count,
                 exceptions=(httpx.TimeoutException, httpx.RequestError),
             )(self.make_request)
             if retry_count

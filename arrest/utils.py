@@ -146,12 +146,12 @@ def jsonable_encoder(obj: Any) -> Any:
     return jsonable_encoder(data)
 
 
-def retry(*, n_retries: int, exceptions: tuple[type[Exception], ...]):
+def retry(*, max_retries: int, exceptions: tuple[type[Exception], ...]):
     def wrapper(func):
         @wraps(func)
         def sync_wrapped(*args, **kwargs):
             __retrying = tenacity.Retrying(
-                stop=tenacity.stop_after_attempt(n_retries),
+                stop=tenacity.stop_after_attempt(max_retries),
                 wait=tenacity.wait_random_exponential(
                     multiplier=1, max=60
                 ),  # Randomly wait up to 2^x * 1 seconds between each retry
@@ -165,7 +165,7 @@ def retry(*, n_retries: int, exceptions: tuple[type[Exception], ...]):
         @wraps(func)
         async def wrapped(*args, **kwargs):
             __retrying = tenacity.AsyncRetrying(
-                stop=tenacity.stop_after_attempt(n_retries),
+                stop=tenacity.stop_after_attempt(max_retries),
                 wait=tenacity.wait_random_exponential(
                     multiplier=1, max=60
                 ),  # Randomly wait up to 2^x * 1 seconds between each retry
