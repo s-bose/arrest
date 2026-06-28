@@ -1,6 +1,6 @@
 [project]
 name = "arrest"
-version = "0.1.12a1"
+version = "0.2.0"
 description = "Declarative, type-safe HTTP client with Pydantic validation"
 authors = [{ name = "shiladitya Bose", email = "shiladitya_basu@live.com" }]
 license = { text = "MIT" }
