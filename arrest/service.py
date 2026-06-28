@@ -1,5 +1,4 @@
 import itertools
-from functools import partial
 from typing import Any, Optional
 
 import httpx
@@ -90,14 +89,6 @@ class Service:
             for resource in resources:
                 self.add_resource(resource, client=client, **client_kwargs)
 
-        self.get = partial(self.request, method=Methods.GET)
-        self.post = partial(self.request, method=Methods.POST)
-        self.put = partial(self.request, method=Methods.PUT)
-        self.patch = partial(self.request, method=Methods.PATCH)
-        self.delete = partial(self.request, method=Methods.DELETE)
-        self.head = partial(self.request, method=Methods.HEAD)
-        self.options = partial(self.request, method=Methods.OPTIONS)
-
     def add_resource(
         self,
         resource: Resource,
@@ -172,7 +163,7 @@ class Service:
             path=suffix, method=method, **kwargs
         )
 
-    def __getattr__(self, key: str) -> Resource | Any:  # pragma: no cover
+    def __getattr__(self, key: str) -> Resource:  # pragma: no cover
         if hasattr(self, key):
             return getattr(self, key)
         return self.resources[key]

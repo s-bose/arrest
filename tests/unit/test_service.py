@@ -1,6 +1,7 @@
 import httpx
 import pytest
 
+from arrest.http import Methods
 from arrest.resource import Resource
 from arrest.service import Service
 from tests import TEST_DEFAULT_SERVICE_URL
@@ -57,15 +58,15 @@ async def test_make_request_to_root_resource(mock_httpx, mocker):
     root__get = mocker.spy(root_resource, "request")
     user__get = mocker.spy(user_resource, "request")
 
-    resp1 = await service.get("")
+    resp1 = await service.request(method=Methods.GET, path="")
 
     assert root__get.call_count == 1
 
-    resp2 = await service.get("/users")
+    resp2 = await service.request(method=Methods.GET, path="/users")
 
     assert user__get.call_count == 1
 
-    resp3 = await service.get("/")
+    resp3 = await service.request(method=Methods.GET, path="/")
 
     assert root__get.call_count == 2
 

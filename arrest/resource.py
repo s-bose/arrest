@@ -324,7 +324,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP GET` request
 
@@ -346,7 +346,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP POST` request
 
@@ -368,7 +368,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP PUT` request
 
@@ -390,7 +390,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP PATCH` request
 
@@ -412,7 +412,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP DELETE` request
 
@@ -434,7 +434,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP HEAD` request
 
@@ -456,7 +456,7 @@ class Resource:
         headers: Optional[Mapping[str, str]] = None,
         query: Optional[Mapping[str, str]] = None,
         **kwargs,
-    ):
+    ) -> Response[Any]:
         """
         Makes a `HTTP OPTIONS` request
 
