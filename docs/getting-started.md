@@ -96,6 +96,83 @@ example_svc = Service(
 ```
 
 ---
+## Using the `H()` helper for type-safe handler definitions
+
+Instead of writing raw tuples `("GET", "/", Request, Response)`, you can use
+the `H()` helper for keyword-argument clarity and full IDE autocomplete:
+
+```python
+from arrest import H, Resource, GET, POST
+
+user_resource = Resource(
+    name="users",
+    route="/users",
+    handlers=[
+        H(GET, "/"),
+        H(POST, "/", request=NewUserRequest, response=UserResponse),
+        H(GET, "/{user_id:str}", response=UserResponse),
+        H(PATCH, "/{user_id:str}", request=UpdateUserRequest),
+        H(GET, "/{user_id:str}/posts", response=List[PostResponse], headers={"x-custom": "value"}),
+    ],
+)
+```
+
+`H()` returns a `ResourceHandler` and accepts all the same arguments:
+
+| Argument | Type | Description |
+|---|---|---|
+| `method` | `Methods` | HTTP method (required) |
+| `route` | `str` | Handler path relative to the resource (required) |
+| `request` | `Any` | Python type to validate request body |
+| `response` | `Any` | Python type to deserialize the response |
+| `callback` | `Callable` | A sync or async callback executed with the response |
+| `headers` | `dict[str, str]` | Default headers for this handler (keyword-only) |
+
+The old tuple syntax `("GET", "/", ...)` and dict syntax still work, so existing
+code continues to function.
+
+---
+## Understanding `Response[T]`
+
+Every call to a resource handler returns a `Response[T]` — a unified wrapper
+that bundles the parsed payload together with transport-level metadata.
+
+```python
+resp = await svc.users.get("/")
+
+# Inspect the outcome
+resp.is_success        # True if 200–299
+resp.is_client_error   # True if 400–499
+resp.is_server_error   # True if 500–599
+resp.status_code       # int
+
+# Access the parsed body (type-safe if you specified a response model)
+user: UserResponse = resp.data
+
+# Access transport-level details
+print(resp.url)         # httpx.URL
+print(resp.elapsed)     # timedelta | None
+print(resp.raw.headers) # raw httpx.Response headers
+```
+
+Unlike earlier versions, non-2xx responses **do not** raise `ArrestHTTPException`.
+Only transport-level failures (timeout, DNS errors, connection refused) do.
+A `404` or `500` response from the server now produces a normal `Response` object
+with `is_client_error` or `is_server_error` set to `True`.
+
+```python
+resp = await svc.users.get("/999")
+if resp.is_client_error:
+    print(f"Not found: {resp.status_code}")
+    print(resp.data)  # the error body, if any
+```
+
+!!! note "Migration"
+    If you were catching `ArrestHTTPException` for non-2xx status codes,
+    replace the `try/except` with an `if resp.is_success` check instead.
+    See [What's New](whats-new.md) for details.
+
+---
 ## Using a Pydantic model for request
 You can also provide an additional request type for your handlers. This can be done by passing a third entry to your handler tuple containing the pydantic class, or pass it directly to the handler dict or `ResourceHandler` initialization.
 
@@ -122,7 +199,9 @@ Notice how we only supplied `route` for our resource? Arrest automatically infer
 Now that our handler is initialized with a request, we can make a request with instances of type `UserRequest`
 
 !!! note "Important"
-    All fields in the pydantic model by default will be sent as the JSON body payload. If you want to send other params such as `headers` or `query`, see below.
+    All fields in the pydantic model by default will be sent as the JSON body payload.
+    If you want to send other params such as `headers`, `query`, or use `Form` / `File`
+    for form-encoded requests, see [Configuring your request](configuring-request.md).
 
 ---
 ## Using a pydantic model for response

@@ -16,11 +16,20 @@ jobs:
     steps:
       - uses: actions/configure-pages@v5
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@b17378828233a8d43dbf67c40f72f2ae5d669916
         with:
-          python-version: 3.x
-      - run: pip install zensical
-      - run: zensical build --clean
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install docs dependencies
+        run: uv sync --group docs
+
+      - name: Build docs
+        run: uv run zensical build --clean
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site

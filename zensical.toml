@@ -6,6 +6,7 @@ repo_url = "https://github.com/s-bose/arrest"
 nav = [
 
     { Introduction = "index.md" },
+    { "What's New" = "whats-new.md" },
     { "Getting Started" = [
         "getting-started.md",
         { Examples = "examples.md" },
