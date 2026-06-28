@@ -16,7 +16,7 @@ Arrest
             <img src="https://codecov.io/github/s-bose/arrest/graph/badge.svg?token=VBU3156QHP">
         </a>
         <a href="https://pypi.python.org/pypi/arrest">
-            <img src="https://img.shields.io/pypi/v/arrest.svg">
+            <img src="https://img.shields.io/pypi/v/arrest">
         </a>
         <a href="https://www.codefactor.io/repository/github/s-bose/arrest">
             <img src="https://www.codefactor.io/repository/github/s-bose/arrest/badge" alt="CodeFactor">
