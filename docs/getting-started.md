@@ -60,7 +60,7 @@ Or you can directly make use of `.request()` and supply the method in it.
 There are no retries built into Arrest. However they can be configured in many different ways.
 You can use the retry mechanism from httpx transport (e.g. `httpx.AsyncHTTPTransport(retries=3)`), or use the `max_retries` field in `Service` or `Resource` specific setting and provide the number of retries. Arrest uses [tenacity](https://github.com/jd/tenacity) under-the-hood for its internal retries.
 
-If you want to learn more, please refer to [this](whats-new.md#standardized-retry-mechanism-with-more-flexibility)
+If you want to learn more, please refer to [the FAQ](faq.md#how-do-retries-work)
 
 
 

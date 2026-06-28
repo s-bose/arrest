@@ -13,10 +13,9 @@ nav = [
         { "Resources and Services" = "resources-services.md" },
     ]},
     { "OpenAPI Integration" = "openapi.md" },
-    { "Developer's Note" = "dev-note.md" },
+    { FAQ = "faq.md" },
     { "API Documentation" = "api.md" },
     { "Release Notes" = "release-notes.md" },
-    { "What's New?" = "whats-new.md" },
 ]
 
 [project.theme]
