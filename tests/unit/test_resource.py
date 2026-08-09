@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 from pydantic import BaseModel
 
+from arrest.ai.meta import ToolMeta
 from arrest.converters import UUIDConverter
 from arrest.defaults import ROOT_RESOURCE
 from arrest.http import Methods
@@ -209,7 +210,7 @@ async def test_resource_decorator():
         url_new = f"{url}/{my_arg}"
         return url_new, self.base_url
 
-    assert await res.get_user_xml(123) == (
+    assert await res.get_user_xml(123) == (  # type: ignore
         "http://www.example.com/api/user/xyz/123",
         "http://www.example.com/api",
     )
@@ -456,3 +457,23 @@ def test_h_rejects_internal_and_unknown_fields(args, kw):
     # Direct ResourceHandler construction also rejects them
     with pytest.raises(ValidationError):
         ResourceHandler(method=args[0], route=args[1], **kw)
+
+
+def test_resource_handler_tool_meta_default_none():
+    assert ResourceHandler(method=Methods.GET, route="/").tool_meta is None
+
+
+def test_h_passes_through_tool_meta():
+    from arrest.handler import H
+
+    meta = ToolMeta(name="get_user", description="Fetch a user by id")
+    handler = H(Methods.GET, "/users/{user_id}", tool_meta=meta)
+
+    assert handler.tool_meta is meta
+
+
+def test_resource_handler_tool_meta_rejects_invalid_type():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        ResourceHandler(method=Methods.GET, route="/", tool_meta=123)  # type: ignore
