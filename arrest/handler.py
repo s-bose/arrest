@@ -3,6 +3,7 @@ import re
 from typing import Any, Callable, NamedTuple, Pattern, overload
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
+from arrest.ai.meta import ToolMeta
 
 from arrest.converters import replace_params
 from arrest.exceptions import ConversionError
@@ -34,6 +35,9 @@ class ResourceHandler(BaseModel):
         headers (dict, optional):
             default Headers for the handlers, can be overridden
             by runtime headers
+        tool_meta: (ToolMeta, optional):
+            optional metadata for tool definitions, used during tool
+            registration
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -44,6 +48,7 @@ class ResourceHandler(BaseModel):
     response: Any | None = None
     callback: Callable | None = None
     headers: dict[str, str] | None = None
+    tool_meta: ToolMeta | None = None
 
     _path_format: str | None = PrivateAttr(default=None)
     _path_regex: Pattern | None = PrivateAttr(default=None)
@@ -108,11 +113,20 @@ class ResourceHandler(BaseModel):
 
 @overload
 def H(
-    method: Methods, route: str, *, headers: dict[str, str] | None = None
+    method: Methods,
+    route: str,
+    *,
+    headers: dict[str, str] | None = None,
+    tool_meta: ToolMeta | None = None,
 ) -> ResourceHandler: ...
 @overload
 def H(
-    method: Methods, route: str, request: Any, *, headers: dict[str, str] | None = None
+    method: Methods,
+    route: str,
+    request: Any,
+    *,
+    headers: dict[str, str] | None = None,
+    tool_meta: ToolMeta | None = None,
 ) -> ResourceHandler: ...
 @overload
 def H(
@@ -122,6 +136,7 @@ def H(
     response: Any,
     *,
     headers: dict[str, str] | None = None,
+    tool_meta: ToolMeta | None = None,
 ) -> ResourceHandler: ...
 @overload
 def H(
@@ -132,6 +147,7 @@ def H(
     callback: Callable[..., Any],
     *,
     headers: dict[str, str] | None = None,
+    tool_meta: ToolMeta | None = None,
 ) -> ResourceHandler: ...
 
 
@@ -143,6 +159,7 @@ def H(
     callback: Callable[..., Any] | None = None,
     *,
     headers: dict[str, str] | None = None,
+    tool_meta: ToolMeta | None = None,
 ) -> ResourceHandler:
     return ResourceHandler(
         method=method,
@@ -151,4 +168,5 @@ def H(
         response=response,
         callback=callback,
         headers=headers,
+        tool_meta=tool_meta,
     )
