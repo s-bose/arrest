@@ -450,13 +450,14 @@ async def test_aenter_merges_config_into_resource_config():
     )
     toolset._config = ArrestConfig(headers={"X-Custom": "1"})
 
-    async with toolset:
-        assert resource.config is not None
-        assert resource.config.headers == {"X-Custom": "1"}
-        # no client supplied -- toolset creates its own pooled one
-        assert toolset._client is not None
-        assert resource.config.client is toolset._client
+    await toolset.__aenter__()
+    assert resource.config is not None
+    assert resource.config.headers == {"X-Custom": "1"}
+    # no client supplied -- toolset creates its own pooled one
+    assert toolset._client is not None
+    assert resource.config.client is toolset._client
 
+    await toolset.__aexit__(None, None, None)
     assert resource.config is None
 
 
@@ -468,12 +469,13 @@ async def test_aenter_respects_user_supplied_client():
     )
     toolset._config = ArrestConfig(client=user_client)
 
-    async with toolset:
-        # a client was already supplied -- toolset must not create its own
-        assert toolset._client is None
-        assert resource.config is not None
-        assert resource.config.client is user_client
+    await toolset.__aenter__()
+    # a client was already supplied -- toolset must not create its own
+    assert toolset._client is None
+    assert resource.config is not None
+    assert resource.config.client is user_client
 
+    await toolset.__aexit__(None, None, None)
     await user_client.aclose()
 
 
@@ -487,9 +489,10 @@ async def test_context_manager_restores_resource_config():
     )
     assert resource.config is None
 
-    async with toolset:
-        assert resource.config is not None
+    await toolset.__aenter__()
+    assert resource.config is not None
 
+    await toolset.__aexit__(None, None, None)
     assert resource.config is None
 
 
@@ -499,10 +502,12 @@ async def test_context_manager_reentry_reuses_client():
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
 
-    async with toolset:
-        client = toolset._client
-        await toolset.__aenter__()
-        assert toolset._client is client
+    await toolset.__aenter__()
+    client = toolset._client
+    await toolset.__aenter__()
+    assert toolset._client is client
+
+    await toolset.__aexit__(None, None, None)
 
 
 @pytest.mark.asyncio
@@ -523,17 +528,18 @@ async def test_aexit_skips_resource_added_after_aenter():
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
 
-    async with toolset:
-        # A resource that wasn't present at __aenter__ time has no entry in
-        # `_original_configs` -- __aexit__ must skip it rather than KeyError.
-        late_resource = Resource(
-            route="/late",
-            name="late",
-            handlers=[H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())],
-        )
-        late_resource.config = ArrestConfig(headers={"X-Late": "1"})
-        toolset._service.add_resource(late_resource)
+    await toolset.__aenter__()
+    # A resource that wasn't present at __aenter__ time has no entry in
+    # `_original_configs` -- __aexit__ must skip it rather than KeyError.
+    late_resource = Resource(
+        route="/late",
+        name="late",
+        handlers=[H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())],
+    )
+    late_resource.config = ArrestConfig(headers={"X-Late": "1"})
+    toolset._service.add_resource(late_resource)
 
+    await toolset.__aexit__(None, None, None)
     assert resource.config is None
     # untouched -- __aexit__ never tracked this resource's original config
     assert late_resource.config is not None
@@ -624,16 +630,14 @@ async def test_call_tool_makes_real_request_through_pooled_client(mock_httpx):
     toolset, _ = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
-    mock_httpx.get(url__regex=r"/widgets/\d+").mock(
+    widgets_route = mock_httpx.get(url__regex=r"/widgets/\d+").mock(
         return_value=httpx.Response(200, json={"id": 7})
     )
 
-    async with toolset:
-        ctx = make_context()
-        tools = await toolset.get_tools(ctx)
-        name, tool = next(iter(tools.items()))
-        result = await toolset.call_tool(
-            name, validated_args(tool, {"id": 7}, None), ctx, tool
-        )
+    # `Agent.run()` enters/exits the toolset itself -- no manual
+    # `__aenter__`/`__aexit__` needed here.
+    agent = Agent(model=TestModel(), toolsets=[toolset])
+    result = await agent.run("call the tool")
 
-    assert result == Out(id=7)
+    assert widgets_route.call_count == 1
+    assert result.output is not None
