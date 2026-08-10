@@ -1,16 +1,16 @@
 # AI Toolset
 
-Arrest can expose any `Service` as a set of tools for an AI agent to call, via
+Arrest can expose any arrest service as a set of tools for an AI agent to call, via
 [`pydantic-ai`](https://ai.pydantic.dev/)'s [`AbstractToolset`](https://ai.pydantic.dev/toolsets/)
 interface.
 
-Instead of hand-writing a tool function per endpoint (and hand-writing its
-JSON schema, its error handling, and its HTTP plumbing), you point
-`ArrestToolset` at a `Service` you've already defined and opt individual
-handlers in with `tool_meta`. Arrest derives the tool's name, description,
-argument schema, and return schema straight from the handler definitiown, and
-dispatches calls through the same `Resource`/`ResourceHandler` machinery used
-everywhere else in Arrest.
+Instead of hand-writing a tool function per endpoint, along with its
+JSON schema, error handling, and HTTP plumbing, you point `ArrestToolset` at
+a `Service` you've already defined and opt individual handlers in with
+`tool_meta`. Arrest derives the tool's name, description, argument schema,
+and return schema from the handler definition, and dispatches calls through
+the same `Resource`/`ResourceHandler` machinery used everywhere else in
+Arrest.
 
 !!! Note
     This feature depends on `pydantic-ai`, which is not a default dependency
@@ -76,8 +76,8 @@ route (e.g. `GET /{user_id}` on resource `users` becomes
 `"{METHOD} {route} on the '{resource}' resource"`.
 
 Handlers whose request or response type can't be represented as a JSON
-schema — multipart bodies (`File()`/`Form()` fields) and XML bodies
-(`BaseXmlModel`) — are silently skipped even if they carry `tool_meta`, since
+schema, such as multipart bodies (`File()`/`Form()` fields) and XML bodies
+(`BaseXmlModel`), are silently skipped even if they carry `tool_meta`, since
 there is no JSON-schema shape an LLM tool call can fill in for them.
 
 ## `ArrestToolset`
@@ -113,17 +113,16 @@ ArrestToolset(
 )
 ```
 
-- **`id`** — the toolset's id. Defaults to a sanitized
-  `arrest-{service.name}-service`.
-- **`include`** / **`exclude`** — fine-grained filtering on top of
-  `tool_meta`, see [Selective exposure](#selective-exposure-includeexclude).
-- **`tool_max_retries`** — overrides pydantic-ai's default per-tool retry
-  count. Falls back to the run's `max_retries` when unset.
-- **`config`** — an `ArrestConfig` merged over every resource's own config
-  for the lifetime of the toolset (see [Pooled client](#pooled-client) below).
-- **`retry_on_errors`** — the set of HTTP status codes that should trigger a
-  `ModelRetry` instead of a hard `ToolFailed`. Defaults to
-  `{408, 429, 500, 502, 503, 504}`.
+`id` is the toolset's id, defaulting to a sanitized
+`arrest-{service.name}-service`. `include` and `exclude` give fine-grained
+filtering on top of `tool_meta`, covered in
+[Selective exposure](#selective-exposure-includeexclude) below.
+`tool_max_retries` overrides pydantic-ai's default per-tool retry count,
+falling back to the run's `max_retries` when unset. `config` is an
+`ArrestConfig` merged over every resource's own config for the lifetime of
+the toolset, see [Pooled client](#pooled-client) below. `retry_on_errors` is
+the set of HTTP status codes that should trigger a `ModelRetry` instead of a
+hard `ToolFailed`, defaulting to `{408, 429, 500, 502, 503, 504}`.
 
 ### Pooled client
 
@@ -140,13 +139,13 @@ the toolset opens one pooled `httpx.AsyncClient` (bound to the service's
 lifetime of the toolset, instead of each call opening and closing its
 own client. The effective config (the pooled client, plus anything
 passed via `config`) is merged into every resource in the service on
-entry, and each resource's original config is restored on exit — so
+entry, and each resource's original config is restored on exit, so
 using a service inside a toolset does not permanently mutate it.
 
-You don't normally need to call this yourself: `Agent(toolsets=[toolset])`
+You don't normally need to call this yourself. `Agent(toolsets=[toolset])`
 already enters and exits every toolset for the duration of each
 `agent.run(...)` call, so just pass the toolset to the agent and call
-`run()` — no `async with` needed, as in the examples above. Enter it
+`run()`; no `async with` needed, as in the examples above. Enter it
 manually only if you're calling `ArrestToolset.get_tools()`/`call_tool()`
 directly, outside of pydantic-ai's own run lifecycle.
 
@@ -155,10 +154,10 @@ directly, outside of pydantic-ai's own run lifecycle.
 Tools are built once, on the first `get_tools()` call for a run, via
 `_build_tools()`, and then cached on the toolset instance. Registering a
 `tool_meta` with a `name` that collides with another handler's generated or
-explicit name raises `UserError` at build time — disambiguate with
+explicit name raises `UserError` at build time; disambiguate with
 `tool_meta.name`.
 
-## Selective exposure — `include`/`exclude`
+## Selective exposure: `include`/`exclude`
 
 `include` and `exclude` narrow the set of handlers exposed as tools, on top
 of the `tool_meta` opt-in. Both accept the same three shapes, of increasing
@@ -210,12 +209,12 @@ tool, and what pydantic-core validates the call's arguments against.
 ## Request dispatch
 
 `call_tool` never re-resolves the model's arguments against the service's
-route table — it dispatches directly against the exact `ResourceHandler` the
+route table. It dispatches directly against the exact `ResourceHandler` the
 tool was built from. Path parameters are substituted into a concrete path via
 `ResourceHandler.build_path(**path_params)`, and the resulting request is
-made through that handler's owning `Resource`. This sidesteps any ambiguity
+made through that handler's owning `Resource`. This avoids the ambiguity
 between overlapping route templates (e.g. `/{id}` vs. `/{id}/tasks`) that a
-runtime route-matching approach could otherwise trip over.
+runtime route-matching approach would otherwise have to resolve.
 
 Errors are translated into pydantic-ai's tool-failure vocabulary:
 
@@ -232,12 +231,11 @@ Errors are translated into pydantic-ai's tool-failure vocabulary:
 ## Result truncation
 
 If `ToolMeta.max_items` is set and the handler's result is a `list` longer
-than that, the toolset intervenes before the result reaches the model:
-
-- **`on_truncate="raise"`** (opt-in) — raises `ToolFailed` with a message
-  telling the model to narrow its query, instead of returning a huge payload.
-- **`on_truncate="note"`** (default) — returns a truncated payload annotated
-  with truncation metadata:
+than that, the toolset intervenes before the result reaches the model. By
+default (`on_truncate="note"`), it returns a truncated payload annotated
+with truncation metadata. Set `on_truncate="raise"` instead to have it raise
+`ToolFailed` with a message telling the model to narrow its query, rather
+than returning a huge payload:
 
 ```python
 {
@@ -263,7 +261,7 @@ H(
 )
 ```
 
-Truncation only applies to `list` results — scalar or object responses are
+Truncation only applies to `list` results. Scalar or object responses are
 returned as-is regardless of `max_items`.
 
 ## Full example
