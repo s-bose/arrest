@@ -12,3 +12,5 @@ typing_extensions==4.12.2
 uvicorn==0.30.6
 pytest==7.4.3
 pytest-asyncio==0.21.1
+python-dotenv
+anthropic
