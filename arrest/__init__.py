@@ -5,8 +5,7 @@ from .http import Methods
 from .resource import Resource
 from .response import Response
 from .service import Service
-
-__version__ = "0.1.10"
+from ._config import ArrestConfig
 
 GET = Methods.GET
 POST = Methods.POST
@@ -31,4 +30,5 @@ __all__ = [
     "DELETE",
     "HEAD",
     "OPTIONS",
+    "ArrestConfig",
 ]
