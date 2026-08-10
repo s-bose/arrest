@@ -149,6 +149,16 @@ already enters and exits every toolset for the duration of each
 manually only if you're calling `ArrestToolset.get_tools()`/`call_tool()`
 directly, outside of pydantic-ai's own run lifecycle.
 
+!!! note "Config merge order"
+    The toolset's `config` is layered *on top of* each resource's existing
+    config (non-`None` fields in `config` win), and the result replaces that
+    resource's config for the toolset's lifetime. This sits above Arrest's
+    normal per-call kwargs > handler config > resource config > service
+    config chain, since `call_tool` dispatches with no per-call or
+    handler-level config of its own — so in practice, `ArrestToolset(...,
+    config=...)` is the highest-priority config in effect while the toolset
+    is open.
+
 ### Tool building is lazy and cached
 
 Tools are built once, on the first `get_tools()` call for a run, via
@@ -227,6 +237,17 @@ Errors are translated into pydantic-ai's tool-failure vocabulary:
 
 `ModelRetry` gives the model a chance to correct itself and try again (up to
 `tool_max_retries`); `ToolFailed` ends the tool call as a hard failure.
+
+!!! warning "Don't stack Arrest retries with tool retries"
+    `retry_on_errors`/`tool_max_retries` are pydantic-ai's model-level retry —
+    the agent sees the failure and decides whether to call the tool again.
+    Arrest's own transport retry (`ArrestConfig.max_retries`, tenacity-based)
+    and `raise_for_status` operate independently, underneath that. If a
+    resource is also configured with `max_retries`, a single tool call can
+    retry silently at the transport layer *and then* trigger a `ModelRetry`
+    on top, compounding delay and retry counts. Pick one layer to own
+    retries for tool-exposed handlers — usually the toolset's, since it's
+    the one the model can reason about — and leave the other unset.
 
 ## Result truncation
 
