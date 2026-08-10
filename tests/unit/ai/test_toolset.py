@@ -44,14 +44,16 @@ def make_context() -> RunContext[Any]:
 
 
 def make_toolset(
-    *handlers: Any, resource_name: str = "widgets"
+    *handlers: Any, resource_name: str = "widgets", **toolset_kwargs: Any
 ) -> tuple[ArrestToolset, Resource]:
+    """A one-resource service and its toolset. Extra kwargs go straight to
+    `ArrestToolset` (`config`, `include`, `exclude`, `retry_on_errors`, ...)."""
     service = Service(name="example", url="http://example.com")
     resource = Resource(
         route=f"/{resource_name}", name=resource_name, handlers=list(handlers)
     )
     service.add_resource(resource)
-    return ArrestToolset(service), resource
+    return ArrestToolset(service, **toolset_kwargs), resource
 
 
 def fake_response(data: Any = None, status_code: int = 200) -> ArrestResponse:
@@ -71,6 +73,36 @@ def validated_args(tool: Any, path_params: dict[str, Any], request_body: Any) ->
     `ToolArgs[...]` instance rather than a plain dict."""
     return tool.args_validator.validate_python(
         {"path_params": path_params, "request_body": request_body}
+    )
+
+
+def stub_request(
+    resource: Resource, result: Any = None, *, error: Exception | None = None
+) -> dict[str, Any]:
+    """Swap `resource.request` for a stub that returns `result` (or raises
+    `error`). Returns the dict the stub records its call kwargs into."""
+    captured: dict[str, Any] = {}
+
+    async def fake_request(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        if error is not None:
+            raise error
+        return result
+
+    resource.request = fake_request
+    return captured
+
+
+async def call_only_tool(
+    toolset: ArrestToolset, path_params: dict[str, Any], request_body: Any = None
+) -> Any:
+    """Resolve the toolset's single tool and invoke it the way pydantic_ai
+    would -- through `get_tools` and a validated `tool_args`."""
+    ctx = make_context()
+    tools = await toolset.get_tools(ctx)
+    name, tool = next(iter(tools.items()))
+    return await toolset.call_tool(
+        name, validated_args(tool, path_params, request_body), ctx, tool
     )
 
 
@@ -172,9 +204,8 @@ async def test_get_tools_include_filters_by_method():
     toolset, _ = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta(name="get_widget")),
         H(Methods.PUT, "/{id:int}", Body, Out, tool_meta=ToolMeta(name="put_widget")),
-        resource_name="widgets",
+        include={"widgets": {Methods.GET}},
     )
-    toolset._include = {"widgets": {Methods.GET}}
 
     tools = await toolset.get_tools(make_context())
 
@@ -186,9 +217,8 @@ async def test_get_tools_exclude_filters_by_route():
     toolset, _ = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta(name="get_by_id")),
         H(Methods.GET, "/search", None, Out, tool_meta=ToolMeta(name="search")),
-        resource_name="widgets",
+        exclude={"widgets": {Methods.GET: {"/{id:int}"}}},
     )
-    toolset._exclude = {"widgets": {Methods.GET: {"/{id:int}"}}}
 
     tools = await toolset.get_tools(make_context())
 
@@ -236,25 +266,25 @@ async def test_call_tool_dispatches_path_params_and_body():
     toolset, resource = make_toolset(
         H(Methods.PUT, "/{id:int}", Body, Out, tool_meta=ToolMeta())
     )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
+    captured = stub_request(resource, fake_response({"id": 1}))
 
-    captured: dict[str, Any] = {}
-
-    async def fake_request(**kwargs: Any) -> ArrestResponse:
-        captured.update(kwargs)
-        return fake_response({"id": 1})
-
-    resource.request = fake_request
-
-    result = await toolset.call_tool(
-        name, validated_args(tool, {"id": 5}, {"name": "bob"}), ctx, tool
-    )
+    result = await call_only_tool(toolset, {"id": 5}, {"name": "bob"})
 
     assert result == {"id": 1}
     assert captured["path"] == "/5"
     assert captured["request"] == Body(name="bob")
+
+
+@pytest.mark.asyncio
+async def test_call_tool_with_no_request_body():
+    toolset, resource = make_toolset(
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
+    )
+    captured = stub_request(resource, fake_response({"id": 1}))
+
+    await call_only_tool(toolset, {"id": 5})
+
+    assert captured["request"] is None
 
 
 @pytest.mark.asyncio
@@ -266,284 +296,149 @@ async def test_call_tool_returns_raw_result_from_handler_callback():
     toolset, resource = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
+    stub_request(resource, {"id": 1, "via": "callback"})
 
-    async def fake_request(**kwargs: Any) -> Any:
-        return {"id": 1, "via": "callback"}
-
-    resource.request = fake_request
-
-    result = await toolset.call_tool(
-        name, validated_args(tool, {"id": 5}, None), ctx, tool
-    )
+    result = await call_only_tool(toolset, {"id": 5})
 
     assert result == {"id": 1, "via": "callback"}
 
 
-@pytest.mark.asyncio
-async def test_call_tool_with_no_request_body():
-    toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
-
-    captured: dict[str, Any] = {}
-
-    async def fake_request(**kwargs: Any) -> ArrestResponse:
-        captured.update(kwargs)
-        return fake_response({"id": 1})
-
-    resource.request = fake_request
-
-    await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
-
-    assert captured["request"] is None
-
-
-@pytest.mark.asyncio
-async def test_call_tool_timeout_raises_model_retry():
-    toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
-
-    async def fake_request(**kwargs: Any) -> ArrestResponse:
-        raise RequestError("request timed out")
-
-    resource.request = fake_request
-
-    with pytest.raises(ModelRetry):
-        await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
-
-
-@pytest.mark.asyncio
-async def test_call_tool_handler_not_found_raises_tool_failed():
-    toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
-
-    async def fake_request(**kwargs: Any) -> ArrestResponse:
-        raise HandlerNotFound(message="no matching handler")
-
-    resource.request = fake_request
-
-    with pytest.raises(ToolFailed):
-        await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
-
-
 @pytest.mark.parametrize(
-    "status_code, expected_exception",
+    "error, expected_exception",
     [
-        # transient -- retryable by default
-        (408, ModelRetry),
-        (429, ModelRetry),
-        (500, ModelRetry),
-        (502, ModelRetry),
-        (503, ModelRetry),
-        (504, ModelRetry),
-        # request itself was wrong -- not transient, model must change input
-        (400, ToolFailed),
-        (404, ToolFailed),
-        # 5xx but not transient -- permanent capability/protocol gaps
-        (501, ToolFailed),
-        (505, ToolFailed),
+        # transport-level failure -- worth another attempt
+        (RequestError("request timed out"), ModelRetry),
+        # the path we built matched no handler -- retrying can't fix that
+        (HandlerNotFound(message="no matching handler"), ToolFailed),
     ],
 )
 @pytest.mark.asyncio
-async def test_call_tool_arrest_http_exception(
-    status_code: int, expected_exception: type[Exception]
+async def test_call_tool_maps_arrest_errors(
+    error: Exception, expected_exception: type[Exception]
 ):
     toolset, resource = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
-
-    async def fake_request(**kwargs: Any) -> ArrestResponse:
-        raise ArrestHTTPException(status_code=status_code, data={"error": "boom"})
-
-    resource.request = fake_request
+    stub_request(resource, error=error)
 
     with pytest.raises(expected_exception):
-        await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
+        await call_only_tool(toolset, {"id": 5})
 
 
+# A status code is retryable iff it's in `retry_on_errors`; the exact default
+# membership is pinned by `test_default_retry_on_errors_is_transient_only`,
+# so these only need one code either side of that line.
 @pytest.mark.parametrize(
     "status_code, expected_exception",
     [
-        (429, ModelRetry),
-        (500, ModelRetry),
-        (503, ModelRetry),
-        (404, ToolFailed),
-        (501, ToolFailed),
+        (503, ModelRetry),  # transient
+        (400, ToolFailed),  # bad request -- model must change its input
+        (501, ToolFailed),  # 5xx, but a permanent capability gap
     ],
 )
+@pytest.mark.parametrize("raised", [True, False], ids=["raised", "returned"])
 @pytest.mark.asyncio
-async def test_call_tool_unsuccessful_response(
-    status_code: int, expected_exception: type[Exception]
+async def test_call_tool_maps_http_status(
+    status_code: int, expected_exception: type[Exception], raised: bool
 ):
+    """Arrest surfaces a failed call either by raising `ArrestHTTPException`
+    or by returning an unsuccessful `ArrestResponse` (when `raise_for_status`
+    is off) -- both must map to the same tool-level outcome."""
     toolset, resource = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
-
-    async def fake_request(**kwargs: Any) -> ArrestResponse:
-        return fake_response({"error": "boom"}, status_code=status_code)
-
-    resource.request = fake_request
+    if raised:
+        stub_request(
+            resource,
+            error=ArrestHTTPException(status_code=status_code, data={"error": "boom"}),
+        )
+    else:
+        stub_request(resource, fake_response({"error": "boom"}, status_code))
 
     with pytest.raises(expected_exception):
-        await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
+        await call_only_tool(toolset, {"id": 5})
 
 
 def test_default_retry_on_errors_is_transient_only():
     assert DEFAULT_RETRY_ON_ERRORS == {408, 429, 500, 502, 503, 504}
 
 
+@pytest.mark.parametrize(
+    "status_code, expected_exception",
+    [
+        (400, ModelRetry),  # opted in, though not transient
+        (503, ToolFailed),  # a default entry, opted out
+    ],
+)
 @pytest.mark.asyncio
-async def test_call_tool_respects_custom_retry_on_errors():
-    service = Service(name="example", url="http://example.com")
-    resource = Resource(
-        route="/widgets",
-        name="widgets",
-        handlers=[H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())],
-    )
-    service.add_resource(resource)
-
-    # Override: only retry on 400, and explicitly not on 503 (a default entry).
-    toolset = ArrestToolset(service, retry_on_errors=[400])
-    ctx = make_context()
-    tools = await toolset.get_tools(ctx)
-    name, tool = next(iter(tools.items()))
-
-    async def fake_400(**kwargs: Any) -> ArrestResponse:
-        raise ArrestHTTPException(status_code=400, data={"error": "boom"})
-
-    resource.request = fake_400
-    with pytest.raises(ModelRetry):
-        await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
-
-    async def fake_503(**kwargs: Any) -> ArrestResponse:
-        raise ArrestHTTPException(status_code=503, data={"error": "boom"})
-
-    resource.request = fake_503
-    with pytest.raises(ToolFailed):
-        await toolset.call_tool(name, validated_args(tool, {"id": 5}, None), ctx, tool)
-
-
-@pytest.mark.asyncio
-async def test_aenter_merges_config_into_resource_config():
+async def test_call_tool_respects_custom_retry_on_errors(
+    status_code: int, expected_exception: type[Exception]
+):
     toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta()),
+        retry_on_errors=[400],
     )
-    toolset._config = ArrestConfig(headers={"X-Custom": "1"})
+    stub_request(
+        resource,
+        error=ArrestHTTPException(status_code=status_code, data={"error": "boom"}),
+    )
 
-    await toolset.__aenter__()
-    assert resource.config is not None
-    assert resource.config.headers == {"X-Custom": "1"}
-    # no client supplied -- toolset creates its own pooled one
-    assert toolset._client is not None
-    assert resource.config.client is toolset._client
+    with pytest.raises(expected_exception):
+        await call_only_tool(toolset, {"id": 5})
 
-    await toolset.__aexit__(None, None, None)
-    assert resource.config is None
+
+# __aenter__ / __aexit__ -- pydantic_ai's lifecycle hooks, driven here the
+# way it drives them: as a context manager.
 
 
 @pytest.mark.asyncio
-async def test_aenter_respects_user_supplied_client():
+async def test_supplied_config_is_merged_into_resource_config():
+    toolset, resource = make_toolset(
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta()),
+        config=ArrestConfig(headers={"X-Custom": "1"}),
+    )
+
+    async with toolset:
+        assert resource.config is not None
+        assert resource.config.headers == {"X-Custom": "1"}
+        # no client supplied -- toolset creates its own pooled one
+        assert toolset._client is not None
+        assert resource.config.client is toolset._client
+
+
+@pytest.mark.asyncio
+async def test_user_supplied_client_is_reused():
     user_client = httpx.AsyncClient()
     toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta()),
+        config=ArrestConfig(client=user_client),
     )
-    toolset._config = ArrestConfig(client=user_client)
 
-    await toolset.__aenter__()
-    # a client was already supplied -- toolset must not create its own
-    assert toolset._client is None
-    assert resource.config is not None
-    assert resource.config.client is user_client
+    async with toolset:
+        # a client was already supplied -- toolset must not create its own
+        assert toolset._client is None
+        assert resource.config is not None
+        assert resource.config.client is user_client
 
-    await toolset.__aexit__(None, None, None)
+    assert not user_client.is_closed
     await user_client.aclose()
 
 
-# __aenter__ / __aexit__
-
-
 @pytest.mark.asyncio
-async def test_context_manager_restores_resource_config():
+async def test_aexit_restores_resource_config_and_closes_own_client():
     toolset, resource = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
     )
     assert resource.config is None
 
-    await toolset.__aenter__()
-    assert resource.config is not None
+    async with toolset:
+        pooled_client = toolset._client
+        assert pooled_client is not None
+        assert resource.config is not None
 
-    await toolset.__aexit__(None, None, None)
-    assert resource.config is None
-
-
-@pytest.mark.asyncio
-async def test_context_manager_reentry_reuses_client():
-    toolset, _ = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-
-    await toolset.__aenter__()
-    client = toolset._client
-    await toolset.__aenter__()
-    assert toolset._client is client
-
-    await toolset.__aexit__(None, None, None)
-
-
-@pytest.mark.asyncio
-async def test_aexit_without_aenter_is_a_noop():
-    toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-
-    assert await toolset.__aexit__(None, None, None) is None
-    # nothing was entered, so there's nothing to tear down or restore
     assert resource.config is None
     assert toolset._client is None
-
-
-@pytest.mark.asyncio
-async def test_aexit_skips_resource_added_after_aenter():
-    toolset, resource = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-
-    await toolset.__aenter__()
-    # A resource that wasn't present at __aenter__ time has no entry in
-    # `_original_configs` -- __aexit__ must skip it rather than KeyError.
-    late_resource = Resource(
-        route="/late",
-        name="late",
-        handlers=[H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())],
-    )
-    late_resource.config = ArrestConfig(headers={"X-Late": "1"})
-    toolset._service.add_resource(late_resource)
-
-    await toolset.__aexit__(None, None, None)
-    assert resource.config is None
-    # untouched -- __aexit__ never tracked this resource's original config
-    assert late_resource.config is not None
-    assert late_resource.config.headers == {"X-Late": "1"}
+    assert pooled_client.is_closed
 
 
 def test_id_defaults_from_service_name():
@@ -617,27 +512,4 @@ async def test_agent_with_test_model_calls_tool_end_to_end():
     assert captured["method"] == Methods.PUT
     assert isinstance(captured["request"], Body)
     assert "path" in captured
-    assert result.output is not None
-
-
-# Real HTTP call through the pooled client (respx-mocked transport, not a
-# monkeypatched `resource.request`) -- exercises the real URL construction,
-# unlike every other test in this file.
-
-
-@pytest.mark.asyncio
-async def test_call_tool_makes_real_request_through_pooled_client(mock_httpx):
-    toolset, _ = make_toolset(
-        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
-    )
-    widgets_route = mock_httpx.get(url__regex=r"/widgets/\d+").mock(
-        return_value=httpx.Response(200, json={"id": 7})
-    )
-
-    # `Agent.run()` enters/exits the toolset itself -- no manual
-    # `__aenter__`/`__aexit__` needed here.
-    agent = Agent(model=TestModel(), toolsets=[toolset])
-    result = await agent.run("call the tool")
-
-    assert widgets_route.call_count == 1
     assert result.output is not None

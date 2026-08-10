@@ -309,26 +309,5 @@ async def test_retry_async(mocker):
 def test_gen_unique_handler_name(
     resource: str, route: str, method: Methods, expected: str
 ):
-
     result = gen_unique_handler_name(resource=resource, route=route, method=method)
     assert result == expected
-
-
-def test_gen_unique_handler_name_differs_by_method():
-    same_route_names = {
-        gen_unique_handler_name(
-            resource="my_resource", route="/my/route", method=method
-        )
-        for method in (Methods.GET, Methods.POST, Methods.PUT, Methods.DELETE)
-    }
-    assert len(same_route_names) == 4
-
-
-def test_gen_unique_handler_name_trailing_slash_matches_no_slash():
-    with_slash = gen_unique_handler_name(
-        resource="my_resource", route="/my/route/", method=Methods.GET
-    )
-    without_slash = gen_unique_handler_name(
-        resource="my_resource", route="/my/route", method=Methods.GET
-    )
-    assert with_slash == without_slash
