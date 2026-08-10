@@ -169,9 +169,28 @@ def test_resource_handler_empty(resource: Resource):
     assert root_handler.method == Methods.GET
     assert root_handler.route == ""
 
-    # unbound handler with no path_regex returns None from parse_path
+    # unbound handler with no path_regex returns None from match
     handler = ResourceHandler(method=Methods.GET, route="/unbound")
-    assert handler.parse_path(method=Methods.GET, path="/unbound") is None
+    assert handler.match(method=Methods.GET, path="/unbound") is None
+
+    # method mismatch is rejected before any path matching is attempted
+    assert handler.match(method=Methods.POST, path="/unbound") is None
+
+    # unbound handler also can't resolve kwargs-based path params
+    assert handler.match(method=Methods.GET, path="/unbound", some_id="1") is None
+
+
+def test_build_path_raises_on_unbound_handler():
+    handler = ResourceHandler(method=Methods.GET, route="/{user_id}")
+    with pytest.raises(RuntimeError, match="has not been bound to a resource"):
+        handler.build_path(user_id="abc")
+
+
+def test_build_path_raises_on_unconsumed_path_param():
+    resource = Resource(route="/user", handlers=[(Methods.GET, "/{user_id}/tasks")])
+    handler = list(resource.routes.values())[-1]
+    with pytest.raises(ValueError, match="Unresolved path params"):
+        handler.build_path(user_id="abc", bogus="x")
 
 
 def test_resource_multiple_handler_same_signature():
