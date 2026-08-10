@@ -54,6 +54,41 @@ class ResourceHandler(BaseModel):
     _path_regex: Pattern | None = PrivateAttr(default=None)
     _param_types: Any = PrivateAttr(default=None)
 
+    def build_path(self, **path_params: Any) -> str:
+        """Build the concrete path for this handler by substituting
+        `path_params` into its route template, e.g. for a handler bound to
+        `/{user_id}/tasks`, `build_path(user_id="abc")` returns `/abc/tasks`.
+
+        Returns:
+            str:
+                The concrete path with all placeholders substituted with
+
+        Raises:
+            RuntimeError:
+                If the handler has not been bound to a resource yet, and thus
+                has no compiled path format available.
+            ValueError:
+                If any placeholders in the route template are not provided in
+                `path_params`.
+        """
+        if self._path_format is None or self._param_types is None:
+            raise RuntimeError(
+                f"Handler {self.method} {self.route!r} has not been bound to "
+                "a resource yet; no compiled path format available."
+            )
+
+        path, remaining = replace_params(
+            path=self._path_format,
+            path_params=dict(path_params),
+            param_types=self._param_types,
+        )
+        if remaining:
+            raise ValueError(
+                f"Unresolved path params {list(remaining)} for handler "
+                f"{self.method} {self.route!r}"
+            )
+        return path
+
     def parse_path(self, method: Methods, path: str, **kwargs) -> str | None:
         if method != self.method:
             return None
@@ -100,6 +135,14 @@ class ResourceHandler(BaseModel):
 
         left = [delta.lstrip("- ") for delta in diff if delta.startswith("- ")]
         right = [delta.lstrip("+ ") for delta in diff if delta.startswith("+ ")]
+
+        if len(right) > len(left):
+            # `path` has at least one concrete segment this handler's own
+            # template has no placeholder for (e.g. a trailing "/tasks" on a
+            # handler whose route is just "/{user_id}") -- `zip` below would
+            # silently drop it instead of rejecting the match, letting a
+            # shorter route spuriously match a longer path.
+            return None
 
         params = dict(zip(left, right))
         for key in list(params):
