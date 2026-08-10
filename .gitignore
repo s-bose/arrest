@@ -12,3 +12,5 @@ site/*
 *.ipynb
 NOTES.md
 TODO.md
+
+.env
