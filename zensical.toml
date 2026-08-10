@@ -15,6 +15,7 @@ nav = [
         { "Resources and Services" = "resources-services.md" },
     ]},
     { "OpenAPI Integration" = "openapi.md" },
+    { "pydantic-ai Toolset" = "ai-toolset.md" },
     { FAQ = "faq.md" },
     { "API Documentation" = "api.md" },
     { "Release Notes" = "release-notes.md" },

@@ -5,7 +5,41 @@ ordered by priority and impact.
 
 ---
 
-## 1. Unified `Response[T]` — a single response type for success and error paths
+## 1. `ArrestToolset` — expose a `Service` as pydantic-ai tools
+
+Arrest can now turn any `Service` into a set of tools an AI agent can call,
+via a new `ArrestToolset` (`arrest.ai.toolset`) that implements
+pydantic-ai's `AbstractToolset`. Opt individual handlers in with
+`tool_meta=ToolMeta(...)` on `H(...)`, and Arrest derives the tool's name,
+description, argument schema, and return schema straight from the handler —
+no hand-written tool functions.
+
+```python
+from arrest import GET, H, Resource, Service
+from arrest.ai.meta import ToolMeta
+from arrest.ai.toolset import ArrestToolset
+from pydantic_ai import Agent
+
+users = Resource(
+    name="users",
+    route="/users",
+    handlers=[H(GET, "/{user_id}", None, User, tool_meta=ToolMeta(name="get_user_by_id"))],
+)
+service = Service(name="example", url="http://localhost:8080/api", resources=[users])
+
+toolset = ArrestToolset(service)
+agent = Agent(model="anthropic:claude-haiku-4-5", toolsets=[toolset])
+
+result = await agent.run("Look up user abc123.")
+```
+
+Requires the `ai` extra: `pip install "arrest[ai]"`. See the
+[pydantic-ai toolset guide](ai-toolset.md) for the full reference, including
+`include`/`exclude` filtering, retry behaviour, and result truncation.
+
+---
+
+## 2. Unified `Response[T]` — a single response type for success and error paths
 
 **Breaking change** — Arrest now returns a `Response[T]` for **every** HTTP status code,
 not just 2xx. Transport-level failures (timeouts, connection errors) raise the new
@@ -94,7 +128,7 @@ await svc.users.request(method="POST", path="/", raise_for_status=True)
 
 ---
 
-## 2. `H()` helper — type-safe handler definitions
+## 3. `H()` helper — type-safe handler definitions
 
 Defining handlers with raw tuples `("GET", "/", Request, Response)` works but
 gives no IDE autocomplete and it's easy to forget the positional order.
@@ -132,7 +166,7 @@ The old tuple/dict syntax still works, so existing code won't break.
 
 ---
 
-## 3. Form and File primitives for `multipart/form-data` and `application/x-www-form-urlencoded`
+## 4. Form and File primitives for `multipart/form-data` and `application/x-www-form-urlencoded`
 
 Arrest now supports form-encoded and multipart requests via two new field annotations:
 `Form(...)` and `File(...)` (imported from `arrest.params`).
@@ -191,7 +225,7 @@ await svc.user.post("/profile", request=ProfileUpdate(
 
 ---
 
-## 4. Documentation provider: MkDocs → Zensical
+## 5. Documentation provider: MkDocs → Zensical
 
 The documentation site has been migrated from **MkDocs** (with Material theme)
 to **[Zensical](https://github.com/s-bose/zensical)** — a modern, fast
@@ -206,7 +240,7 @@ If you're contributing doc changes, use `zensical serve` instead of `mkdocs serv
 
 ---
 
-## 5. Package manager: Poetry → uv
+## 6. Package manager: Poetry → uv
 
 The project now uses **[uv](https://github.com/astral-sh/uv)** as its package
 manager instead of Poetry.
@@ -223,7 +257,7 @@ dependency groups (`[dependency-groups]`) for organizing optional dependencies.
 
 ---
 
-## 6. XML request and response support via `pydantic-xml`
+## 7. XML request and response support via `pydantic-xml`
 
 Arrest now supports XML bodies using `pydantic-xml`'s `BaseXmlModel`. When your
 request or response type subclasses `BaseXmlModel`, Arrest handles serialization
@@ -259,6 +293,7 @@ resp = await svc.users.post("/xml", request=XmlRequest(name="Alice", email="a@b.
 
 ## See also
 
+- [pydantic-ai toolset](ai-toolset.md) — expose a `Service` as agent tools
 - [Quickstart](quickstart.md) — detailed walkthrough of `H()`, `Response[T]`, and `Form`/`File`
 - [Configuring your request](configuring-request.md) — full reference for request parameters
 - [FAQ](faq.md) — common questions about using `Response[T]`
