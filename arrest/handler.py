@@ -1,4 +1,3 @@
-import difflib
 import re
 from typing import Any, Callable, NamedTuple, Pattern, overload
 
@@ -89,14 +88,35 @@ class ResourceHandler(BaseModel):
             )
         return path
 
-    def parse_path(self, method: Methods, path: str, **kwargs) -> str | None:
+    def match(self, method: Methods, path: str, **kwargs) -> tuple[str, int] | None:
+        """Resolve `path` (plus `kwargs`) against this handler's route.
+        `Resource.get_matching_handler` uses the returned extension to pick
+        the closest match when routes overlap as prefixes of each other,
+        e.g. `/{id}` vs `/{id}/tasks`.
+
+        Parameters:
+            method (Methods):
+                HTTP method the request was made with
+            path (str):
+                Path to match, e.g. `/{id}/tasks` or a concrete path
+            **kwargs:
+                Values for any route placeholders `path` doesn't cover
+
+        Returns:
+            tuple[str, int] | None:
+                `(path, extension)` if `path` and `kwargs` together resolve
+                this handler's route, else `None`. `extension` counts
+                template segments past `path` that had to come from
+                `kwargs` (0 for an exact match).
+        """
         if method != self.method:
             return None
 
         if kwargs:
             return self.__resolve_path_param(path, **kwargs)
 
-        return self.__parse_exact_path(path)
+        parsed = self.__parse_exact_path(path)
+        return (parsed, 0) if parsed is not None else None
 
     def __parse_exact_path(self, path: str) -> str | None:
         if not self._path_regex:
@@ -104,18 +124,16 @@ class ResourceHandler(BaseModel):
         if self._path_regex.fullmatch(path):
             return path
 
-    def __resolve_path_param(self, path: str, **kwargs) -> str | None:
-        params = self.__extract_path_params(path)
-        if params is None:
+    def __resolve_path_param(self, path: str, **kwargs) -> tuple[str, int] | None:
+        extracted = self.__extract_path_params(path)
+        if extracted is None:
             return None
-
-        if not self._path_format or not self._param_types:
-            return None
+        path_format, params, extension = extracted
         params |= kwargs
 
         try:
             parsed_path, remaining_params = replace_params(
-                path=self._path_format,
+                path=path_format,
                 path_params=params,
                 param_types=self._param_types,
             )
@@ -125,33 +143,35 @@ class ResourceHandler(BaseModel):
         if remaining_params:
             return None
 
-        return self.__parse_exact_path(parsed_path)
+        final = self.__parse_exact_path(parsed_path)
+        return (final, extension) if final is not None else None
 
-    def __extract_path_params(self, path: str) -> dict | None:
-        if not self._path_format:
-            return None
-        differ = difflib.Differ()
-        diff = list(differ.compare(self._path_format.split("/"), path.split("/")))
-
-        left = [delta.lstrip("- ") for delta in diff if delta.startswith("- ")]
-        right = [delta.lstrip("+ ") for delta in diff if delta.startswith("+ ")]
-
-        if len(right) > len(left):
-            # `path` has at least one concrete segment this handler's own
-            # template has no placeholder for (e.g. a trailing "/tasks" on a
-            # handler whose route is just "/{user_id}") -- `zip` below would
-            # silently drop it instead of rejecting the match, letting a
-            # shorter route spuriously match a longer path.
+    def __extract_path_params(self, path: str) -> tuple[str, dict, int] | None:
+        """Positionally match `path`'s segments as a literal prefix of this
+        handler's own template. A template placeholder at a position where
+        `path` supplies a value fills that param; a template placeholder
+        beyond `path`'s length is left for `kwargs` to fill instead (this is
+        what lets a short hint path like "/posts" discover a longer nested
+        route via kwargs). Returns `(path_format, params, extension)`, where
+        `extension` is how many template segments past `path`'s own length
+        remain."""
+        if self._path_format is None:
             return None
 
-        params = dict(zip(left, right))
-        for key in list(params):
-            if not (match := re.match("{(.*)}", key)):
+        path_segments = path.split("/")
+        template_segments = self._path_format.split("/")
+        if len(path_segments) > len(template_segments):
+            return None
+
+        params: dict[str, str] = {}
+        for path_seg, tmpl_seg in zip(path_segments, template_segments):
+            if placeholder := re.match(r"^{(\w+)}$", tmpl_seg):
+                if path_seg:
+                    params[placeholder.group(1)] = path_seg
+            elif path_seg != tmpl_seg:
                 return None
 
-            params[match.group(1)] = params.pop(key)
-
-        return {k: v for k, v in params.items() if v}
+        return self._path_format, params, len(template_segments) - len(path_segments)
 
 
 @overload

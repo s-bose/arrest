@@ -258,6 +258,31 @@ async def test_call_tool_dispatches_path_params_and_body():
 
 
 @pytest.mark.asyncio
+async def test_call_tool_returns_raw_result_from_handler_callback():
+    # A handler with a `callback` makes `resource.request()` return whatever
+    # the callback produces instead of an `ArrestResponse` -- `call_tool`
+    # must pass that value straight through (after truncation), not assume
+    # it's a response object.
+    toolset, resource = make_toolset(
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
+    )
+    ctx = make_context()
+    tools = await toolset.get_tools(ctx)
+    name, tool = next(iter(tools.items()))
+
+    async def fake_request(**kwargs: Any) -> Any:
+        return {"id": 1, "via": "callback"}
+
+    resource.request = fake_request
+
+    result = await toolset.call_tool(
+        name, validated_args(tool, {"id": 5}, None), ctx, tool
+    )
+
+    assert result == {"id": 1, "via": "callback"}
+
+
+@pytest.mark.asyncio
 async def test_call_tool_with_no_request_body():
     toolset, resource = make_toolset(
         H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
@@ -478,6 +503,41 @@ async def test_context_manager_reentry_reuses_client():
         client = toolset._client
         await toolset.__aenter__()
         assert toolset._client is client
+
+
+@pytest.mark.asyncio
+async def test_aexit_without_aenter_is_a_noop():
+    toolset, resource = make_toolset(
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
+    )
+
+    assert await toolset.__aexit__(None, None, None) is None
+    # nothing was entered, so there's nothing to tear down or restore
+    assert resource.config is None
+    assert toolset._client is None
+
+
+@pytest.mark.asyncio
+async def test_aexit_skips_resource_added_after_aenter():
+    toolset, resource = make_toolset(
+        H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())
+    )
+
+    async with toolset:
+        # A resource that wasn't present at __aenter__ time has no entry in
+        # `_original_configs` -- __aexit__ must skip it rather than KeyError.
+        late_resource = Resource(
+            route="/late",
+            name="late",
+            handlers=[H(Methods.GET, "/{id:int}", None, Out, tool_meta=ToolMeta())],
+        )
+        late_resource.config = ArrestConfig(headers={"X-Late": "1"})
+        toolset._service.add_resource(late_resource)
+
+    assert resource.config is None
+    # untouched -- __aexit__ never tracked this resource's original config
+    assert late_resource.config is not None
+    assert late_resource.config.headers == {"X-Late": "1"}
 
 
 def test_id_defaults_from_service_name():
