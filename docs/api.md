@@ -102,3 +102,19 @@ raised when Arrest cannot convert path-parameter type using any of the existing 
 
 ## OpenAPIGenerator
 ::: arrest.openapi.OpenAPIGenerator
+
+## `ArrestToolset`
+
+See the [pydantic-ai toolset guide](ai-toolset.md) for a full walkthrough.
+
+::: arrest.ai.toolset.ArrestToolset
+    options:
+        show_source: false
+        members:
+            - __init__
+            - get_tools
+            - call_tool
+
+## `ToolMeta`
+
+::: arrest.ai.meta.ToolMeta

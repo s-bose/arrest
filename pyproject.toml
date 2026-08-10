@@ -1,6 +1,6 @@
 [project]
 name = "arrest"
-version = "0.2.1"
+version = "0.2.2"
 description = "Declarative, type-safe HTTP client with Pydantic validation"
 authors = [{ name = "shiladitya Bose", email = "shiladitya_basu@live.com" }]
 license = { text = "MIT" }
@@ -14,6 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Framework :: Pydantic",
     "Topic :: Software Development :: Libraries",
     "Topic :: Internet :: WWW/HTTP",
     "Typing :: Typed",
@@ -42,6 +43,9 @@ arrest = "arrest.__main__:main"
 openapi = [
     "jinja2>=3.1.3",
     "datamodel-code-generator>=0.33.0",
+]
+ai = [
+    "pydantic-ai-slim>=2.27.0",
 ]
 
 [dependency-groups]

@@ -16,6 +16,7 @@ from httpx._types import FileTypes
 from pydantic import BaseModel, TypeAdapter
 from pydantic_xml import BaseXmlModel
 
+from arrest.http import Methods
 from arrest.logging import logger
 from arrest.params import ParamTypes, RequestArgs, _File, _Param
 from arrest.types import ExceptionHandler, ExceptionHandlers, UploadFile
@@ -344,3 +345,10 @@ def build_body_kwargs(
     if content_type == "application/xml":
         return {"content": body}
     return {"json": body} if body else {}
+
+
+def gen_unique_handler_name(resource: str, route: str, method: Methods) -> str:
+    route = route.rstrip("/")
+
+    resource_and_route = f"{resource}s" if not route else f"{resource}_{route}"
+    return sanitize_name(f"{method}_{resource_and_route}").strip("_")

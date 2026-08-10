@@ -676,11 +676,23 @@ class Resource:
     def get_matching_handler(
         self, method: Methods, path: str, **kwargs
     ) -> tuple[ResourceHandler, str] | None:
+        # Among all handlers whose route matches, prefer the one closest to
+        # `path` (fewest assumed extra segments) -- not just the first one
+        # registered, so overlapping routes (e.g. `/{id}` vs `/{id}/tasks`)
+        # resolve the same way regardless of registration order.
+        best: tuple[ResourceHandler, str, int] | None = None
         for handler in self.routes.values():
-            parsed_path = handler.parse_path(method=method, path=path, **kwargs)
-            if parsed_path is not None:
-                url = join_url(self.route, parsed_path)
-                return handler, url
+            match = handler.match(method=method, path=path, **kwargs)
+            if match is None:
+                continue
+            parsed_path, extension = match
+            if best is None or extension < best[2]:
+                best = (handler, parsed_path, extension)
+
+        if best is not None:
+            handler, parsed_path, _ = best
+            url = join_url(self.route, parsed_path)
+            return handler, url
 
     def _bind_handler(
         self, base_url: str | None = None, *, handler: ResourceHandler

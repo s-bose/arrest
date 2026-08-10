@@ -135,6 +135,7 @@ You might also have noticed that custom request DTOs can be provided such as `Ne
 
 Check out the [What's New](whats-new.md) page for a detailed overview of the latest features:
 
+- **`ArrestToolset`** — expose a `Service` as agent-callable tools for [pydantic-ai](ai-toolset.md)
 - **Unified `Response[T]`** — one response type for success and error paths
 - **`H()` helper** — type-safe handler definitions with IDE autocomplete
 - **Form and File primitives** — support for `multipart/form-data` and `application/x-www-form-urlencoded`

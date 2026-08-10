@@ -46,6 +46,7 @@ Arrest is a **type-safe HTTP client** for Python built on [httpx](https://www.py
 - **OpenAPI codegen** — Generate Arrest services and Pydantic models from an OpenAPI spec
 - **`H()` helper** — IDE-friendly handler definitions with keyword-argument autocomplete
 - **Unified `Response[T]`** — One response type for all HTTP status codes with `is_success`, `is_client_error`, etc.
+- **pydantic-ai toolset** — Expose a `Service` as agent-callable tools via `ArrestToolset`
 
 ---
 
@@ -64,6 +65,11 @@ pip install arrest
 ### OpenAPI support (optional)
 ```bash
 uv add 'arrest[openapi]'
+```
+
+### pydantic-ai toolset (optional)
+```bash
+uv add arrest --extra ai
 ```
 
 ---
@@ -131,6 +137,34 @@ arrest --url https://petstore3.swagger.io/api/v3/openapi.json -o ./generated
 ```
 
 Generates `models.py`, `resources.py`, and `services.py` from any OpenAPI spec.
+
+---
+
+## pydantic-ai toolset
+
+Expose a `Service` as agent-callable tools by opting handlers in with `tool_meta`:
+
+```python
+from arrest.ai.meta import ToolMeta
+from arrest.ai.toolset import ArrestToolset
+from pydantic_ai import Agent
+
+users = Resource(
+    name="users",
+    route="/users",
+    handlers=[
+        H(GET, "/{user_id}", None, User, tool_meta=ToolMeta(name="get_user_by_id")),
+    ],
+)
+service = Service(name="example", url="http://localhost:8080/api", resources=[users])
+
+toolset = ArrestToolset(service)
+agent = Agent(model="anthropic:claude-haiku-4-5", toolsets=[toolset])
+
+result = await agent.run("Look up user abc123.")  # pydantic-ai enters/exits the toolset for you
+```
+
+See the [pydantic-ai toolset docs](https://s-bose.github.io/arrest/ai-toolset/) for `include`/`exclude` filtering, retry behavior, and result truncation.
 
 ---
 

@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 from pydantic import BaseModel
 
+from arrest.ai.meta import ToolMeta
 from arrest.converters import UUIDConverter
 from arrest.defaults import ROOT_RESOURCE
 from arrest.http import Methods
@@ -168,9 +169,28 @@ def test_resource_handler_empty(resource: Resource):
     assert root_handler.method == Methods.GET
     assert root_handler.route == ""
 
-    # unbound handler with no path_regex returns None from parse_path
+    # unbound handler with no path_regex returns None from match
     handler = ResourceHandler(method=Methods.GET, route="/unbound")
-    assert handler.parse_path(method=Methods.GET, path="/unbound") is None
+    assert handler.match(method=Methods.GET, path="/unbound") is None
+
+    # method mismatch is rejected before any path matching is attempted
+    assert handler.match(method=Methods.POST, path="/unbound") is None
+
+    # unbound handler also can't resolve kwargs-based path params
+    assert handler.match(method=Methods.GET, path="/unbound", some_id="1") is None
+
+
+def test_build_path_raises_on_unbound_handler():
+    handler = ResourceHandler(method=Methods.GET, route="/{user_id}")
+    with pytest.raises(RuntimeError, match="has not been bound to a resource"):
+        handler.build_path(user_id="abc")
+
+
+def test_build_path_raises_on_unconsumed_path_param():
+    resource = Resource(route="/user", handlers=[(Methods.GET, "/{user_id}/tasks")])
+    handler = list(resource.routes.values())[-1]
+    with pytest.raises(ValueError, match="Unresolved path params"):
+        handler.build_path(user_id="abc", bogus="x")
 
 
 def test_resource_multiple_handler_same_signature():
@@ -209,7 +229,7 @@ async def test_resource_decorator():
         url_new = f"{url}/{my_arg}"
         return url_new, self.base_url
 
-    assert await res.get_user_xml(123) == (
+    assert await res.get_user_xml(123) == (  # type: ignore
         "http://www.example.com/api/user/xyz/123",
         "http://www.example.com/api",
     )
@@ -456,3 +476,23 @@ def test_h_rejects_internal_and_unknown_fields(args, kw):
     # Direct ResourceHandler construction also rejects them
     with pytest.raises(ValidationError):
         ResourceHandler(method=args[0], route=args[1], **kw)
+
+
+def test_resource_handler_tool_meta_default_none():
+    assert ResourceHandler(method=Methods.GET, route="/").tool_meta is None
+
+
+def test_h_passes_through_tool_meta():
+    from arrest.handler import H
+
+    meta = ToolMeta(name="get_user", description="Fetch a user by id")
+    handler = H(Methods.GET, "/users/{user_id}", tool_meta=meta)
+
+    assert handler.tool_meta is meta
+
+
+def test_resource_handler_tool_meta_rejects_invalid_type():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        ResourceHandler(method=Methods.GET, route="/", tool_meta=123)  # type: ignore

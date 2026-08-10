@@ -202,6 +202,39 @@ def test_path_params_kwargs_multiple_handlers(
         assert result is expected_handler_route
 
 
+def test_path_params_shorter_route_does_not_match_longer_path(service):
+    """A route template that's a strict prefix of another (e.g. `/{user_id}`
+    vs `/{user_id}/tasks`) must not spuriously match a request meant for the
+    longer one when the shorter route is registered first.
+
+    Note: only covers the shorter-registered-first direction. The reverse is
+    a separate, still-open gap in this fuzzy matcher -- `ArrestToolset`
+    avoids it by resolving a concrete path itself, but a direct
+    `Resource.request()`/`get_matching_handler()` caller could still hit it.
+    """
+    service.add_resource(
+        Resource(
+            route="/user",
+            handlers=[
+                (Methods.GET, "/{user_id}"),
+                (Methods.GET, "/{user_id}/tasks"),
+            ],
+        )
+    )
+
+    handler, parsed_path = service.user.get_matching_handler(
+        method="GET", path="/{user_id}/tasks", user_id="abc"
+    )
+    assert handler.route == "/{user_id}/tasks"
+    assert parsed_path == "/user/abc/tasks"
+
+    handler, parsed_path = service.user.get_matching_handler(
+        method="GET", path="/{user_id}", user_id="abc"
+    )
+    assert handler.route == "/{user_id}"
+    assert parsed_path == "/user/abc"
+
+
 @pytest.mark.parametrize(
     "method, request_path, expected_handler_route",
     [

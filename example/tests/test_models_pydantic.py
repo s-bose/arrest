@@ -6,6 +6,7 @@ from httpx import ASGITransport
 from pydantic import BaseModel
 
 from arrest import Resource, Service
+from arrest._config import ArrestConfig
 from arrest.params import Body, Header, Query
 from example.app.main import app
 from example.example_service.models import (
@@ -71,7 +72,7 @@ svc = Service(
     name="svc without types",
     url="http://localhost:8080",
     resources=[root, tasks, users, custom],
-    transport=ASGITransport(app=app),
+    config=ArrestConfig(transport=ASGITransport(app=app)),
 )
 
 
