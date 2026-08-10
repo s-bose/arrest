@@ -77,6 +77,16 @@ CONVERTER_REGEX: dict[str, Converter[Any]] = {
     "uuid": UUIDConverter(),
 }
 
+CONVERTER_TO_TYPES: dict[type[Converter[Any]], type] = {
+    IntegerConverter: int,
+    FloatConverter: float,
+    UUIDConverter: UUID,
+}
+
+
+def get_converter_type(converter: Converter[Any]) -> type:
+    return CONVERTER_TO_TYPES.get(type(converter), str)
+
 
 def compile_path(path: str) -> tuple[Pattern[str], str, dict[str, Converter[Any]]]:
     """

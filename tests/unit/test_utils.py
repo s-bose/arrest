@@ -6,6 +6,7 @@ from datetime import datetime
 import pytest
 from pydantic import BaseModel, RootModel
 
+from arrest.http import Methods
 from arrest.utils import (
     extract_model_field,
     extract_resource_and_suffix,
@@ -13,6 +14,7 @@ from arrest.utils import (
     jsonable_encoder,
     retry,
     validate_model,
+    gen_unique_handler_name,
 )
 
 
@@ -237,12 +239,12 @@ def test_jsonable_encoder_object_with_no___dict__():
 @pytest.mark.asyncio
 async def test_retry_async(mocker):
     class Foo:
-        @retry(max_retries=3, exceptions=(ValueError))
+        @retry(max_retries=3, exceptions=(ValueError,))
         async def fn_async(self):
             print("baz")
             raise ValueError()
 
-        @retry(max_retries=2, exceptions=(Exception))
+        @retry(max_retries=2, exceptions=(Exception,))
         def fn_sync():
             print("baz sync")
             raise Exception()
@@ -257,5 +259,76 @@ async def test_retry_async(mocker):
         assert spy.call_count == 3
 
     with pytest.raises(Exception):
-        foo.fn_sync()
+        foo.fn_sync()  # type: ignore
         assert spy_sync.call_count == 2
+
+
+@pytest.mark.parametrize(
+    argnames="resource, route, method, expected",
+    argvalues=[
+        (
+            "my_resource",
+            "/my/route",
+            "GET",
+            "get_my_resource_my_route",
+        ),
+        (
+            "my_resource",
+            "/my/route/",
+            "POST",
+            "post_my_resource_my_route",
+        ),
+        (
+            "my_resource",
+            "/my/route/{id}",
+            "PUT",
+            "put_my_resource_my_route_id",
+        ),
+        ("my_resource", "", "DELETE", "delete_my_resources"),
+        ("my_resource", "/", "DELETE", "delete_my_resources"),
+        (
+            "My Resource",
+            "/my/route",
+            "GET",
+            "get_my_resource_my_route",
+        ),
+        (
+            "my_resource",
+            "/my/route/{id}/sub/{sub_id}",
+            "PATCH",
+            "patch_my_resource_my_route_id_sub_sub_id",
+        ),
+        (
+            "users",
+            "/{user_id:str}/posts/{post_id:uuid}",
+            "GET",
+            "get_users_user_id_str_posts_post_id_uuid",
+        ),
+    ],
+)
+def test_gen_unique_handler_name(
+    resource: str, route: str, method: Methods, expected: str
+):
+
+    result = gen_unique_handler_name(resource=resource, route=route, method=method)
+    assert result == expected
+
+
+def test_gen_unique_handler_name_differs_by_method():
+    same_route_names = {
+        gen_unique_handler_name(
+            resource="my_resource", route="/my/route", method=method
+        )
+        for method in (Methods.GET, Methods.POST, Methods.PUT, Methods.DELETE)
+    }
+    assert len(same_route_names) == 4
+
+
+def test_gen_unique_handler_name_trailing_slash_matches_no_slash():
+    with_slash = gen_unique_handler_name(
+        resource="my_resource", route="/my/route/", method=Methods.GET
+    )
+    without_slash = gen_unique_handler_name(
+        resource="my_resource", route="/my/route", method=Methods.GET
+    )
+    assert with_slash == without_slash
