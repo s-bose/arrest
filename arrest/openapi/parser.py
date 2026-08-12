@@ -53,35 +53,23 @@ from arrest.utils import sanitize_name
 
 
 class OpenAPIGenerator:
+    """Generates boilerplate code from an OpenAPI specification.
+
+    Supports OpenAPI v3.0+ specifications in JSON and YAML formats.
+    """
+
     def __init__(
         self,
-        *,
         url: str,
-        output_path: str,
-        dir_name: Optional[str] = None,
-    ) -> None:
-        """
-        class for generating Arrest services, resources and schema
-        components from OpenAPI specification (>= v3.0)
-        Generates three files:
+        output_dir: Path = OPENAPI_DIRECTORY,
+        schema_filename: str = OPENAPI_SCHEMA_FILENAME,
+    ):
+        self.url = url
+        self.output_dir = output_dir / ROOT_RESOURCE
+        self.schema_filename = schema_filename
 
-        1. models.py (contains OpenAPI Schema component definitions)
-        2. resources.py (Arrest Resources based on the path items)
-        3. services.py (Arrest Services using the resources)
-
-
-        Parameters:
-            url:
-                an HTTP url or full path to the OpenAPI specification (json or yaml)
-            output_path:
-                path where the generated files will be saved
-            dir_name:
-                (optional) specify the folder name containing the files
-
-        """
-        self.url: str = url
-        self.output_path: str = output_path
-        self.dir_name = dir_name
+        self.schema: OpenAPI | None = None
+        self.service: ServiceSchema | None = None
 
     @retry(
         max_retries=MAX_RETRIES,
@@ -94,7 +82,7 @@ class OpenAPIGenerator:
     )
     def download_openapi_spec(self) -> bytes:
         if self.url.startswith("http"):
-            response = httpx.get(self.url)
+            response = httpx.get(self.url, timeout=30.0)
             response.raise_for_status()
             return response.read()
 
@@ -109,223 +97,238 @@ class OpenAPIGenerator:
             fmt (Optional[Format], optional): specification format [json, yaml, yml]
 
         Raises:
-            ArrestError: if the output path does not exist
+            ValueError: If the provided format is not supported.
         """
-        openapi_bytes = self.download_openapi_spec()
-        fmt = fmt if fmt else Format(self.url.split(".")[-1])
-        openapi: OpenAPI = self.parse_openapi(fmt=fmt, data=io.BytesIO(openapi_bytes))
+        data = self.download_openapi_spec()
 
-        output_path = Path(self.output_path)
-        if not output_path.exists():
-            raise ArrestError("output path does not exist")
+        if fmt is None:
+            try:
+                spec = json.loads(data)
+            except json.JSONDecodeError:
+                spec = yaml.safe_load(data)
+        elif fmt.value == Format.json:
+            spec = json.loads(data)
+        elif fmt.value in {Format.yaml, Format.yml}:
+            spec = yaml.safe_load(data)
+        else:
+            raise ArrestError(f"{fmt.value} is not a supported format for code generation.")
 
-        service_name = self.dir_name or self.get_service_name(openapi)
-        output_path = output_path / service_name
-        schema_path = output_path / OPENAPI_SCHEMA_FILENAME
+        if not isinstance(spec, dict):
+            raise ArrestError("Unexpected OpenAPI specification content.")
 
-        Path.mkdir(output_path, exist_ok=True)
+        self.schema = OpenAPI(**spec)
 
-        self.generate_component_schema(
-            input_bytes=openapi_bytes, schema_path=schema_path, silent=silent
-        )
-        resources = self.generate_resource_file(
-            openapi=openapi,
-            schema_path=schema_path,
-            resource_path=output_path,
-            silent=silent,
-        )
-        self.generate_service_file(
-            openapi=openapi,
-            service_path=output_path,
-            resources=resources,
-            silent=silent,
-        )
-        InitTemplate(destination_path=output_path).render_and_save()
+        self.schema.servers = self.schema.servers if isinstance(self.schema.servers, list) else []
+        self.schema.info = self.schema.info if self.schema.info else {}
+        self.schema.external_docs = self.schema.external_docs if self.schema.external_docs else {}
+        self.schema.tags = self.schema.tags if isinstance(self.schema.tags, list) else []
+        self.schema.security = self.schema.security if isinstance(self.schema.security, list) else []
 
-    def generate_component_schema(
-        self, input_bytes: bytes, schema_path: Path, silent: bool = False
-    ) -> None:
-        generate(
-            input_=input_bytes.decode("utf-8"),
-            input_file_type=InputFileType.OpenAPI,
-            openapi_scopes=[OpenAPIScope.Schemas],
-            output=schema_path,
-            output_model_type=DataModelType.PydanticV2BaseModel,
+        service_name = sanitize_name(self.schema.info.get("title", ""))
+        logger.debug("service_name: %s", service_name)
+        self.service = ServiceSchema(
+            name=service_name,
+            url=self.schema.servers[0].get("url", "") if self.schema.servers else "",
         )
 
         if not silent:
             logger.info(
-                f"generated pydantic models from schema definitions in : {schema_path}"
+                "OpenAPI Content fetched. Service: %s, servers: %s, tags: %s",
+                service_name,
+                self.schema.servers,
+                [tag.get("name", "") for tag in self.schema.tags],
             )
 
-    def generate_service_file(
-        self,
-        *,
-        openapi: OpenAPI,
-        service_name: Optional[str] = None,
-        service_path: Path | str,
-        resources: list[ResourceSchema],
-        silent: bool = False,
-    ):
-        services = list(
-            self._build_arrest_service(
-                openapi=openapi, service_name=service_name, resources=resources
+    def generate_models(self, spec_text: str) -> str:
+        """Generate pydantic models from the OpenAPI specification.
+
+        Parameters:
+            spec_text (str): The JSON specification text.
+
+        Returns:
+            str: Generated models code.
+        """
+        output = io.StringIO()
+
+        try:
+            generate(
+                input_=io.StringIO(spec_text),
+                input_file_type=InputFileType.OpenAPI,
+                output=output,
+                output_model_type=DataModelType.PydanticV2BaseModel,
+                openapi_scopes=[
+                    OpenAPIScope.Schemas,
+                    OpenAPIScope.Parameters,
+                ],
             )
+        except Exception as e:
+            raise ArrestError(f"Error generating models: {str(e)}") from e
+
+        return output.getvalue()
+
+    def _create_root_init(self, schema_files: list[str]) -> None:
+        """Create the root-level __init__.py that imports all schemas."""
+        root_init_path = self.output_dir / "schemas" / "__init__.py"
+        root_init_path.parent.mkdir(parents=True, exist_ok=True)
+
+        init_template = InitTemplate(schema_files=schema_files)
+        root_init_content = init_template.render()
+
+        with open(root_init_path, "w", encoding="utf-8") as f:
+            f.write(root_init_content)
+
+    def _populate_schema_methods(
+        self, resource: ResourceSchema
+    ) -> list[HandlerSchema]:
+        """Populate handler schemas for a resource from the OpenAPI specification."""
+        schema_handlers: list[HandlerSchema] = []
+
+        for path_str, path_item in self.schema.paths.items():
+            operations = path_item.get_operations()
+            if not operations:
+                continue
+
+            sanitized_path = path_str.strip("/")
+            path_parts = sanitized_path.split("/")
+
+            if resource.name not in path_parts:
+                continue
+
+            for method, operation in operations.items():
+                handler_method = self._create_handler_method(
+                    method=method,
+                    operation=operation,
+                    path=path_str,
+                    path_item=path_item,
+                )
+                schema_handlers.append(handler_method)
+
+        return schema_handlers
+
+    def _create_handler_method(
+        self,
+        method: str,
+        operation: Operation,
+        path: str,
+        path_item: PathItem,
+    ) -> HandlerSchema:
+        """Create a handler schema from an OpenAPI operation."""
+        handler_schema = HandlerSchema(
+            handler_name=operation.operation_id or f"{method}_{hash(path)}",
+            http_method=Methods(method),
+            route=path,
+            request_schemas=[],
+            response_schema=None,
         )
 
-        ServiceTemplate(
-            services=services, destination_path=service_path
-        ).render_and_save()
+        return handler_schema
 
-        if not silent:
-            logger.info(f"generated arrest services in : {service_path}/services.py")
+    def _check_stop_iteration(
+        self, operation: Operation, path_item: PathItem, path: str
+    ) -> Generator[HandlerSchema, None, None]:
+        """Check if the current path and operation combination should stop iteration."""
+        if operation.deprecated:
+            return StopIteration
 
-    def get_service_name(
-        self, openapi: OpenAPI, service_name: Optional[str] = None
-    ) -> str:
-        name = service_name or openapi.info.title or OPENAPI_DIRECTORY
-        return sanitize_name(name)
+        # Skip websocket paths
+        if "websocket" in path.lower():
+            return StopIteration
 
-    def generate_resource_file(
+        return None
+
+    def generate_service_and_resources(self) -> tuple[ServiceSchema, list[ResourceSchema]]:
+        """Generate service and resource schemas from the OpenAPI specification."""
+        resource_map: dict[str, ResourceSchema] = {}
+
+        for path_str, path_item in self.schema.paths.items():
+            resource_name = self._extract_resource_name(path_str)
+
+            if resource_name not in resource_map:
+                resource_map[resource_name] = ResourceSchema(
+                    name=resource_name,
+                    url=path_str,
+                    handlers=[],
+                )
+
+            for method, operation in path_item.get_operations().items():
+                if (stop := self._check_stop_iteration(operation, path_item, path_str)):
+                    if stop is StopIteration:
+                        continue
+
+                handler = self._create_handler_method(
+                    method=method,
+                    operation=operation,
+                    path=path_str,
+                    path_item=path_item,
+                )
+                resource_map[resource_name].handlers.append(handler)
+
+        return self.service, list(resource_map.values())
+
+    def _extract_resource_name(self, path_str: str) -> str:
+        """Extract resource name from the path string."""
+        sanitized_path = path_str.strip("/")
+        path_parts = sanitized_path.split("/")
+
+        # Use first meaningful path part
+        non_param_parts = [
+            part for part in path_parts if not part.startswith("{")
+        ]
+        if non_param_parts:
+            return non_param_parts[0]
+
+        # Fallback to unique path
+        return sanitize_name(path_str.replace("/", "_"))
+
+    def _write_resource_files(self, resources: list[ResourceSchema]) -> None:
+        """Write resource template files to disk."""
+        for resource in resources:
+            resource_dir = self.output_dir / resource.name
+            resource_dir.mkdir(parents=True, exist_ok=True)
+
+            resource_template = ResourceTemplate(resource=resource)
+            resource_content = resource_template.render()
+
+            init_content = f"from .{resource.name}_resource import {convert_to_pascal(resource.name)}Resource\n"
+
+            with open(resource_dir / "__init__.py", "w", encoding="utf-8") as f:
+                f.write(init_content)
+
+            with open(
+                resource_dir / f"{resource.name}_resource.py",
+                "w",
+                encoding="utf-8",
+            ) as f:
+                f.write(resource_content)
+
+        # Write main __init__.py
+        self._create_root_init(
+            schema_files=[resource.name for resource in resources]
+        )
+
+    def _write_service_file(self, service: ServiceSchema) -> None:
+        """Write the service template file to disk."""
+        service_template = ServiceTemplate(service=service)
+        service_content = service_template.render()
+
+        service_dir = self.output_dir
+        service_dir.mkdir(parents=True, exist_ok=True)
+
+        with open(service_dir / "service.py", "w", encoding="utf-8") as f:
+            f.write(service_content)
+
+    def generate(
         self,
-        openapi: OpenAPI,
-        schema_path: Path | str,
-        resource_path: Path | str,
+        models: bool = True,
+        resources: bool = True,
+        service: bool = True,
+        fmt: Optional[Format] = None,
         silent: bool = False,
-    ) -> list[ResourceSchema]:
-        resources = list(self._build_arrest_resources(openapi=openapi))
-        path, _ = os.path.splitext(schema_path)
-        module = Path(path).stem
+    ) -> None:
+        """Main entry point for generating code from the OpenAPI specification.
+        """
+        self.generate_schema(fmt=fmt, silent=silent)
 
-        ResourceTemplate(
-            schema_module=module, resources=resources, destination_path=resource_path
-        ).render_and_save()
-
-        if not silent:
-            logger.info(f"generated arrest resources in : {resource_path}/resources.py")
-        return resources
-
-    def _build_arrest_service(
-        self,
-        openapi: OpenAPI,
-        service_name: Optional[str] = None,
-        resources: list[ResourceSchema] | None = None,
-    ) -> Generator[ServiceSchema, None, None]:
-        name = service_name or self.get_service_name(openapi)
-
-        resources = resources or []
-        resource_names = [res.name for res in resources]
-        for idx, server in enumerate(openapi.servers):
-            for idxx, url in enumerate(self._extract_url(server)):
-                suffix = f"_{idx}" if idx else ""
-                suffix += f"_{idxx}" if idxx else ""
-                service_id = f"{name}{suffix}"
-                yield ServiceSchema(
-                    service_id=service_id,
-                    name=name,
-                    url=url,
-                    description=server.description,
-                    resources=resource_names,
-                )
-
-    def _extract_url(self, server: Server) -> Generator[str, None, None]:
-        url, variables = server.url, server.variables
-        if not variables:
-            yield url
-        else:
-            value_list = []
-            for var in variables.values():
-                values = set(var.enum) if var.enum else set()
-                values.add(var.default)
-                value_list.append(values)
-            for values in itertools.product(*value_list):
-                kwargs = {k: v for k, v in zip(variables.keys(), values)}
-                yield url.format(**kwargs)
-
-    def _build_arrest_resources(
-        self, openapi: OpenAPI
-    ) -> Generator[ResourceSchema, None, None]:
-        def prefix(path: str) -> str:
-            """
-            ("/base/xyz/123") -> "base"
-            ("/base/{id}") -> "base"
-            """
-            return path[1:].split("/")[0]
-
-        for key, group in itertools.groupby(openapi.paths.keys(), key=prefix):
-            routes = list(group)
-            path_items = [openapi.paths.get(route) for route in routes]
-            handlers: list[HandlerSchema] = []
-            for route, path_item in zip(routes, path_items):
-                if key:
-                    route = route.removeprefix(f"/{key}")
-                handlers.extend(self._build_handlers(route=route, path_item=path_item))
-            if key:
-                yield ResourceSchema(
-                    name=sanitize_name(key), route=f"/{key}", handlers=handlers
-                )
-            else:
-                yield ResourceSchema(name=ROOT_RESOURCE, route=key, handlers=handlers)
-
-    def _build_handlers(
-        self, route: str, path_item: PathItem | None
-    ) -> list[HandlerSchema]:
-        handlers = []
-        if not path_item:
-            return handlers
-
-        for method in list(Methods):
-            operation: Operation | None
-            if operation := getattr(path_item, str(method).lower(), None):
-                request_class = self.get_request_schema(operation)
-                response_class = self.get_response_schema(operation)
-
-                request_to_pascal = convert_to_pascal(request_class)
-                response_to_pascal = convert_to_pascal(response_class)
-                handlers.append(
-                    HandlerSchema(
-                        route=route,
-                        method=method,
-                        request=request_to_pascal,
-                        response=response_to_pascal,
-                    )
-                )
-
-        return handlers
-
-    def get_request_schema(self, operation: Operation) -> Optional[str]:
-        if not (request_body := operation.requestBody):
-            logger.debug("no request body defined")
-            return None
-
-        if isinstance(request_body, Reference):
-            return get_ref_schema(request_body)
-
-        if media := request_body.content.get("application/json", None):
-            return get_ref_schema(media.media_type_schema)
-
-    def get_response_schema(self, operation: Operation) -> Optional[str]:
-        if not operation.responses or not (
-            success_response := operation.responses.get(str(httpx.codes.OK), None)
-        ):
-            logger.debug("no success (200) response defined")
-            return None
-        if isinstance(success_response, Reference):
-            return get_ref_schema(success_response)
-
-        if success_response.content and (
-            media := success_response.content.get("application/json", None)
-        ):
-            return get_ref_schema(media.media_type_schema)
-
-    @classmethod
-    def load_dict(cls, fmt: Format, data: IO) -> dict:
-        if fmt == Format.json:
-            return json.load(data)
-        elif fmt in (Format.yaml, Format.yml):
-            return yaml.load(data, yaml.SafeLoader)
-
-    @classmethod
-    def parse_openapi(cls, fmt: Format, data: IO) -> OpenAPI:
-        spec = cls.load_dict(fmt, data)
-        return OpenAPI(**spec)
+        if models:
+            spec_json = json.dumps(self.schema.model_dump(by_alias=True), indent=2)
+            self._write_model_files(spec_json)
